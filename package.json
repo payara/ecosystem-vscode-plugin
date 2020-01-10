@@ -21,6 +21,7 @@
 	],
 	"activationEvents": [
 		"onCommand:payara.server.add",
+		"onCommand:payara.server.remove",
 		"onCommand:payara.server.refresh"
 	],
 	"main": "./out/main/extension.js",
@@ -36,6 +37,11 @@
 				}
 			},
 			{
+				"command": "payara.server.remove",
+				"title": "Remove Payara Server",
+				"category": "Payara"
+			},
+			{
 				"command": "payara.server.refresh",
 				"title": "Refresh Payara Servers",
 				"category": "Payara",
@@ -43,6 +49,10 @@
 					"light": "resources/light/refresh.svg",
 					"dark": "resources/dark/refresh.svg"
 				}
+			},
+			{
+				"command": "payara.server.remove.context",
+				"title": "Remove"
 			}
 		],
 		"views": {
@@ -57,10 +67,24 @@
 			"view/title": [
 				{
 					"command": "payara.server.add",
-					"when": "view == payaraServerExplorer"
+					"when": "view == payaraServerExplorer",
+					"group": "navigation@0"
 				},
 				{
 					"command": "payara.server.refresh",
+					"when": "view == payaraServerExplorer",
+					"group": "navigation@1"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "payara.server.remove.context",
+					"when": "never"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "payara.server.remove.context",
 					"when": "view == payaraServerExplorer"
 				}
 			]

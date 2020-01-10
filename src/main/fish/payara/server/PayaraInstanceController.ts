@@ -12,6 +12,7 @@ import { QuickPickItem, CancellationToken } from 'vscode';
 export class PayaraInstanceController {
 
     private outputChannel: vscode.OutputChannel;
+
     constructor(private instanceProvider: PayaraInstanceProvider, private extensionPath: string) {
         this.outputChannel = vscode.window.createOutputChannel('payara');
     }
@@ -21,9 +22,19 @@ export class PayaraInstanceController {
             input => this.selectServer(input, {
             })
         );
+        this.refreshServerList();
     }
 
-    async selectServer(input: ui.MultiStepInput, state: Partial<State>) {
+    public async removeServer(payaraServer: PayaraServerInstance): Promise<void> {
+        this.instanceProvider.removeServer(payaraServer);
+        this.refreshServerList();
+    }
+
+    public async refreshServerList(): Promise<void> {
+        vscode.commands.executeCommand('payara.server.refresh');
+    }
+
+    private async selectServer(input: ui.MultiStepInput, state: Partial<State>) {
 
         const fileUris = await vscode.window.showOpenDialog({
             defaultUri: vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined,

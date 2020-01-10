@@ -3,6 +3,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as os from "os";
+import * as _ from "lodash";
 import * as fse from "fs-extra";
 import { PayaraServerInstance } from "./PayaraServerInstance";
 
@@ -30,17 +31,31 @@ export class PayaraInstanceProvider {
     }
 
     public addServer(payaraServer: PayaraServerInstance): void {
+        this.removeServerFromList(payaraServer);
+        this.servers.push(payaraServer);
+        this.updateServerConfig();
+    }
+
+    public removeServer(payaraServer: PayaraServerInstance): boolean {
+        if(this.removeServerFromList(payaraServer)) {
+            this.updateServerConfig();
+            return true;
+        }
+        return false;
+    }
+
+    private removeServerFromList(payaraServer: PayaraServerInstance): boolean {
         const index: number = this.servers.findIndex(
             server => server.getName() === payaraServer.getName()
         );
         if (index > -1) {
             this.servers.splice(index, 1);
+            return true;
         }
-        this.servers.push(payaraServer);
-        this.updateServerConfig();
+        return false;
     }
 
-    public async updateServerConfig(): Promise<void> {
+    private async updateServerConfig(): Promise<void> {
         try {
             await fse.outputJson(
                 this.serversConfig,
@@ -52,7 +67,6 @@ export class PayaraInstanceProvider {
                     };
                 })
             );
-            vscode.commands.executeCommand('payara.server.refresh');
         } catch (error) {
             console.error(error.toString());
         }
