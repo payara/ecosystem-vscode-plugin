@@ -22,12 +22,28 @@ export class PayaraInstanceController {
             input => this.selectServer(input, {
             })
         );
-        this.refreshServerList();
     }
 
     public async removeServer(payaraServer: PayaraServerInstance): Promise<void> {
         this.instanceProvider.removeServer(payaraServer);
         this.refreshServerList();
+    }
+
+    public async renameServer(payaraServer: PayaraServerInstance): Promise<void> {
+        if (payaraServer) {
+            await vscode.window.showInputBox({
+                value: payaraServer.getName(),
+                prompt: 'Enter a unique name for the server',
+                placeHolder: 'Payara Server name',
+                validateInput: name => this.validateName(name, this.instanceProvider)
+            }).then(newName => {
+                if (newName) {
+                    payaraServer.setName(newName);
+                    this.instanceProvider.updateServerConfig();
+                    this.refreshServerList();
+                }
+            });
+        }
     }
 
     public async refreshServerList(): Promise<void> {
@@ -53,8 +69,8 @@ export class PayaraInstanceController {
         let domainsDir: string = path.join(serverPath, 'glassfish', 'domains');
         const domains: QuickPickItem[] = fse.readdirSync(domainsDir).map(label => ({ label }));
 
-        state.path = serverPath;   
-        state.domains = domains;         
+        state.path = serverPath;
+        state.domains = domains;
         return (input: ui.MultiStepInput) => this.selectDomain(input, state);
     }
 
@@ -73,7 +89,7 @@ export class PayaraInstanceController {
         if (pick instanceof ui.MyButton) {
             return (input: ui.MultiStepInput) => this.createDomain(input, state);
         }
-        
+
         state.domain = pick.label;
         return (input: ui.MultiStepInput) => this.serverName(input, state);
     }
@@ -81,27 +97,32 @@ export class PayaraInstanceController {
     async serverName(input: ui.MultiStepInput, state: Partial<State>) {
         const title = 'Register Payara Server';
         let serverPath: string = state.path ? state.path : '';
-        const additionalSteps = typeof state.domain === 'string' ? 1 : 0;
         let defaultServerName: string = path.basename(serverPath);
         state.name = await input.showInputBox({
             title: title,
-            step: 3 + additionalSteps,
-            totalSteps: 3 + additionalSteps,
+            step: 3,
+            totalSteps: 3,
             value: state.name || defaultServerName,
             prompt: 'Enter a unique name for the server',
             placeHolder: 'Payara Server name',
-            validate: this.validateName,
+            validate: name => this.validateName(name, this.instanceProvider),
             shouldResume: this.shouldResume
         });
 
         let serverName: string = state.name ? state.name : defaultServerName;
-        let domainName: string = state.domain? state.domain :'domain1';
+        let domainName: string = state.domain ? state.domain : 'domain1';
         let payaraServerInstance: PayaraServerInstance = new PayaraServerInstance(serverName, serverPath, domainName);
         this.instanceProvider.addServer(payaraServerInstance);
+        this.refreshServerList();
     }
 
-    async validateName(name: string) {
-        return _.isEmpty(name) ? 'Server name cannot be empty' : undefined;
+    async validateName(name: string, instanceProvider: PayaraInstanceProvider): Promise<string | undefined> {
+        if (_.isEmpty(name)) {
+            return 'Server name cannot be empty';
+        } else if (instanceProvider.getServerByName(name)) {
+            return 'Payar Server already exist with the given name, please re-enter';
+        }
+        return undefined;
     }
 
     async createDomain(input: ui.MultiStepInput, state: Partial<State>) {

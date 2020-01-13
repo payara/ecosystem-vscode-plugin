@@ -31,18 +31,28 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
+			'payara.server.rename',
+			payaraServer => payaraInstanceController.renameServer(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
 			'payara.server.refresh',
 			payaraServer => payaraServerTree.refresh(payaraServer)
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'payara.server.remove.context', 
+			'payara.server.remove.context',
 			payaraServer => payaraInstanceController.removeServer(payaraServer)
 		)
 	);
-
-
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.rename.context',
+			payaraServer => payaraInstanceController.renameServer(payaraServer)
+		)
+	);
 }
 
 

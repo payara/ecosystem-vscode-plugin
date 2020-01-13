@@ -12,6 +12,10 @@ export class PayaraServerInstance extends vscode.TreeItem  {
         return this.name;
     }
 
+    public setName(name: string) {
+        this.name = name;
+    }
+
     public getPath(): string {
         return this.path;
     }

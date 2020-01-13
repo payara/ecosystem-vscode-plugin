@@ -20,6 +20,12 @@ export class PayaraInstanceProvider {
         return this.servers;
     }
 
+    public getServerByName(name: string): PayaraServerInstance | undefined {
+        return this.servers.find(
+            item => item.getName() === name
+        );
+    }
+
     getserversConfig(context: vscode.ExtensionContext): string {
         let storagePath: string;
         if (!context.storagePath) {
@@ -37,7 +43,7 @@ export class PayaraInstanceProvider {
     }
 
     public removeServer(payaraServer: PayaraServerInstance): boolean {
-        if(this.removeServerFromList(payaraServer)) {
+        if (this.removeServerFromList(payaraServer)) {
             this.updateServerConfig();
             return true;
         }
@@ -55,7 +61,7 @@ export class PayaraInstanceProvider {
         return false;
     }
 
-    private async updateServerConfig(): Promise<void> {
+    public async updateServerConfig(): Promise<void> {
         try {
             await fse.outputJson(
                 this.serversConfig,

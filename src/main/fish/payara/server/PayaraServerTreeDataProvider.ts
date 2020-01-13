@@ -30,12 +30,16 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Pay
                 server.iconPath = this.context.asAbsolutePath(path.join('resources', `payara.svg`));
                 server.contextValue = "";
                 server.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+                server.label = server.getName();
                 return server;
             });
         } else {
-            vscode.window.showInformationMessage('getChildren todo ' + server);
+            server.iconPath = this.context.asAbsolutePath(path.join('resources', `payara.svg`));
+            server.contextValue = "";
+            server.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+            server.label = server.getName();
+            return [];
         }
-        return [];
     }
 
 }
