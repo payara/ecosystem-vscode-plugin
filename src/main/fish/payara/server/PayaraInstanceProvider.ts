@@ -117,5 +117,9 @@ export class PayaraInstanceProvider {
         }
     }
 
+    public async readServerConfig(): Promise<any> {
+        let data = fse.readFileSync(this.serversConfig);
+        return await JSON.parse(data.toString());
+    }
 
 }

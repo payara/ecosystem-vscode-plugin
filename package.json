@@ -23,7 +23,9 @@
 		"onCommand:payara.server.add",
 		"onCommand:payara.server.remove",
 		"onCommand:payara.server.rename",
-		"onCommand:payara.server.refresh"
+		"onCommand:payara.server.refresh",
+		"onView:payaraServerExplorer",
+		"onView:payaraServer"
 	],
 	"main": "./out/main/extension.js",
 	"contributes": {

@@ -54,6 +54,18 @@ export class PayaraInstanceController {
 
     constructor(private instanceProvider: PayaraInstanceProvider, private extensionPath: string) {
         this.outputChannel = vscode.window.createOutputChannel('payara');
+        this.init();
+    }
+
+    private async init(): Promise<void> {
+        let instances = this.instanceProvider.readServerConfig();
+        instances.forEach((instance: any) => {
+            let payaraServerInstance: PayaraServerInstance = new PayaraServerInstance(
+                instance.name, instance.path, instance.domainName
+            );
+            this.instanceProvider.addServer(payaraServerInstance);
+        });
+        this.refreshServerList();
     }
 
     public async addServer(): Promise<void> {
