@@ -71,18 +71,33 @@
 					"id": "payaraServerExplorer",
 					"name": "Payara Servers"
 				}
+			],
+			"payaraActivitybar": [
+				{
+					"id": "payaraServer",
+					"name": "Servers"
+				}
+			]
+		},
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "payaraActivitybar",
+					"title": "Payara",
+					"icon": "resources/payara.svg"
+				}
 			]
 		},
 		"menus": {
 			"view/title": [
 				{
 					"command": "payara.server.add",
-					"when": "view == payaraServerExplorer",
+					"when": "view == payaraServerExplorer || view == payaraServer",
 					"group": "navigation@0"
 				},
 				{
 					"command": "payara.server.refresh",
-					"when": "view == payaraServerExplorer",
+					"when": "view == payaraServerExplorer || view == payaraServer",
 					"group": "navigation@1"
 				}
 			],
@@ -99,11 +114,11 @@
 			"view/item/context": [
 				{
 					"command": "payara.server.remove.context",
-					"when": "view == payaraServerExplorer"
+					"when": "view == payaraServerExplorer || view == payaraServer"
 				},
 				{
 					"command": "payara.server.rename.context",
-					"when": "view == payaraServerExplorer"
+					"when": "view == payaraServerExplorer || view == payaraServer"
 				}
 			]
 		}

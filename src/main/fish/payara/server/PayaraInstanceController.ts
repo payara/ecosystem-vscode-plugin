@@ -119,7 +119,7 @@ export class PayaraInstanceController {
             title,
             step: 2,
             totalSteps: 3,
-            placeholder: 'Select a exisitng domain',
+            placeholder: 'Select an existing domain.',
             items: state.domains ? state.domains : [],
             activeItem: typeof state.domain !== 'string' ? state.domain : undefined,
             // buttons: [createDomainButton],

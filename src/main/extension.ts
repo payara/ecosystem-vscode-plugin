@@ -57,6 +57,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		)
 	);
 	context.subscriptions.push(
+		vscode.window.registerTreeDataProvider(
+			'payaraServer', payaraServerTree
+		)
+	);
+	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.add',
 			() => payaraInstanceController.addServer()
