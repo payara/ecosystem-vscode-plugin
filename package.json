@@ -14,16 +14,23 @@
 		"Payara"
 	],
 	"engines": {
-		"vscode": "^1.40.0"
+		"vscode": "^1.22.0"
 	},
 	"categories": [
 		"Other"
 	],
 	"activationEvents": [
 		"onCommand:payara.server.add",
-		"onCommand:payara.server.remove",
-		"onCommand:payara.server.rename",
 		"onCommand:payara.server.refresh",
+		"onCommand:payara.server.start",
+		"onCommand:payara.server.start.debug",
+		"onCommand:payara.server.restart",
+		"onCommand:payara.server.stop",
+		"onCommand:payara.server.rename",
+		"onCommand:payara.server.remove",
+		"onCommand:payara.server.console.open",
+		"onCommand:payara.server.log.open",
+		"onCommand:payara.server.config.open",
 		"onView:payaraServerExplorer",
 		"onView:payaraServer"
 	],
@@ -35,13 +42,37 @@
 				"title": "Add Payara Server",
 				"category": "Payara",
 				"icon": {
-					"light": "resources/light/add.svg",
-					"dark": "resources/dark/add.svg"
+					"light": "resources/theme/light/add.svg",
+					"dark": "resources/theme/dark/add.svg"
 				}
 			},
 			{
-				"command": "payara.server.remove",
-				"title": "Remove Payara Server",
+				"command": "payara.server.refresh",
+				"title": "Refresh Payara Servers",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/refresh.svg",
+					"dark": "resources/theme/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "payara.server.start",
+				"title": "Start Payara Server",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.start.debug",
+				"title": "Start in Debug Mode",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.restart",
+				"title": "Restart Payara Server",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.stop",
+				"title": "Stop Payara Server",
 				"category": "Payara"
 			},
 			{
@@ -50,21 +81,60 @@
 				"category": "Payara"
 			},
 			{
-				"command": "payara.server.refresh",
-				"title": "Refresh Payara Servers",
-				"category": "Payara",
-				"icon": {
-					"light": "resources/light/refresh.svg",
-					"dark": "resources/dark/refresh.svg"
-				}
+				"command": "payara.server.remove",
+				"title": "Remove Payara Server",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.console.open",
+				"title": "View Domain Admin Console",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.log.open",
+				"title": "View Domain Server Log",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.config.open",
+				"title": "View Domain Server Config",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.start.context",
+				"title": "Start"
+			},
+			{
+				"command": "payara.server.start.debug.context",
+				"title": "Start in Debug Mode"
+			},
+			{
+				"command": "payara.server.restart.context",
+				"title": "Restart"
+			},
+			{
+				"command": "payara.server.stop.context",
+				"title": "Stop"
+			},
+			{
+				"command": "payara.server.rename.context",
+				"title": "Rename"
 			},
 			{
 				"command": "payara.server.remove.context",
 				"title": "Remove"
 			},
 			{
-				"command": "payara.server.rename.context",
-				"title": "Rename"
+				"command": "payara.server.console.open.context",
+				"title": "View Domain Admin Console"
+			},
+			{
+				"command": "payara.server.log.open.context",
+				"title": "View Domain Server Log"
+			},
+			{
+				"command": "payara.server.config.open.context",
+				"title": "View Domain Server Config"
 			}
 		],
 		"views": {
@@ -105,22 +175,87 @@
 			],
 			"commandPalette": [
 				{
+					"command": "payara.server.start.context",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.start.debug.context",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.restart.context",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.stop.context",
+					"when": "never"
+				},
+				{
 					"command": "payara.server.remove.context",
 					"when": "never"
 				},
 				{
 					"command": "payara.server.rename.context",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.console.open.context",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.log.open.context",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.config.open.context",
 					"when": "never"
 				}
 			],
 			"view/item/context": [
 				{
-					"command": "payara.server.remove.context",
-					"when": "view == payaraServerExplorer || view == payaraServer"
+					"command": "payara.server.start.context",
+					"when": "view == payaraServerExplorer || view == payaraServer",
+					"group": "manage@0"
+				},
+				{
+					"command": "payara.server.start.debug.context",
+					"when": "view == payaraServerExplorer || view == payaraServer",
+					"group": "manage@1"
+				},
+				{
+					"command": "payara.server.restart.context",
+					"when": "view == payaraServerExplorer || view == payaraServer",
+					"group": "manage@2"
+				},
+				{
+					"command": "payara.server.stop.context",
+					"when": "view == payaraServerExplorer || view == payaraServer",
+					"group": "manage@3"
 				},
 				{
 					"command": "payara.server.rename.context",
-					"when": "view == payaraServerExplorer || view == payaraServer"
+					"when": "view == payaraServerExplorer || view == payaraServer",
+					"group": "update@4"
+				},
+				{
+					"command": "payara.server.remove.context",
+					"when": "view == payaraServerExplorer || view == payaraServer",
+					"group": "update@5"
+				},
+				{
+					"command": "payara.server.console.open.context",
+					"when": "view == payaraServerExplorer || view == payaraServer",
+					"group": "view@6"
+				},
+				{
+					"command": "payara.server.log.open.context",
+					"when": "view == payaraServerExplorer || view == payaraServer",
+					"group": "view@7"
+				},
+				{
+					"command": "payara.server.config.open.context",
+					"when": "view == payaraServerExplorer || view == payaraServer",
+					"group": "view@8"
 				}
 			]
 		}
@@ -133,8 +268,15 @@
 		"test": "node ./out/test/runTest.js"
 	},
 	"dependencies": {
+		"@types/tail": "^2.0.0",
+		"@types/xml2js": "^0.4.5",
 		"fs-extra": "^8.1.0",
-		"lodash": "^4.17.15"
+		"lodash": "^4.17.15",
+		"open": "^6.2.1 ",
+		"request": "^2.88.0",
+		"sync-request": "^6.1.0",
+		"tail": "^2.0.3",
+		"xml2js": "^0.4.23"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
@@ -147,6 +289,7 @@
 		"mocha": "^6.2.2",
 		"typescript": "^3.6.4",
 		"tslint": "^5.20.0",
-		"vscode-test": "^1.2.2"
+		"vscode-test": "^1.2.2",
+		"os": "^0.1.1"
 	}
 }

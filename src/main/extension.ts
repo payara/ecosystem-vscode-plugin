@@ -47,14 +47,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'payara.server.remove',
-			payaraServer => payaraInstanceController.removeServer(payaraServer)
+			'payara.server.start',
+			payaraServer => payaraInstanceController.startServer(payaraServer, false)
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'payara.server.rename',
-			payaraServer => payaraInstanceController.renameServer(payaraServer)
+			'payara.server.start.debug',
+			payaraServer => payaraInstanceController.startServer(payaraServer, true)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.restart',
+			payaraServer => payaraInstanceController.restartServer(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.stop',
+			payaraServer => payaraInstanceController.stopServer(payaraServer)
 		)
 	);
 	context.subscriptions.push(
@@ -65,14 +77,87 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'payara.server.remove.context',
+			'payara.server.rename',
+			payaraServer => payaraInstanceController.renameServer(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.remove',
 			payaraServer => payaraInstanceController.removeServer(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.console.open',
+			payaraServer => payaraInstanceController.openConsole(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.log.open',
+			payaraServer => payaraInstanceController.openLog(payaraServer)
+		)
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.config.open',
+			payaraServer => payaraInstanceController.openConfig(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.start.context',
+			payaraServer => payaraInstanceController.startServer(payaraServer, false)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.start.debug.context',
+			payaraServer => payaraInstanceController.startServer(payaraServer, true)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.restart.context',
+			payaraServer => payaraInstanceController.restartServer(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.stop.context',
+			payaraServer => payaraInstanceController.stopServer(payaraServer)
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.rename.context',
 			payaraServer => payaraInstanceController.renameServer(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.remove.context',
+			payaraServer => payaraInstanceController.removeServer(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.console.open.context',
+			payaraServer => payaraInstanceController.openConsole(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.log.open.context',
+			payaraServer => payaraInstanceController.openLog(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.config.open.context',
+			payaraServer => payaraInstanceController.openConfig(payaraServer)
 		)
 	);
 }

@@ -21,6 +21,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as os from "os";
 import * as _ from "lodash";
+import * as fs from "fs";
 import * as fse from "fs-extra";
 import { PayaraServerInstance } from "./PayaraServerInstance";
 
@@ -30,7 +31,7 @@ export class PayaraInstanceProvider {
     private serversConfig: string;
 
     constructor(public context: vscode.ExtensionContext) {
-        this.serversConfig = this.getserversConfig(context);
+        this.serversConfig = this.getServersConfig(context);
     }
 
     getServers(): PayaraServerInstance[] {
@@ -43,14 +44,23 @@ export class PayaraInstanceProvider {
         );
     }
 
-    getserversConfig(context: vscode.ExtensionContext): string {
+    private getServersConfig(context: vscode.ExtensionContext): string {
         let storagePath: string;
         if (!context.storagePath) {
             storagePath = path.resolve(os.tmpdir(), `payara_vscode`);
+        } else if (!fs.existsSync(context.storagePath)) {
+            fs.mkdirSync(context.storagePath);
+            storagePath = context.storagePath;
         } else {
             storagePath = context.storagePath;
         }
-        return path.join(storagePath, 'servers.json');
+        let serversConfig: string = path.join(storagePath, 'servers.json');
+        if (!fs.existsSync(serversConfig)) {
+            fs.writeFile(serversConfig, "[]" , (err) => {
+                console.log(serversConfig + " file successfully created.");
+            });
+        }
+        return serversConfig;
     }
 
     public addServer(payaraServer: PayaraServerInstance): void {
@@ -95,9 +105,9 @@ export class PayaraInstanceProvider {
         }
     }
 
-    public async readServerConfig(): Promise<any> {
+    public readServerConfig(): any {
         let data = fse.readFileSync(this.serversConfig);
-        return await JSON.parse(data.toString());
+        return JSON.parse(data.toString());
     }
 
 }
