@@ -45,14 +45,14 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Pay
         if (!server) {
             return this.instanceProvider.getServers().map((server: PayaraServerInstance) => {
                 server.iconPath = this.context.asAbsolutePath(path.join('resources', server.getIcon()));
-                server.contextValue = server.isStarted() ? "started" : "stopped";
+                server.contextValue = server.getState();
                 server.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
                 server.label = server.getName();
                 return server;
             });
         } else {
             server.iconPath = this.context.asAbsolutePath(path.join('resources', server.getIcon()));
-            server.contextValue = server.isStarted() ? "started" : "stopped";
+            server.contextValue = server.getState();
             server.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
             server.label = server.getName();
             return [];

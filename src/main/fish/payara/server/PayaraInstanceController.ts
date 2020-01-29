@@ -79,6 +79,10 @@ export class PayaraInstanceController {
     }
 
     public async startServer(payaraServer: PayaraServerInstance, debug: boolean): Promise<void> {
+        if(!payaraServer.isStopped()) {
+            vscode.window.showErrorMessage('Payara Server instance already running.');
+            return;
+        }
         let process: ChildProcess = new StartTask().startServer(payaraServer, debug);
         if (process.pid) {
             payaraServer.setDebug(debug);
@@ -115,6 +119,10 @@ export class PayaraInstanceController {
     }
 
     public async restartServer(payaraServer: PayaraServerInstance): Promise<void> {
+        if(payaraServer.isStopped()) {
+            vscode.window.showErrorMessage('Payara Server instance not running.');
+            return;
+        }
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
         endpoints.invoke("restart-domain", async (res) => {
             if (res.statusCode === 200) {
@@ -146,6 +154,10 @@ export class PayaraInstanceController {
     }
 
     public async stopServer(payaraServer: PayaraServerInstance): Promise<void> {
+        if(payaraServer.isStopped()) {
+            vscode.window.showErrorMessage('Payara Server instance not running.');
+            return;
+        }
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
         endpoints.invoke("stop-domain", async res => {
             if (res.statusCode === 200) {

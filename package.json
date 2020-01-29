@@ -214,47 +214,47 @@
 			"view/item/context": [
 				{
 					"command": "payara.server.start.context",
-					"when": "view == payaraServerExplorer || view == payaraServer",
+					"when": "viewItem == stoppedPayara",
 					"group": "manage@0"
 				},
 				{
 					"command": "payara.server.start.debug.context",
-					"when": "view == payaraServerExplorer || view == payaraServer",
+					"when": "viewItem == stoppedPayara",
 					"group": "manage@1"
 				},
 				{
 					"command": "payara.server.restart.context",
-					"when": "view == payaraServerExplorer || view == payaraServer",
+					"when": "viewItem == runningPayara",
 					"group": "manage@2"
 				},
 				{
 					"command": "payara.server.stop.context",
-					"when": "view == payaraServerExplorer || view == payaraServer",
+					"when": "viewItem == runningPayara",
 					"group": "manage@3"
 				},
 				{
 					"command": "payara.server.rename.context",
-					"when": "view == payaraServerExplorer || view == payaraServer",
+					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "update@4"
 				},
 				{
 					"command": "payara.server.remove.context",
-					"when": "view == payaraServerExplorer || view == payaraServer",
+					"when": "viewItem == stoppedPayara",
 					"group": "update@5"
 				},
 				{
 					"command": "payara.server.console.open.context",
-					"when": "view == payaraServerExplorer || view == payaraServer",
+					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "view@6"
 				},
 				{
 					"command": "payara.server.log.open.context",
-					"when": "view == payaraServerExplorer || view == payaraServer",
+					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "view@7"
 				},
 				{
 					"command": "payara.server.config.open.context",
-					"when": "view == payaraServerExplorer || view == payaraServer",
+					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "view@8"
 				}
 			]

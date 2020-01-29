@@ -272,8 +272,8 @@ export class PayaraServerInstance extends vscode.TreeItem {
 }
 
 export enum InstanceState {
-    RUNNING = "running",
-    LODING = "loading",
-    RESTARTING = "restarting",
-    STOPPED = "stopped"
+    RUNNING = "runningPayara",
+    LODING = "loadingPayara",
+    RESTARTING = "restartingPayara",
+    STOPPED = "stoppedPayara"
 }
