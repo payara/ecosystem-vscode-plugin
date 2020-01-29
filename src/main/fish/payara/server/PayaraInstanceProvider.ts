@@ -46,19 +46,23 @@ export class PayaraInstanceProvider {
 
     private getServersConfig(context: vscode.ExtensionContext): string {
         let storagePath: string;
-        if (!context.storagePath) {
-            storagePath = path.resolve(os.tmpdir(), `payara_vscode`);
-        } else if (!fs.existsSync(context.storagePath)) {
-            fs.mkdirSync(context.storagePath);
+        if (context.storagePath) {
+            if (!fs.existsSync(context.storagePath)) {
+                fs.mkdirSync(context.storagePath);
+            }
             storagePath = context.storagePath;
+        } else if (context.globalStoragePath) {
+            if (!fs.existsSync(context.globalStoragePath)) {
+                fs.mkdirSync(context.globalStoragePath);
+            }
+            storagePath = context.globalStoragePath;
         } else {
-            storagePath = context.storagePath;
+            storagePath = path.resolve(os.tmpdir(), `payara_vscode`);
         }
+
         let serversConfig: string = path.join(storagePath, 'servers.json');
         if (!fs.existsSync(serversConfig)) {
-            fs.writeFile(serversConfig, "[]" , (err) => {
-                console.log(serversConfig + " file successfully created.");
-            });
+            fs.writeFileSync(serversConfig, "[]");
         }
         return serversConfig;
     }
