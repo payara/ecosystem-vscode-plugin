@@ -21,8 +21,11 @@
 
 import { Uri, workspace } from 'vscode';
 
+import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from 'path';
+import * as cp from 'child_process';
+import { JavaUtils } from '../tooling/utils/JavaUtils';
 
 export class JDKVersion {
 
@@ -258,26 +261,31 @@ export class JDKVersion {
     }
 
     public static getDefaultJDKVersion(): JDKVersion | undefined {
-        if(JDKVersion.DEFAULT_JDK_VERSION) {
+        if (JDKVersion.DEFAULT_JDK_VERSION) {
             return JDKVersion.DEFAULT_JDK_VERSION;
         }
         let javaHome: string | undefined = this.getDefaultJDKHome();
         let javaVersion: string = '';
         let implementor: string | undefined;
         if (javaHome) {
-            const release = path.resolve(javaHome, 'release');
-            let lines = fse.readFileSync(release)
-                .toString()
-                .split('\n')
-                .filter(Boolean);
-            for (var line of lines) {
-                // JAVA_VERSION="1.8.0_172"
-                if (line.startsWith("JAVA_VERSION=")) {
-                    javaVersion = line.split('=')[1];
-                    javaVersion = javaVersion.substring(javaVersion.indexOf("\"") + 1, javaVersion.lastIndexOf("\""));
-                } else if (line.startsWith("IMPLEMENTOR=")) {
-                    implementor = line.split('=')[1];
-                    implementor = implementor.substring(implementor.indexOf("\"") + 1, implementor.lastIndexOf("\""));
+            let javaVmExe: string = JavaUtils.javaVmExecutableFullPath(javaHome);
+            // Java VM executable should exist.
+            if (!fse.pathExistsSync(javaVmExe)) {
+                throw new Error("Java VM " + javaVmExe + " executable not found");
+            }
+            let result: string = cp.spawnSync(javaVmExe, ['-XshowSettings:properties', '-version']).output.toString();
+            let lines = result.split('\n');
+            for (let line of lines) {
+                if (line.indexOf('java.version =') !== -1) {
+                    let KeyValue: string[] = line.split('=');
+                    if (KeyValue.length === 2) {
+                        javaVersion = KeyValue[1].trim();
+                    }
+                } else if (line.indexOf('java.vendor =') !== -1) {
+                    let KeyValue: string[] = line.split('=');
+                    if (KeyValue.length === 2) {
+                        implementor = KeyValue[1].trim();
+                    }
                 }
             }
             if (javaVersion.length > 0) {
@@ -288,9 +296,9 @@ export class JDKVersion {
         return undefined;
     }
 
-    public static isCorrectJDK(jdkVersion: JDKVersion, 
-        vendor: string | undefined, 
-        minVersion: JDKVersion | undefined, 
+    public static isCorrectJDK(jdkVersion: JDKVersion,
+        vendor: string | undefined,
+        minVersion: JDKVersion | undefined,
         maxVersion: JDKVersion | undefined): boolean {
         let correctJDK: boolean = true;
         if (vendor !== undefined) {
