@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg version="1.1" id="Layer_1"
     xmlns="http://www.w3.org/2000/svg"
-    xmlns:xlink="http://www.w3.org/1999/xlink" 
+    xmlns:xlink="http://www.w3.org/1999/xlink"
     x="0px" y="0px" viewBox="0 0 300 220" 
     preserveAspectRatio="xMinYMin meet" xml:space="preserve" >
     <style type="text/css">
@@ -22,6 +22,13 @@
                                 M101.2,92.6c0,0,2.6-15.7-14.1-28C105.6,71,107.3,81.2,101.2,92.6z M107.2,83.4c0,0,2-11.9-10.7-21.2
                                 C110.5,67,111.9,74.8,107.2,83.4z"
             />
+        </g>
+        <g>
+            <path fill="#5ca33b" d="m324.03401,157.888949l-131.5887,56.806367l0,-119.778649l23.789424,10.105255l103.384233,43.907074l4.415042,1.873646c2.833124,1.025924 2.833124,6.062114 0,7.086307zm0,0"/>
+        </g>
+        <g>
+            <rect style="fill:#E21B1B;" x="157" y="142" width="32" height="32"/>
+            <rect style="fill:#FF2020;" x="160" y="145" width="26" height="26"/>
         </g>
     </g>
 </svg>
