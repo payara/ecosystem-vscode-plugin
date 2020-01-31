@@ -118,11 +118,11 @@ export class MultiStepInput {
 							.catch(reject);
 					})
 				);
+				input.show();
 				if (this.current) {
 					this.current.dispose();
 				}
 				this.current = input;
-				this.current.show();
 			});
 		} finally {
 			disposables.forEach(d => d.dispose());
@@ -177,11 +177,11 @@ export class MultiStepInput {
 							.catch(reject);
 					})
 				);
+				input.show();
 				if (this.current) {
 					this.current.dispose();
 				}
 				this.current = input;
-				this.current.show();
 			});
 		} finally {
 			disposables.forEach(d => d.dispose());
