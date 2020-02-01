@@ -269,6 +269,8 @@
 	},
 	"dependencies": {
 		"@types/tail": "^2.0.0",
+		"@types/tmp": "^0.1.0",
+		"@types/validator": "^12.0.1",
 		"@types/xml2js": "^0.4.5",
 		"fs-extra": "^8.1.0",
 		"lodash": "^4.17.15",
@@ -276,20 +278,22 @@
 		"request": "^2.88.0",
 		"sync-request": "^6.1.0",
 		"tail": "^2.0.3",
+		"tmp": "^0.1.0",
+		"validator": "^12.2.0",
 		"xml2js": "^0.4.23"
 	},
 	"devDependencies": {
+		"@types/fs-extra": "^8.0.1",
 		"@types/glob": "^7.1.1",
+		"@types/lodash": "^4.14.149",
 		"@types/mocha": "^5.2.7",
 		"@types/node": "^12.11.7",
 		"@types/vscode": "^1.40.0",
-		"@types/fs-extra": "^8.0.1",
-		"@types/lodash": "^4.14.149",
 		"glob": "^7.1.5",
 		"mocha": "^6.2.2",
+		"os": "^0.1.1",
+		"tslint": "^5.20.1",
 		"typescript": "^3.6.4",
-		"tslint": "^5.20.0",
-		"vscode-test": "^1.2.2",
-		"os": "^0.1.1"
+		"vscode-test": "^1.2.2"
 	}
 }

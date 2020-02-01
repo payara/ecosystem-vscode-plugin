@@ -27,7 +27,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	const payaraInstanceProvider: PayaraInstanceProvider = new PayaraInstanceProvider(context);
 	const payaraServerTree: PayaraServerTreeDataProvider = new PayaraServerTreeDataProvider(context, payaraInstanceProvider);
-	const payaraInstanceController: PayaraInstanceController = new PayaraInstanceController(payaraInstanceProvider, context.extensionPath);
+	const payaraInstanceController: PayaraInstanceController = new PayaraInstanceController(context, payaraInstanceProvider, context.extensionPath);
 
 	context.subscriptions.push(
 		vscode.window.registerTreeDataProvider(
