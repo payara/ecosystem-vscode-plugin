@@ -157,12 +157,6 @@ export class PayaraInstanceController {
         args.push("-jar");
         args.push(path.join(serverPath, "glassfish", "modules", "admin-cli.jar"));
         args.push("create-domain");
-        args.push("--domaindir");
-        args.push(path.join(serverPath, "glassfish", "domains"));
-        args.push("--adminport");
-        args.push(adminPort);
-        args.push("--instanceport");
-        args.push(instancePort);
         args.push("--user");
         args.push(username);
         if (password === '') {
@@ -172,6 +166,12 @@ export class PayaraInstanceController {
             args.push("--passwordfile");
             args.push(passwordFile.name);
         }
+        args.push("--domaindir");
+        args.push(path.join(serverPath, "glassfish", "domains"));
+        args.push("--adminport");
+        args.push(adminPort);
+        args.push("--instanceport");
+        args.push(instancePort);
         args.push(domainName);
         let process: ChildProcess = cp.spawn(javaVmExe, args, { cwd: serverPath });
         if (process.pid) {
