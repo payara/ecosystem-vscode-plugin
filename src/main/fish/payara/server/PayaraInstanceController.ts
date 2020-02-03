@@ -31,7 +31,7 @@ import { PayaraInstanceProvider } from "./PayaraInstanceProvider";
 import { PayaraServerInstance, InstanceState } from './PayaraServerInstance';
 import { JvmConfigReader } from './start/JvmConfigReader';
 import { JDKVersion } from './start/JDKVersion';
-import { QuickPickItem, CancellationToken, Uri, OutputChannel } from 'vscode';
+import { QuickPickItem, CancellationToken, Uri, OutputChannel, OpenDialogOptions } from 'vscode';
 import { JvmOption } from './start/JvmOption';
 import { StringUtils } from './tooling/utils/StringUtils';
 import { ServerUtils } from './tooling/utils/ServerUtils';
@@ -51,25 +51,34 @@ export class PayaraInstanceController {
         private context: vscode.ExtensionContext,
         private instanceProvider: PayaraInstanceProvider,
         private extensionPath: string) {
-        this.init();
         this.outputChannel = vscode.window.createOutputChannel("payara");
+        this.init();
     }
 
     private async init(): Promise<void> {
-        let instances: any = this.instanceProvider.readServerConfig();
-        instances.forEach((instance: any) => {
-            let payaraServer: PayaraServerInstance = new PayaraServerInstance(
-                instance.name, instance.path, instance.domainName
-            );
-            this.instanceProvider.addServer(payaraServer);
-            payaraServer.checkAliveStatusUsingJPS(() => {
-                payaraServer.getOutputChannel().show(false);
-                payaraServer.connectOutput();
-                payaraServer.setStarted(true);
-                this.refreshServerList();
+        this.instanceProvider
+            .readServerConfig()
+            .forEach((instance: any) => {
+                let payaraServer: PayaraServerInstance = new PayaraServerInstance(
+                    instance.name, instance.path, instance.domainName
+                );
+                this.instanceProvider.addServer(payaraServer);
+                payaraServer.checkAliveStatusUsingJPS(() => {
+                    payaraServer.getOutputChannel().show(false);
+                    payaraServer.connectOutput();
+                    payaraServer.setStarted(true);
+                    this.refreshServerList();
+                });
             });
-        });
-        this.refreshServerList();
+
+        this.instanceProvider
+            .readUnlistedServerConfig()
+            .forEach((instance: any) => {
+                let payaraServer: PayaraServerInstance = new PayaraServerInstance(
+                    instance.name, instance.path, instance.domainName
+                );
+                this.instanceProvider.getUnlistedServers().push(payaraServer);
+            });
     }
 
     public async addServer(): Promise<void> {
@@ -213,21 +222,57 @@ export class PayaraInstanceController {
     }
 
     private async selectServer(input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
-
-        const fileUris = await vscode.window.showOpenDialog({
+        let serverPath: string;
+        let dialogOptions: OpenDialogOptions = ({
             defaultUri: vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined,
             canSelectFiles: false,
             canSelectFolders: true,
             canSelectMany: false,
             openLabel: 'Select Payara Server'
         });
-        const serverPaths: vscode.Uri[] = fileUris ? fileUris : [] as vscode.Uri[];
-        if (_.isEmpty(serverPaths)
-            || !serverPaths[0].fsPath
-            || !this.isValidServerPath(serverPaths[0].fsPath)) {
-            vscode.window.showErrorMessage("Selected Payara Server path is invalid.");
+        let getServerPaths = (fileUris: vscode.Uri[] | undefined): string => {
+            const serverPaths: vscode.Uri[] = fileUris ? fileUris : [] as vscode.Uri[];
+            if (_.isEmpty(serverPaths)
+                || !serverPaths[0].fsPath
+                || !this.isValidServerPath(serverPaths[0].fsPath)) {
+                vscode.window.showErrorMessage("Selected Payara Server path is invalid.");
+            }
+            return serverPaths[0].fsPath;
+        };
+        const unlistedServers = this.instanceProvider
+            .getUnlistedServers()
+            .filter(server => fs.existsSync(server.getPath()))
+            .filter(server => this.isValidServerPath(server.getPath()))
+            .map(server => ({ label: server.getPath() }));
+        if (unlistedServers.length > 0) {
+            let browseServerButtonLabel = 'Browse the Payara Server...';
+            const browseServerButton = new MyButton({
+                dark: Uri.file(this.context.asAbsolutePath('resources/theme/dark/add.svg')),
+                light: Uri.file(this.context.asAbsolutePath('resources/theme/light/add.svg')),
+            }, browseServerButtonLabel);
+            unlistedServers.push(({ label: browseServerButtonLabel }));
+            let pick = await input.showQuickPick({
+                title: 'Register Payara Server',
+                step: 1,
+                totalSteps: 3,
+                placeholder: 'Select the Payara Server location',
+                items: unlistedServers,
+                buttons: [browseServerButton],
+                shouldResume: this.shouldResume
+            });
+
+            if (pick instanceof ui.MyButton || pick.label === browseServerButtonLabel) {
+                let fileUris = await vscode.window.showOpenDialog(dialogOptions);
+                serverPath = getServerPaths(fileUris);
+            } else {
+                serverPath = pick.label;
+            }
+        } else {
+            let fileUris = await vscode.window.showOpenDialog(dialogOptions);
+            serverPath = getServerPaths(fileUris);
         }
-        state.path = serverPaths[0].fsPath;
+
+        state.path = serverPath;
         return (input: ui.MultiStepInput) => this.serverName(input, state, callback);
     }
 
