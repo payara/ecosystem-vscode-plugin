@@ -296,7 +296,7 @@ export class PayaraInstanceController {
         } else if (!/[a-zA-Z0-9_-]+$/.test(name)) {
             return 'Please enter the valid Domain name.';
         } else if (existingDomainsDir.indexOf(name) > -1) {
-            return 'Domain already exist, please enter the unique name.';
+            return 'Domain already exist, please enter a unique name.';
         }
         return undefined;
     }
