@@ -230,8 +230,7 @@ export class PayaraInstanceController {
             canSelectMany: false,
             openLabel: 'Select Payara Server'
         });
-        let getServerPaths = (fileUris: vscode.Uri[] | undefined): string => {
-            const serverPaths: vscode.Uri[] = fileUris ? fileUris : [] as vscode.Uri[];
+        let getServerPaths = (serverPaths: vscode.Uri[]): string => {
             if (_.isEmpty(serverPaths)
                 || !serverPaths[0].fsPath
                 || !this.isValidServerPath(serverPaths[0].fsPath)) {
@@ -263,12 +262,18 @@ export class PayaraInstanceController {
 
             if (pick instanceof ui.MyButton || pick.label === browseServerButtonLabel) {
                 let fileUris = await vscode.window.showOpenDialog(dialogOptions);
+                if (!fileUris) {
+                    return;
+                }
                 serverPath = getServerPaths(fileUris);
             } else {
                 serverPath = pick.label;
             }
         } else {
             let fileUris = await vscode.window.showOpenDialog(dialogOptions);
+            if (!fileUris) {
+                return;
+            }
             serverPath = getServerPaths(fileUris);
         }
 
