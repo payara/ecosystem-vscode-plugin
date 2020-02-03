@@ -310,7 +310,7 @@ export class PayaraInstanceController {
 
     private async validatePort(port: string): Promise<string | undefined> {
         if (!isPort.default(port)) {
-            return 'Please enter the valid port number.';
+            return 'Please enter a valid port number.';
         }
         return undefined;
     }
