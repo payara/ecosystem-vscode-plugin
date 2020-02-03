@@ -285,7 +285,7 @@ export class PayaraInstanceController {
         if (_.isEmpty(name)) {
             return 'Server name cannot be empty';
         } else if (instanceProvider.getServerByName(name)) {
-            return 'Payar Server already exist with the given name, please re-enter';
+            return 'Payara Server already exist with the given name, please re-enter';
         }
         return undefined;
     }
