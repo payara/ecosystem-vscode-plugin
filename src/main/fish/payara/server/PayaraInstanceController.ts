@@ -56,29 +56,8 @@ export class PayaraInstanceController {
     }
 
     private async init(): Promise<void> {
-        this.instanceProvider
-            .readServerConfig()
-            .forEach((instance: any) => {
-                let payaraServer: PayaraServerInstance = new PayaraServerInstance(
-                    instance.name, instance.path, instance.domainName
-                );
-                this.instanceProvider.addServer(payaraServer);
-                payaraServer.checkAliveStatusUsingJPS(() => {
-                    payaraServer.getOutputChannel().show(false);
-                    payaraServer.connectOutput();
-                    payaraServer.setStarted(true);
-                    this.refreshServerList();
-                });
-            });
-
-        this.instanceProvider
-            .readUnlistedServerConfig()
-            .forEach((instance: any) => {
-                let payaraServer: PayaraServerInstance = new PayaraServerInstance(
-                    instance.name, instance.path, instance.domainName
-                );
-                this.instanceProvider.getUnlistedServers().push(payaraServer);
-            });
+        this.instanceProvider.loadServerConfigs();
+        this.refreshServerList();
     }
 
     public async addServer(): Promise<void> {
@@ -233,16 +212,15 @@ export class PayaraInstanceController {
         let getServerPaths = (serverPaths: vscode.Uri[]): string => {
             if (_.isEmpty(serverPaths)
                 || !serverPaths[0].fsPath
-                || !this.isValidServerPath(serverPaths[0].fsPath)) {
+                || !ServerUtils.isValidServerPath(serverPaths[0].fsPath)) {
                 vscode.window.showErrorMessage("Selected Payara Server path is invalid.");
             }
             return serverPaths[0].fsPath;
         };
         const unlistedServers = this.instanceProvider
             .getUnlistedServers()
-            .filter(server => fs.existsSync(server.getPath()))
-            .filter(server => this.isValidServerPath(server.getPath()))
             .map(server => ({ label: server.getPath() }));
+
         if (unlistedServers.length > 0) {
             let browseServerButtonLabel = 'Browse the Payara Server...';
             const browseServerButton = new MyButton({
@@ -456,12 +434,6 @@ export class PayaraInstanceController {
                 callback(state);
             });
         }
-    }
-
-    private isValidServerPath(serverPath: string): boolean {
-        const payaraApiExists: boolean = fse.pathExistsSync(path.join(serverPath, 'glassfish', 'bin', 'asadmin'));
-        const asadminFileExists: boolean = fse.pathExistsSync(path.join(serverPath, 'bin', 'asadmin'));
-        return payaraApiExists && asadminFileExists;
     }
 
     public async startServer(payaraServer: PayaraServerInstance, debug: boolean): Promise<void> {
