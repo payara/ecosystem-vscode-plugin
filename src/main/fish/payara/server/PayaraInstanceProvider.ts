@@ -34,7 +34,7 @@ export class PayaraInstanceProvider {
         this.serversConfig = this.getServersConfig(context);
     }
 
-    getServers(): PayaraServerInstance[] {
+    public getServers(): PayaraServerInstance[] {
         return this.servers;
     }
 
@@ -100,7 +100,9 @@ export class PayaraInstanceProvider {
                     return {
                         name: instance.getName(),
                         path: instance.getPath(),
-                        domainName: instance.getDomainName()
+                        domainName: instance.getDomainName(),
+                        username: instance.getUsername(),
+                        password: instance.getPassword()
                     };
                 })
             );

@@ -28,6 +28,7 @@
 		"onCommand:payara.server.stop",
 		"onCommand:payara.server.rename",
 		"onCommand:payara.server.remove",
+		"onCommand:payara.server.credential",
 		"onCommand:payara.server.console.open",
 		"onCommand:payara.server.log.open",
 		"onCommand:payara.server.config.open",
@@ -83,6 +84,11 @@
 			{
 				"command": "payara.server.remove",
 				"title": "Remove Payara Server",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.credential",
+				"title": "Update Credential",
 				"category": "Payara"
 			},
 			{
@@ -195,6 +201,10 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.server.credential",
+					"when": "never"
+				},
+				{
 					"command": "payara.server.rename.context",
 					"when": "never"
 				},
@@ -243,6 +253,11 @@
 					"group": "update@5"
 				},
 				{
+					"command": "payara.server.credential",
+					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
+					"group": "update@5"
+				},
+				{
 					"command": "payara.server.console.open.context",
 					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "view@6"
@@ -276,7 +291,6 @@
 		"lodash": "^4.17.15",
 		"open": "^6.2.1 ",
 		"request": "^2.88.0",
-		"sync-request": "^6.1.0",
 		"tail": "^2.0.3",
 		"tmp": "^0.1.0",
 		"validator": "^12.2.0",

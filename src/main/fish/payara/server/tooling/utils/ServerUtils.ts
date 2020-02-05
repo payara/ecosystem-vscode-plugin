@@ -63,6 +63,12 @@ export class ServerUtils {
     /** Payara main class to be started when using classpath. */
     public static PF_MAIN_CLASS: string = "com.sun.enterprise.glassfish.bootstrap.ASMain";
 
+    public static DEFAULT_USERNAME: string = 'admin';
+    public static DEFAULT_PASSWORD: string = '';
+    public static MASTER_PASSWORD: string = 'changeit';
+    public static DEFAULT_ADMIN_PORT: string = '4848';
+    public static DEFAULT_HTTP_PORT: string = '8080';
+
     /**
      * Builds command line argument containing argument identifier, space
      * and argument value, e.g. <code>--name value</code>.
