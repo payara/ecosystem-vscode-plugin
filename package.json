@@ -255,7 +255,7 @@
 				{
 					"command": "payara.server.credential",
 					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
-					"group": "update@5"
+					"group": "update@6"
 				},
 				{
 					"command": "payara.server.console.open.context",
