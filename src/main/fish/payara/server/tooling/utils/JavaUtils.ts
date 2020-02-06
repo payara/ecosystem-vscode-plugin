@@ -49,7 +49,7 @@ export class JavaUtils {
 
     public static PATH_SEPARATOR: string = "path.separator";//os.osName();
 
-    private static IS_WIN: boolean = os.platform() === 'win32';
+    public static IS_WIN: boolean = os.platform() === 'win32';
 
     /**
      * Append quoted Java VM system property

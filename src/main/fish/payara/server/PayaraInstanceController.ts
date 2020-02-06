@@ -63,7 +63,6 @@ export class PayaraInstanceController {
             );
             this.instanceProvider.addServer(payaraServer);
             payaraServer.checkAliveStatusUsingJPS(() => {
-                payaraServer.getOutputChannel().show(false);
                 payaraServer.connectOutput();
                 payaraServer.setStarted(true);
                 this.refreshServerList();
@@ -94,9 +93,9 @@ export class PayaraInstanceController {
                             this.instanceProvider.addServer(payaraServer);
                             this.refreshServerList();
                             payaraServer.checkAliveStatusUsingJPS(() => {
+                                payaraServer.connectOutput();
                                 payaraServer.setStarted(true);
                                 this.refreshServerList();
-                                payaraServer.connectOutput();
                             });
                         };
                         if (state.newDomain) {
@@ -462,17 +461,17 @@ export class PayaraInstanceController {
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
         endpoints.invoke("restart-domain", async (res) => {
             if (res.statusCode === 200) {
-                payaraServer.connectOutput();
                 payaraServer.setState(InstanceState.RESTARTING);
                 this.refreshServerList();
                 payaraServer.getOutputChannel().show(false);
                 payaraServer.checkAliveStatusUsingRest(
                     async () => {
+                        payaraServer.connectOutput();
                         payaraServer.setStarted(true);
                         this.refreshServerList();
-                        payaraServer.connectOutput();
                     },
                     async () => {
+                        payaraServer.disconnectOutput();
                         payaraServer.setStarted(false);
                         this.refreshServerList();
                         vscode.window.showErrorMessage('Unable to restart the Payara Server.');
@@ -504,7 +503,6 @@ export class PayaraInstanceController {
             }
         });
     }
-
 
     public async renameServer(payaraServer: PayaraServerInstance): Promise<void> {
         if (payaraServer) {
