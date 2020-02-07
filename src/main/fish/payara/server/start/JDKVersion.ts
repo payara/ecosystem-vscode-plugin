@@ -66,8 +66,6 @@ export class JDKVersion {
 
     private static DEFAULT_VALUE: number = 0;
 
-    private static DEFAULT_JDK_VERSION: JDKVersion | undefined;
-
     public constructor(
         major: number,
         minor: number | undefined,
@@ -260,40 +258,32 @@ export class JDKVersion {
         return javaHome;
     }
 
-    public static getDefaultJDKVersion(): JDKVersion | undefined {
-        if (JDKVersion.DEFAULT_JDK_VERSION) {
-            return JDKVersion.DEFAULT_JDK_VERSION;
-        }
-        let javaHome: string | undefined = this.getDefaultJDKHome();
+    public static getJDKVersion(javaHome: string): JDKVersion | undefined {
         let javaVersion: string = '';
         let implementor: string | undefined;
-        if (javaHome) {
-            let javaVmExe: string = JavaUtils.javaVmExecutableFullPath(javaHome);
-            // Java VM executable should exist.
-            if (!fse.pathExistsSync(javaVmExe)) {
-                throw new Error("Java VM " + javaVmExe + " executable not found");
-            }
-            let result: string = cp.spawnSync(javaVmExe, ['-XshowSettings:properties', '-version']).output.toString();
-            let lines = result.split('\n');
-            for (let line of lines) {
-                if (line.indexOf('java.version =') !== -1) {
-                    let KeyValue: string[] = line.split('=');
-                    if (KeyValue.length === 2) {
-                        javaVersion = KeyValue[1].trim();
-                    }
-                } else if (line.indexOf('java.vendor =') !== -1) {
-                    let KeyValue: string[] = line.split('=');
-                    if (KeyValue.length === 2) {
-                        implementor = KeyValue[1].trim();
-                    }
+        let javaVmExe: string = JavaUtils.javaVmExecutableFullPath(javaHome);
+        // Java VM executable should exist.
+        if (!fse.pathExistsSync(javaVmExe)) {
+            throw new Error("Java VM " + javaVmExe + " executable not found");
+        }
+        let result: string = cp.spawnSync(javaVmExe, ['-XshowSettings:properties', '-version']).output.toString();
+        let lines = result.split('\n');
+        for (let line of lines) {
+            if (line.indexOf('java.version =') !== -1) {
+                let KeyValue: string[] = line.split('=');
+                if (KeyValue.length === 2) {
+                    javaVersion = KeyValue[1].trim();
+                }
+            } else if (line.indexOf('java.vendor =') !== -1) {
+                let KeyValue: string[] = line.split('=');
+                if (KeyValue.length === 2) {
+                    implementor = KeyValue[1].trim();
                 }
             }
-            if (javaVersion.length > 0) {
-                JDKVersion.DEFAULT_JDK_VERSION = JDKVersion.toValue(javaVersion, implementor);
-                return JDKVersion.DEFAULT_JDK_VERSION;
-            }
         }
-        return undefined;
+        if (javaVersion.length > 0) {
+            return JDKVersion.toValue(javaVersion, implementor);
+        }
     }
 
     public static isCorrectJDK(jdkVersion: JDKVersion,

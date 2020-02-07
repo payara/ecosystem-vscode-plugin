@@ -44,6 +44,8 @@ export class PayaraServerInstance extends vscode.TreeItem {
 
     private logStream: Tail | null = null;
 
+    private jdkHome: string | null = null;
+
     constructor(private name: string, private path: string, private domainName: string) {
         super(name);
         this.outputChannel = vscode.window.createOutputChannel(name);
@@ -63,6 +65,17 @@ export class PayaraServerInstance extends vscode.TreeItem {
 
     public getDomainName(): string {
         return this.domainName;
+    }
+
+    public getJDKHome(): string | undefined {
+        if(this.jdkHome === null) {
+            return JDKVersion.getDefaultJDKHome();
+        }
+        return this.jdkHome;
+    }
+
+    public setJDKHome(jdkHome: string) {
+        this.jdkHome = jdkHome;
     }
 
     public getServerRoot(): string {
@@ -199,7 +212,7 @@ export class PayaraServerInstance extends vscode.TreeItem {
     }
 
     public checkAliveStatusUsingJPS(callback: () => any): void {
-        let javaHome: string | undefined = JDKVersion.getDefaultJDKHome();
+        let javaHome: string | undefined = this.getJDKHome();
         if (!javaHome) {
             throw new Error("Java home path not found.");
         }

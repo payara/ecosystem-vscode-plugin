@@ -100,7 +100,8 @@ export class PayaraInstanceProvider {
                     return {
                         name: instance.getName(),
                         path: instance.getPath(),
-                        domainName: instance.getDomainName()
+                        domainName: instance.getDomainName(),
+                        jdkHome: instance.getJDKHome()
                     };
                 })
             );
