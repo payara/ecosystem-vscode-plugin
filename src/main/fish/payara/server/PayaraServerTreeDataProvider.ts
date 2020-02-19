@@ -49,6 +49,7 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Tre
                 server.contextValue = server.getState();
                 server.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
                 server.label = server.getName();
+                server.tooltip = server.getPath() + '[' + server.getDomainName() + ']';
                 return server;
             });
         } else if(item instanceof PayaraServerInstance && item.isStarted()){
