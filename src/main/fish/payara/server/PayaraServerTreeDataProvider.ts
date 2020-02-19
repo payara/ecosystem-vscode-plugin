@@ -22,28 +22,29 @@ import * as path from "path";
 import { TreeItem } from "vscode";
 import { PayaraInstanceProvider } from './PayaraInstanceProvider';
 import { PayaraServerInstance } from "./PayaraServerInstance";
+import { ApplicationInstance } from '../project/ApplicationInstance';
 
-export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<PayaraServerInstance> {
+export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
-    onDidChangeTreeDataListener: vscode.EventEmitter<PayaraServerInstance> = new vscode.EventEmitter<PayaraServerInstance>();
+    onDidChangeTreeDataListener: vscode.EventEmitter<TreeItem> = new vscode.EventEmitter<TreeItem>();
 
-    onDidChangeTreeData: vscode.Event<PayaraServerInstance> = this.onDidChangeTreeDataListener.event;
+    onDidChangeTreeData: vscode.Event<TreeItem> = this.onDidChangeTreeDataListener.event;
 
     constructor(private context: vscode.ExtensionContext, private instanceProvider: PayaraInstanceProvider) {
         this.onDidChangeTreeDataListener.fire();
     }
 
-    public refresh(element: PayaraServerInstance): void {
-        this.onDidChangeTreeDataListener.fire(element);
+    public refresh(item: TreeItem): void {
+        this.onDidChangeTreeDataListener.fire(item);
     }
 
-    public async getTreeItem(server: PayaraServerInstance): Promise<PayaraServerInstance> {
-        return server;
+    public async getTreeItem(item: TreeItem): Promise<TreeItem> {
+        return item;
     }
 
-    public async getChildren(server?: PayaraServerInstance): Promise<PayaraServerInstance[]> {
-        if (!server) {
-            return this.instanceProvider.getServers().map(server => {
+    public async getChildren(item?: TreeItem): Promise<TreeItem[]> {
+        if (!item) {
+            return this.instanceProvider.getServers().map((server: PayaraServerInstance) => {
                 server.iconPath = this.context.asAbsolutePath(path.join('resources', server.getIcon()));
                 server.contextValue = server.getState();
                 server.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
@@ -51,13 +52,16 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Pay
                 server.tooltip = server.getPath() + '[' + server.getDomainName() + ']';
                 return server;
             });
-        } else {
-            server.iconPath = this.context.asAbsolutePath(path.join('resources', server.getIcon()));
-            server.contextValue = server.getState();
-            server.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
-            server.label = server.getName();
-            return [];
+        } else if(item instanceof PayaraServerInstance && item.isStarted()){
+            return item.getApplications().map((application: ApplicationInstance) => {
+                application.iconPath = this.context.asAbsolutePath(path.join('resources', application.getIcon()));
+                // application.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+                application.label = application.name;
+                application.contextValue = "payara-application";
+                return application;
+            });
         }
+        return [];
     }
 
 }
