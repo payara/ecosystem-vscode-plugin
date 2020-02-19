@@ -21,6 +21,7 @@ import * as vscode from 'vscode';
 import * as _ from "lodash";
 import * as path from "path";
 import * as open from "open";
+import * as xml2js from "xml2js";
 import * as fs from "fs";
 import * as tmp from "tmp";
 import * as fse from "fs-extra";
@@ -31,7 +32,7 @@ import { PayaraInstanceProvider } from "./PayaraInstanceProvider";
 import { PayaraServerInstance, InstanceState } from './PayaraServerInstance';
 import { JvmConfigReader } from './start/JvmConfigReader';
 import { JDKVersion } from './start/JDKVersion';
-import { QuickPickItem, CancellationToken, Uri, OutputChannel, QuickInputButton } from 'vscode';
+import { QuickPickItem, CancellationToken, Uri, OutputChannel, QuickInputButton, workspace, InputBox } from 'vscode';
 import { JvmOption } from './start/JvmOption';
 import { StringUtils } from './tooling/utils/StringUtils';
 import { ServerUtils } from './tooling/utils/ServerUtils';
@@ -40,6 +41,11 @@ import { StartTask } from './start/StartTask';
 import { ChildProcess } from 'child_process';
 import { RestEndpoints } from './endpoints/RestEndpoints';
 import { URL } from 'url';
+import { ApplicationInstance } from '../project/ApplicationInstance';
+import { IncomingMessage } from 'http';
+import { Build } from '../project/Build';
+import { BuildSupport } from '../project/BuildSupport';
+import { DeploymentSupport } from '../project/DeploymentSupport';
 import { MyButton } from './../../../UI';
 import { FileResult } from 'tmp';
 
@@ -417,7 +423,7 @@ export class PayaraInstanceController {
         return payaraApiExists && asadminFileExists;
     }
 
-    public async startServer(payaraServer: PayaraServerInstance, debug: boolean): Promise<void> {
+    public async startServer(payaraServer: PayaraServerInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {
         if (!payaraServer.isStopped()) {
             vscode.window.showErrorMessage('Payara Server instance already running.');
             return;
@@ -448,24 +454,33 @@ export class PayaraInstanceController {
                 async () => {
                     payaraServer.setStarted(true);
                     this.refreshServerList();
+                    payaraServer.reloadApplications();
+                    if (callback) {
+                        callback(true);
+                    }
                 },
                 async () => {
                     payaraServer.setStarted(false);
                     this.refreshServerList();
+                    if (callback) {
+                        callback(false);
+                    }
                     vscode.window.showErrorMessage('Unable to start the Payara Server.');
                 });
         }
     }
 
-    public async restartServer(payaraServer: PayaraServerInstance): Promise<void> {
+    public async restartServer(payaraServer: PayaraServerInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {
         if (payaraServer.isStopped()) {
             vscode.window.showErrorMessage('Payara Server instance not running.');
             return;
         }
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
+        let query: string = '?debug=' + debug;
         endpoints.invoke("restart-domain", async (res) => {
             if (res.statusCode === 200) {
                 payaraServer.connectOutput();
+                payaraServer.setDebug(debug);
                 payaraServer.setState(InstanceState.RESTARTING);
                 this.refreshServerList();
                 payaraServer.getOutputChannel().show(false);
@@ -474,10 +489,16 @@ export class PayaraInstanceController {
                         payaraServer.setStarted(true);
                         this.refreshServerList();
                         payaraServer.connectOutput();
+                        if (callback) {
+                            callback(true);
+                        }
                     },
                     async () => {
                         payaraServer.setStarted(false);
                         this.refreshServerList();
+                        if (callback) {
+                            callback(false);
+                        }
                         vscode.window.showErrorMessage('Unable to restart the Payara Server.');
                     }
                 );
@@ -500,7 +521,8 @@ export class PayaraInstanceController {
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
         endpoints.invoke("stop-domain", async res => {
             if (res.statusCode === 200) {
-                payaraServer.setStarted(false);
+                payaraServer.setState(InstanceState.STOPPED);
+                payaraServer.setDebug(false);
                 await new Promise(res => setTimeout(res, 2000));
                 this.refreshServerList();
                 payaraServer.disconnectOutput();
@@ -630,11 +652,117 @@ export class PayaraInstanceController {
         vscode.commands.executeCommand('payara.server.refresh');
     }
 
-    async shouldResume(): Promise<boolean> {
+    private async shouldResume(): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
         });
     }
 
+    public deployApp(uri: Uri, debug: boolean) {
+        let support = new DeploymentSupport(this);
+        this.selectListedServer(server => {
+            let deploy = (status: boolean) => {
+                if (status) {
+                    if (uri.fsPath.endsWith('.war') || uri.fsPath.endsWith('.jar')) {
+                        support.deployApplication(uri.fsPath, server);
+                    } else {
+                        support.buildAndDeployApplication(uri, server);
+                    }
+                } else {
+                    vscode.window.showErrorMessage('Unable to deploy the application as Payara Server instance not running.');
+                }
+            };
+            if (!server.isStarted()) {
+                this.startServer(server, debug, deploy);
+            } else if (debug && !server.isDebug()) {
+                this.restartServer(server, debug, deploy);
+            } else {
+                deploy(true);
+            }
+        });
+    }
+
+    private selectListedServer(callback: (server: PayaraServerInstance) => any) {
+        let servers: PayaraServerInstance[] = this.instanceProvider.getServers();
+        if (servers.length === 0) {
+            vscode.window.showErrorMessage('Please register the Payara Server.');
+        } else if (servers.length === 1) {
+            callback(servers[0]);
+        } else {
+            vscode.window.showQuickPick(servers, {
+                placeHolder: 'Select the Payara Server',
+                canPickMany: false
+            }).then(value => {
+                if (value instanceof PayaraServerInstance) {
+                    callback(value);
+                } else {
+                    vscode.window.showErrorMessage('Please select the Payara Server.');
+                }
+            });
+        }
+    }
+
+    public undeployApp(application: ApplicationInstance) {
+        let controller = this;
+        let payaraServer = application.payaraServer;
+        let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
+        let query: string = '?name=' + encodeURIComponent(application.name);
+        endpoints.invoke("undeploy" + query, async response => {
+            if (response.statusCode === 200) {
+                response.on('data', data => {
+                    payaraServer.removeApplication(application);
+                    controller.refreshServerList();
+                });
+            }
+        });
+    }
+
+    public enableApp(application: ApplicationInstance) {
+        let controller = this;
+        let payaraServer = application.payaraServer;
+        let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
+        let query: string = '?DEFAULT=' + encodeURIComponent(application.name);
+        endpoints.invoke("enable" + query, async response => {
+            if (response.statusCode === 200) {
+                response.on('data', data => {
+                    application.setEnabled(true);
+                    controller.refreshServerList();
+                });
+            }
+        });
+    }
+
+    public disableApp(application: ApplicationInstance) {
+        let controller = this;
+        let payaraServer = application.payaraServer;
+        let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
+        let query: string = '?DEFAULT=' + encodeURIComponent(application.name);
+        endpoints.invoke("disable" + query, async response => {
+            if (response.statusCode === 200) {
+                response.on('data', data => {
+                    application.setEnabled(false);
+                    controller.refreshServerList();
+                });
+            }
+        });
+    }
+
+    public openApp(application: ApplicationInstance) {
+        if (application.getContextPath() === null) {
+            vscode.window.showInformationMessage('Context path not found for the application: ' + application.name);
+        } else if (application.getContextPath() === undefined) {
+            application.fetchContextPath(() => open(new URL(
+                "http://localhost:"
+                + application.payaraServer.getHttpPort()
+                + application.getContextPath()).toString()
+            ));
+        } else {
+            open(new URL(
+                "http://localhost:"
+                + application.payaraServer.getHttpPort()
+                + application.getContextPath()).toString()
+            );
+        }
+    }
 }
 
 interface State {

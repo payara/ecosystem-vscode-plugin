@@ -22,6 +22,7 @@
 	"activationEvents": [
 		"onCommand:payara.server.add",
 		"onCommand:payara.server.refresh",
+		"onCommand:payara.server.refresh.all",
 		"onCommand:payara.server.start",
 		"onCommand:payara.server.start.debug",
 		"onCommand:payara.server.restart",
@@ -32,6 +33,8 @@
 		"onCommand:payara.server.console.open",
 		"onCommand:payara.server.log.open",
 		"onCommand:payara.server.config.open",
+		"onCommand:payara.server.app.deploy",
+		"onCommand:payara.server.app.debug",
 		"onView:payaraServerExplorer",
 		"onView:payaraServer"
 	],
@@ -48,7 +51,7 @@
 				}
 			},
 			{
-				"command": "payara.server.refresh",
+				"command": "payara.server.refresh.all",
 				"title": "Refresh Payara Servers",
 				"category": "Payara",
 				"icon": {
@@ -58,7 +61,7 @@
 			},
 			{
 				"command": "payara.server.start",
-				"title": "Start Payara Server",
+				"title": "Start",
 				"category": "Payara"
 			},
 			{
@@ -68,22 +71,22 @@
 			},
 			{
 				"command": "payara.server.restart",
-				"title": "Restart Payara Server",
+				"title": "Restart",
 				"category": "Payara"
 			},
 			{
 				"command": "payara.server.stop",
-				"title": "Stop Payara Server",
-				"category": "Payara"
-			},
-			{
-				"command": "payara.server.rename",
-				"title": "Rename Payara Server",
+				"title": "Stop",
 				"category": "Payara"
 			},
 			{
 				"command": "payara.server.remove",
-				"title": "Remove Payara Server",
+				"title": "Remove",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.rename",
+				"title": "Rename",
 				"category": "Payara"
 			},
 			{
@@ -107,40 +110,34 @@
 				"category": "Payara"
 			},
 			{
-				"command": "payara.server.start.context",
-				"title": "Start"
+				"command": "payara.server.app.deploy",
+				"title": "Run on Payara Server",
+				"category": "Payara"
 			},
 			{
-				"command": "payara.server.start.debug.context",
-				"title": "Start in Debug Mode"
+				"command": "payara.server.app.debug",
+				"title": "Debug on Payara Server",
+				"category": "Payara"
 			},
 			{
-				"command": "payara.server.restart.context",
-				"title": "Restart"
+				"command": "payara.server.app.undeploy",
+				"title": "Undeploy",
+				"category": "Payara"
 			},
 			{
-				"command": "payara.server.stop.context",
-				"title": "Stop"
+				"command": "payara.server.app.enable",
+				"title": "Enable",
+				"category": "Payara"
 			},
 			{
-				"command": "payara.server.rename.context",
-				"title": "Rename"
+				"command": "payara.server.app.disable",
+				"title": "Disable",
+				"category": "Payara"
 			},
 			{
-				"command": "payara.server.remove.context",
-				"title": "Remove"
-			},
-			{
-				"command": "payara.server.console.open.context",
-				"title": "View Domain Admin Console"
-			},
-			{
-				"command": "payara.server.log.open.context",
-				"title": "View Domain Server Log"
-			},
-			{
-				"command": "payara.server.config.open.context",
-				"title": "View Domain Server Config"
+				"command": "payara.server.app.home",
+				"title": "Open in Browser",
+				"category": "Payara"
 			}
 		],
 		"views": {
@@ -174,34 +171,42 @@
 					"group": "navigation@0"
 				},
 				{
-					"command": "payara.server.refresh",
+					"command": "payara.server.refresh.all",
 					"when": "view == payaraServerExplorer || view == payaraServer",
 					"group": "navigation@1"
 				}
 			],
 			"commandPalette": [
 				{
-					"command": "payara.server.start.context",
+					"command": "payara.server.start",
 					"when": "never"
 				},
 				{
-					"command": "payara.server.start.debug.context",
+					"command": "payara.server.start.debug",
 					"when": "never"
 				},
 				{
-					"command": "payara.server.restart.context",
+					"command": "payara.server.restart",
 					"when": "never"
 				},
 				{
-					"command": "payara.server.stop.context",
+					"command": "payara.server.stop",
 					"when": "never"
 				},
 				{
-					"command": "payara.server.remove.context",
+					"command": "payara.server.remove",
 					"when": "never"
 				},
 				{
-					"command": "payara.server.rename.context",
+					"command": "payara.server.rename",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.console.open",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.log.open",
 					"when": "never"
 				},
 				{
@@ -209,46 +214,74 @@
 					"when": "never"
 				},
 				{
-					"command": "payara.server.console.open.context",
+					"command": "payara.server.config.open",
 					"when": "never"
 				},
 				{
-					"command": "payara.server.log.open.context",
+					"command": "payara.server.app.deploy",
 					"when": "never"
 				},
 				{
-					"command": "payara.server.config.open.context",
+					"command": "payara.server.app.debug",
 					"when": "never"
+				},
+				{
+					"command": "payara.server.app.undeploy",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.app.enable",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.app.disable",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.app.home",
+					"when": "never"
+				}
+			],
+			"explorer/context": [
+				{
+					"command": "payara.server.app.deploy",
+					"when": "explorerResourceIsFolder == true || resourceLangId == java || resourceFilename == pom.xml || resourceFilename == build.gradle || resourceExtname == .war || resourceExtname == .jar",
+					"group": "run@0"
+				},
+				{
+					"command": "payara.server.app.debug",
+					"when": "explorerResourceIsFolder == true || resourceLangId == java || resourceFilename == pom.xml || resourceFilename == build.gradle || resourceExtname == .war || resourceExtname == .jar",
+					"group": "run@1"
 				}
 			],
 			"view/item/context": [
 				{
-					"command": "payara.server.start.context",
+					"command": "payara.server.start",
 					"when": "viewItem == stoppedPayara",
 					"group": "manage@0"
 				},
 				{
-					"command": "payara.server.start.debug.context",
+					"command": "payara.server.start.debug",
 					"when": "viewItem == stoppedPayara",
 					"group": "manage@1"
 				},
 				{
-					"command": "payara.server.restart.context",
+					"command": "payara.server.restart",
 					"when": "viewItem == runningPayara",
 					"group": "manage@2"
 				},
 				{
-					"command": "payara.server.stop.context",
+					"command": "payara.server.stop",
 					"when": "viewItem == runningPayara",
 					"group": "manage@3"
 				},
 				{
-					"command": "payara.server.rename.context",
+					"command": "payara.server.rename",
 					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "update@4"
 				},
 				{
-					"command": "payara.server.remove.context",
+					"command": "payara.server.remove",
 					"when": "viewItem == stoppedPayara",
 					"group": "update@5"
 				},
@@ -258,19 +291,39 @@
 					"group": "update@6"
 				},
 				{
-					"command": "payara.server.console.open.context",
+					"command": "payara.server.console.open",
 					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "view@6"
 				},
 				{
-					"command": "payara.server.log.open.context",
+					"command": "payara.server.log.open",
 					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "view@7"
 				},
 				{
-					"command": "payara.server.config.open.context",
+					"command": "payara.server.config.open",
 					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "view@8"
+				},
+				{
+					"command": "payara.server.app.undeploy",
+					"when": "viewItem == payara-application",
+					"group": "application@1"
+				},
+				{
+					"command": "payara.server.app.enable",
+					"when": "viewItem == payara-application",
+					"group": "application@2"
+				},
+				{
+					"command": "payara.server.app.disable",
+					"when": "viewItem == payara-application",
+					"group": "application@3"
+				},
+				{
+					"command": "payara.server.app.home",
+					"when": "viewItem == payara-application",
+					"group": "application@4"
 				}
 			]
 		}

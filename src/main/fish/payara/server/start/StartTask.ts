@@ -36,7 +36,7 @@ export class StartTask {
 
     public startServer(payaraServer: PayaraServerInstance, debug: boolean): ChildProcess {
         let serverName: string = payaraServer.getName();
-        let jvmConfigReader: JvmConfigReader = new JvmConfigReader(payaraServer.getDomainXmlPath(), PayaraServerInstance.DAS_NAME);
+        let jvmConfigReader: JvmConfigReader = new JvmConfigReader(payaraServer.getDomainXmlPath(), ServerUtils.DAS_NAME);
 
         let javaHome: string | undefined = payaraServer.getJDKHome();
         if (!javaHome) {

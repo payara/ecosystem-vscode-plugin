@@ -16,23 +16,27 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
+
 import * as vscode from "vscode";
 import * as _ from "lodash";
 import * as path from "path";
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as cp from 'child_process';
+import * as xml2js from "xml2js";
 import { PortReader } from "./start/PortReader";
 import { JDKVersion } from "./start/JDKVersion";
 import { JavaUtils } from "./tooling/utils/JavaUtils";
 import { ServerUtils } from "./tooling/utils/ServerUtils";
 import { Tail } from "tail";
+import { ApplicationInstance } from "../project/ApplicationInstance";
 import { RestEndpoints } from "./endpoints/RestEndpoints";
 
-export class PayaraServerInstance extends vscode.TreeItem {
+export class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem {
 
-    /** Default name of the DAS server. */
-    public static DAS_NAME: string = "server";
+    public label: string;
+
+    public description: string | undefined;
 
     private outputChannel: vscode.OutputChannel;
 
@@ -46,8 +50,11 @@ export class PayaraServerInstance extends vscode.TreeItem {
 
     private jdkHome: string | null = null;
 
+    private applicationInstances: Array<ApplicationInstance> = new Array<ApplicationInstance>();
+
     constructor(private name: string, private path: string, private domainName: string) {
         super(name);
+        this.label = name;
         this.outputChannel = vscode.window.createOutputChannel(name);
     }
 
@@ -178,7 +185,7 @@ export class PayaraServerInstance extends vscode.TreeItem {
     }
 
     private createPortReader(): PortReader {
-        return new PortReader(this.getDomainXmlPath(), PayaraServerInstance.DAS_NAME);
+        return new PortReader(this.getDomainXmlPath(), ServerUtils.DAS_NAME);
     }
 
     public async checkAliveStatusUsingRest(
@@ -281,6 +288,44 @@ export class PayaraServerInstance extends vscode.TreeItem {
         this.disconnectOutput();
         this.outputChannel.dispose();
     }
+
+    public addApplication(application: ApplicationInstance): void {
+        this.applicationInstances.push(application);
+    }
+
+    public removeApplication(application: ApplicationInstance): void {
+        let index = this.applicationInstances.indexOf(application, 0);
+        if (index > -1) {
+            this.applicationInstances.splice(index, 1);
+        }
+    }
+
+    public getApplications(): Array<ApplicationInstance> {
+        return this.applicationInstances;
+    }
+
+    public reloadApplications() {
+        let payaraServer = this;
+        payaraServer.applicationInstances = new Array<ApplicationInstance>();
+        let endpoints: RestEndpoints = new RestEndpoints(this);
+        endpoints.invoke("list-applications", async response => {
+            if (response.statusCode === 200) {
+                response.on('data', function (data) {
+                    new xml2js.Parser().parseString(data.toString(),
+                        function (err: any, result: any) {
+                            let message = result['action-report']['message-part'][0];
+                            for (let property of message.property) {
+                                payaraServer.addApplication(
+                                    new ApplicationInstance(payaraServer, property.$.name, property.$.value)
+                                );
+                            }
+                        });
+                });
+            }
+        });
+    }
+
+
 
 }
 
