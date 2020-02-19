@@ -63,6 +63,9 @@ export class ServerUtils {
     /** Payara main class to be started when using classpath. */
     public static PF_MAIN_CLASS: string = "com.sun.enterprise.glassfish.bootstrap.ASMain";
 
+    /** Default name of the DAS server. */
+    public static DAS_NAME: string = "server";
+
     /**
      * Builds command line argument containing argument identifier, space
      * and argument value, e.g. <code>--name value</code>.
