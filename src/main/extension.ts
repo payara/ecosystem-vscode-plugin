@@ -47,6 +47,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
+			'payara.server.refresh.all',
+			() => {
+				for (let payaraServer of payaraInstanceProvider.getServers()) {
+					if (payaraServer.isStarted()) {
+						payaraServer.reloadApplications();
+					}
+					payaraServerTree.refresh(payaraServer);
+				}
+			}
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.refresh',
+			payaraServer => {
+				payaraServerTree.refresh(payaraServer);
+			}
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
 			'payara.server.start',
 			payaraServer => payaraInstanceController.startServer(payaraServer, false)
 		)
@@ -60,19 +81,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.restart',
-			payaraServer => payaraInstanceController.restartServer(payaraServer)
+			payaraServer => payaraInstanceController.restartServer(payaraServer, payaraServer.isDebug())
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.stop',
 			payaraServer => payaraInstanceController.stopServer(payaraServer)
-		)
-	);
-	context.subscriptions.push(
-		vscode.commands.registerCommand(
-			'payara.server.refresh',
-			payaraServer => payaraServerTree.refresh(payaraServer)
 		)
 	);
 	context.subscriptions.push(
@@ -99,7 +114,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			payaraServer => payaraInstanceController.openLog(payaraServer)
 		)
 	);
-
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.config.open',
@@ -108,56 +122,38 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'payara.server.start.context',
-			payaraServer => payaraInstanceController.startServer(payaraServer, false)
+			'payara.server.app.deploy',
+			uri => payaraInstanceController.deployApp(uri, false)
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'payara.server.start.debug.context',
-			payaraServer => payaraInstanceController.startServer(payaraServer, true)
+			'payara.server.app.debug',
+			uri => payaraInstanceController.deployApp(uri, true)
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'payara.server.restart.context',
-			payaraServer => payaraInstanceController.restartServer(payaraServer)
+			'payara.server.app.undeploy',
+			application => payaraInstanceController.undeployApp(application)
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'payara.server.stop.context',
-			payaraServer => payaraInstanceController.stopServer(payaraServer)
+			'payara.server.app.enable',
+			application => payaraInstanceController.enableApp(application)
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'payara.server.rename.context',
-			payaraServer => payaraInstanceController.renameServer(payaraServer)
+			'payara.server.app.disable',
+			application => payaraInstanceController.disableApp(application)
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'payara.server.remove.context',
-			payaraServer => payaraInstanceController.removeServer(payaraServer)
-		)
-	);
-	context.subscriptions.push(
-		vscode.commands.registerCommand(
-			'payara.server.console.open.context',
-			payaraServer => payaraInstanceController.openConsole(payaraServer)
-		)
-	);
-	context.subscriptions.push(
-		vscode.commands.registerCommand(
-			'payara.server.log.open.context',
-			payaraServer => payaraInstanceController.openLog(payaraServer)
-		)
-	);
-	context.subscriptions.push(
-		vscode.commands.registerCommand(
-			'payara.server.config.open.context',
-			payaraServer => payaraInstanceController.openConfig(payaraServer)
+			'payara.server.app.home',
+			application => payaraInstanceController.openApp(application)
 		)
 	);
 }
