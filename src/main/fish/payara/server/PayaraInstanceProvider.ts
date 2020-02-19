@@ -24,18 +24,57 @@ import * as _ from "lodash";
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import { PayaraServerInstance } from "./PayaraServerInstance";
+import { ServerUtils } from "./tooling/utils/ServerUtils";
 
 export class PayaraInstanceProvider {
 
     private servers: PayaraServerInstance[] = [];
+    private unlistedServers: PayaraServerInstance[] = [];
     private serversConfig: string;
+    private unlistedServersConfig: string;
 
     constructor(public context: vscode.ExtensionContext) {
         this.serversConfig = this.getServersConfig(context);
+        this.unlistedServersConfig = this.getUnlistedServersConfig(context);
+    }
+
+    async loadServerConfigs(): Promise<void> {
+        this
+            .readServerConfig()
+            .forEach((instance: any) => {
+                let payaraServer: PayaraServerInstance = new PayaraServerInstance(
+                    instance.name, instance.path, instance.domainName
+                );
+                this.addServer(payaraServer);
+                payaraServer.checkAliveStatusUsingJPS(() => {
+                    payaraServer.getOutputChannel().show(false);
+                    payaraServer.connectOutput();
+                    payaraServer.setStarted(true);
+                });
+            });
+
+        this.readUnlistedServerConfig()
+            .forEach((instance: any) => {
+                let payaraServer: PayaraServerInstance = new PayaraServerInstance(
+                    instance.name, instance.path, instance.domainName
+                );
+                this.unlistedServers.push(payaraServer);
+            });
     }
 
     public getServers(): PayaraServerInstance[] {
         return this.servers;
+    }
+
+    public getUnlistedServers(): PayaraServerInstance[] {
+        let oldUnlistedServers: PayaraServerInstance[] = this.unlistedServers;
+        this.unlistedServers = this.unlistedServers
+        .filter(server => fs.existsSync(server.getPath()))
+        .filter(server => ServerUtils.isValidServerPath(server.getPath()));
+        if(oldUnlistedServers.length !== this.unlistedServers.length) {
+            this.updateUnlistedServerConfig();
+        }
+        return this.unlistedServers;
     }
 
     public getServerByName(name: string): PayaraServerInstance | undefined {
@@ -67,26 +106,60 @@ export class PayaraInstanceProvider {
         return serversConfig;
     }
 
+    private getUnlistedServersConfig(context: vscode.ExtensionContext): string {
+        let storagePath: string;
+        if (context.globalStoragePath) {
+            if (!fs.existsSync(context.globalStoragePath)) {
+                fs.mkdirSync(context.globalStoragePath);
+            }
+            storagePath = context.globalStoragePath;
+        } else {
+            storagePath = path.resolve(os.tmpdir(), `payara_vscode`);
+        }
+
+        let unlistedServersConfig: string = path.join(storagePath, 'unlisted_servers.json');
+        if (!fs.existsSync(unlistedServersConfig)) {
+            fs.writeFileSync(unlistedServersConfig, "[]");
+        }
+        return unlistedServersConfig;
+    }
+
     public addServer(payaraServer: PayaraServerInstance): void {
-        this.removeServerFromList(payaraServer);
+        this.removeServerFromListed(payaraServer);
+        this.removeServerFromUnlisted(payaraServer);
         this.servers.push(payaraServer);
         this.updateServerConfig();
+        this.updateUnlistedServerConfig();
     }
 
     public removeServer(payaraServer: PayaraServerInstance): boolean {
-        if (this.removeServerFromList(payaraServer)) {
+        if (this.removeServerFromListed(payaraServer)) {
+            this.removeServerFromUnlisted(payaraServer);
+            this.unlistedServers.push(payaraServer);
             this.updateServerConfig();
+            this.updateUnlistedServerConfig();
             return true;
         }
         return false;
     }
 
-    private removeServerFromList(payaraServer: PayaraServerInstance): boolean {
+    private removeServerFromListed(payaraServer: PayaraServerInstance): boolean {
         const index: number = this.servers.findIndex(
             server => server.getName() === payaraServer.getName()
         );
         if (index > -1) {
             this.servers.splice(index, 1);
+            return true;
+        }
+        return false;
+    }
+
+    private removeServerFromUnlisted(payaraServer: PayaraServerInstance): boolean {
+        const index: number = this.unlistedServers.findIndex(
+            server => server.getPath() === payaraServer.getPath()
+        );
+        if (index > -1) {
+            this.unlistedServers.splice(index, 1);
             return true;
         }
         return false;
@@ -111,8 +184,30 @@ export class PayaraInstanceProvider {
         }
     }
 
+    public async updateUnlistedServerConfig(): Promise<void> {
+        try {
+            await fse.outputJson(
+                this.unlistedServersConfig,
+                this.unlistedServers.map(instance => {
+                    return {
+                        name: instance.getName(),
+                        path: instance.getPath(),
+                        domainName: instance.getDomainName()
+                    };
+                })
+            );
+        } catch (error) {
+            console.error(error.toString());
+        }
+    }
+
     public readServerConfig(): any {
         let data = fse.readFileSync(this.serversConfig);
+        return JSON.parse(data.toString());
+    }
+
+    public readUnlistedServerConfig(): any {
+        let data = fse.readFileSync(this.unlistedServersConfig);
         return JSON.parse(data.toString());
     }
 
