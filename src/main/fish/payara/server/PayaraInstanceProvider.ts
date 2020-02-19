@@ -45,9 +45,11 @@ export class PayaraInstanceProvider {
                 let payaraServer: PayaraServerInstance = new PayaraServerInstance(
                     instance.name, instance.path, instance.domainName
                 );
+                if (instance.jdkHome) {
+                    payaraServer.setJDKHome(instance.jdkHome);
+                }
                 this.addServer(payaraServer);
                 payaraServer.checkAliveStatusUsingJPS(() => {
-                    payaraServer.getOutputChannel().show(false);
                     payaraServer.connectOutput();
                     payaraServer.setStarted(true);
                 });
