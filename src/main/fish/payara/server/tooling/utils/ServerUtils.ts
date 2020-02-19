@@ -20,6 +20,8 @@
  */
 
 import * as path from "path";
+import * as fs from "fs";
+
 import { PayaraServerInstance } from '../../PayaraServerInstance';
 
 export class ServerUtils {
@@ -79,5 +81,9 @@ export class ServerUtils {
         return name + ' ' + value;
     }
 
+    public static isValidServerPath(serverPath: string): boolean {
+        return fs.existsSync(path.join(serverPath, 'glassfish', 'bin', 'asadmin')) 
+        && fs.existsSync(path.join(serverPath, 'bin', 'asadmin'));
+    }
 
 }
