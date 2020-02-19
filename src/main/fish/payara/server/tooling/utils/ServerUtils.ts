@@ -69,6 +69,9 @@ export class ServerUtils {
     public static DEFAULT_ADMIN_PORT: string = '4848';
     public static DEFAULT_HTTP_PORT: string = '8080';
 
+    /** Default name of the DAS server. */
+    public static DAS_NAME: string = "server";
+
     /**
      * Builds command line argument containing argument identifier, space
      * and argument value, e.g. <code>--name value</code>.
