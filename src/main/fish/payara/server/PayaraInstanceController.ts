@@ -88,9 +88,9 @@ export class PayaraInstanceController {
                             this.instanceProvider.addServer(payaraServer);
                             this.refreshServerList();
                             payaraServer.checkAliveStatusUsingJPS(() => {
+                                payaraServer.connectOutput();
                                 payaraServer.setStarted(true);
                                 this.refreshServerList();
-                                payaraServer.connectOutput();
                             });
                         };
                         if (state.newDomain) {
@@ -510,7 +510,7 @@ export class PayaraInstanceController {
                 this.refreshServerList();
                 payaraServer.getOutputChannel().show(false);
                 payaraServer.checkAliveStatusUsingRest(
-                    async () => {
+                    async () =>
                         payaraServer.setStarted(true);
                         this.refreshServerList();
                         payaraServer.connectOutput();
@@ -519,6 +519,7 @@ export class PayaraInstanceController {
                         }
                     },
                     async () => {
+                        payaraServer.disconnectOutput();
                         payaraServer.setStarted(false);
                         this.refreshServerList();
                         if (callback) {
@@ -554,7 +555,6 @@ export class PayaraInstanceController {
             }
         });
     }
-
 
     public async renameServer(payaraServer: PayaraServerInstance): Promise<void> {
         if (payaraServer) {

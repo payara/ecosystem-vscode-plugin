@@ -31,6 +31,7 @@ import { ServerUtils } from "./tooling/utils/ServerUtils";
 import { Tail } from "tail";
 import { ApplicationInstance } from "../project/ApplicationInstance";
 import { RestEndpoints } from "./endpoints/RestEndpoints";
+import { ChildProcess } from "child_process";
 
 export class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem {
 
@@ -46,7 +47,7 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
 
     private portReader: PortReader | null = null;
 
-    private logStream: Tail | null = null;
+    private logStream: ChildProcess | null = null;
 
     private applicationInstances: Array<ApplicationInstance> = new Array<ApplicationInstance>();
 
@@ -243,31 +244,34 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
         });
     }
 
-    public createLogStream(): void {
-        if (fs.existsSync(this.getServerLog())) {
+    public connectOutput(): void {
+        if (this.logStream === null && fs.existsSync(this.getServerLog())) {
             let logCallback = (data: string | Buffer): void => {
                 this.outputChannel.appendLine(
                     this.getName() && !_.isEmpty(data.toString()) ? `[${this.getName()}]: ${data.toString()}` : data.toString()
                 );
             };
-            this.logStream = new Tail(this.getServerLog());
-            this.logStream.on("line", logCallback);
-            this.logStream.on('error', (err) => console.log(err));
-        }
-    }
-
-    public connectOutput(): void {
-        if (this.logStream === null) {
-            this.createLogStream();
-        }
-        if (this.logStream !== null) {
-            this.logStream.watch();
+            if (JavaUtils.IS_WIN) {
+                this.logStream = cp.spawn('powershell.exe', ['Get-Content', '-Tail', '20', '-Wait', '-literalpath', this.getServerLog()]);
+            } else {
+                this.logStream = cp.spawn('tail ', ['-f', '-n', '20', this.getServerLog()]);
+            }
+            if (this.logStream.pid) {
+                this.outputChannel.show(false);
+                let logCallback = (data: string | Buffer): void => this.outputChannel.append(data.toString());
+                if (this.logStream.stdout !== null) {
+                    this.logStream.stdout.on('data', logCallback);
+                }
+                if (this.logStream.stderr !== null) {
+                    this.logStream.stderr.on('data', logCallback);
+                }
+            }
         }
     }
 
     public disconnectOutput(): void {
         if (this.logStream !== null) {
-            this.logStream.unwatch();
+            this.logStream.kill();
         }
     }
 
