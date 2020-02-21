@@ -108,6 +108,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			payaraServer => payaraInstanceController.updateCredential(payaraServer)
 		)
 	);
+  context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.jdk.home',
+			payaraServer => payaraInstanceController.updateJDKHome(payaraServer)
+		)
+	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.console.open',

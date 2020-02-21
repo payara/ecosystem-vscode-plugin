@@ -30,6 +30,7 @@
 		"onCommand:payara.server.rename",
 		"onCommand:payara.server.remove",
 		"onCommand:payara.server.credential",
+		"onCommand:payara.server.jdk.home",
 		"onCommand:payara.server.console.open",
 		"onCommand:payara.server.log.open",
 		"onCommand:payara.server.config.open",
@@ -92,6 +93,11 @@
 			{
 				"command": "payara.server.credential",
 				"title": "Update Credential",
+        "category": "Payara"
+			},
+      {
+				"command": "payara.server.jdk.home",
+				"title": "JDK Home",
 				"category": "Payara"
 			},
 			{
@@ -214,6 +220,10 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.server.jdk.home",
+					"when": "never"
+				},
+				{
 					"command": "payara.server.config.open",
 					"when": "never"
 				},
@@ -287,6 +297,11 @@
 				},
 				{
 					"command": "payara.server.credential",
+					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
+					"group": "update@6"
+				},
+				{
+					"command": "payara.server.jdk.home",
 					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "update@6"
 				},
