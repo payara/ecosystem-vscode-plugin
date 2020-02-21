@@ -87,12 +87,7 @@ export class PayaraInstanceProvider {
 
     private getServersConfig(context: vscode.ExtensionContext): string {
         let storagePath: string;
-        if (context.storagePath) {
-            if (!fs.existsSync(context.storagePath)) {
-                fs.mkdirSync(context.storagePath);
-            }
-            storagePath = context.storagePath;
-        } else if (context.globalStoragePath) {
+        if (context.globalStoragePath) {
             if (!fs.existsSync(context.globalStoragePath)) {
                 fs.mkdirSync(context.globalStoragePath);
             }
