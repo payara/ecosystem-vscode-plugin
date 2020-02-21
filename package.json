@@ -29,6 +29,7 @@
 		"onCommand:payara.server.stop",
 		"onCommand:payara.server.rename",
 		"onCommand:payara.server.remove",
+		"onCommand:payara.server.jdk.home",
 		"onCommand:payara.server.console.open",
 		"onCommand:payara.server.log.open",
 		"onCommand:payara.server.config.open",
@@ -86,6 +87,11 @@
 			{
 				"command": "payara.server.rename",
 				"title": "Rename",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.jdk.home",
+				"title": "JDK Home",
 				"category": "Payara"
 			},
 			{
@@ -204,6 +210,10 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.server.jdk.home",
+					"when": "never"
+				},
+				{
 					"command": "payara.server.config.open",
 					"when": "never"
 				},
@@ -274,6 +284,11 @@
 					"command": "payara.server.remove",
 					"when": "viewItem == stoppedPayara",
 					"group": "update@5"
+				},
+				{
+					"command": "payara.server.jdk.home",
+					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
+					"group": "update@6"
 				},
 				{
 					"command": "payara.server.console.open",

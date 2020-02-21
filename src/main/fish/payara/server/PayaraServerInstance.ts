@@ -49,6 +49,8 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
 
     private logStream: ChildProcess | null = null;
 
+    private jdkHome: string | null = null;
+
     private applicationInstances: Array<ApplicationInstance> = new Array<ApplicationInstance>();
 
     constructor(private name: string, private path: string, private domainName: string) {
@@ -71,6 +73,17 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
 
     public getDomainName(): string {
         return this.domainName;
+    }
+
+    public getJDKHome(): string | undefined {
+        if(this.jdkHome === null) {
+            return JDKVersion.getDefaultJDKHome();
+        }
+        return this.jdkHome;
+    }
+
+    public setJDKHome(jdkHome: string) {
+        this.jdkHome = jdkHome;
     }
 
     public getServerRoot(): string {
@@ -207,7 +220,7 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
     }
 
     public checkAliveStatusUsingJPS(callback: () => any): void {
-        let javaHome: string | undefined = JDKVersion.getDefaultJDKHome();
+        let javaHome: string | undefined = this.getJDKHome();
         if (!javaHome) {
             throw new Error("Java home path not found.");
         }

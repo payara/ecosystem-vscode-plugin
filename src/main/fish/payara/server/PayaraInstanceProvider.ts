@@ -45,9 +45,11 @@ export class PayaraInstanceProvider {
                 let payaraServer: PayaraServerInstance = new PayaraServerInstance(
                     instance.name, instance.path, instance.domainName
                 );
+                if (instance.jdkHome) {
+                    payaraServer.setJDKHome(instance.jdkHome);
+                }
                 this.addServer(payaraServer);
                 payaraServer.checkAliveStatusUsingJPS(() => {
-                    payaraServer.getOutputChannel().show(false);
                     payaraServer.connectOutput();
                     payaraServer.setStarted(true);
                 });
@@ -85,12 +87,7 @@ export class PayaraInstanceProvider {
 
     private getServersConfig(context: vscode.ExtensionContext): string {
         let storagePath: string;
-        if (context.storagePath) {
-            if (!fs.existsSync(context.storagePath)) {
-                fs.mkdirSync(context.storagePath);
-            }
-            storagePath = context.storagePath;
-        } else if (context.globalStoragePath) {
+        if (context.globalStoragePath) {
             if (!fs.existsSync(context.globalStoragePath)) {
                 fs.mkdirSync(context.globalStoragePath);
             }
@@ -173,7 +170,8 @@ export class PayaraInstanceProvider {
                     return {
                         name: instance.getName(),
                         path: instance.getPath(),
-                        domainName: instance.getDomainName()
+                        domainName: instance.getDomainName(),
+                        jdkHome: instance.getJDKHome()
                     };
                 })
             );

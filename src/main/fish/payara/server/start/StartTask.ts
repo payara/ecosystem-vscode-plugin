@@ -37,12 +37,17 @@ export class StartTask {
     public startServer(payaraServer: PayaraServerInstance, debug: boolean): ChildProcess {
         let serverName: string = payaraServer.getName();
         let jvmConfigReader: JvmConfigReader = new JvmConfigReader(payaraServer.getDomainXmlPath(), ServerUtils.DAS_NAME);
-        let javaVersion: JDKVersion | undefined = JDKVersion.getDefaultJDKVersion();
-        let javaHome: string | undefined = JDKVersion.getDefaultJDKHome();
-        let optList: Array<string> = new Array<string>();
-        if (!javaVersion || !javaHome) {
+
+        let javaHome: string | undefined = payaraServer.getJDKHome();
+        if (!javaHome) {
             throw new Error("Java home path not found.");
         }
+        let javaVersion: JDKVersion | undefined = JDKVersion.getJDKVersion(javaHome);
+        if (!javaVersion) {
+            throw new Error("Java version not found.");
+        }
+        let optList: Array<string> = new Array<string>();
+
         for (const jvmOption of jvmConfigReader.getJvmOptions()) {
             if (JDKVersion.isCorrectJDK(javaVersion, jvmOption.vendor, jvmOption.minVersion, jvmOption.maxVersion)) {
                 optList.push(jvmOption.option);
