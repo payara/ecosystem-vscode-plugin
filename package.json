@@ -348,7 +348,8 @@
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
 		"pretest": "yarn run compile",
-		"test": "node ./out/test/runTest.js"
+		"test": "node ./out/test/runTest.js",
+		"tslint": "tslint -t verbose src/**/*.ts"
 	},
 	"dependencies": {
 		"@types/tail": "^2.0.0",
