@@ -19,6 +19,7 @@
 
 import * as http from 'http';
 import * as https from 'https';
+import * as _ from "lodash";
 import * as xml2js from 'xml2js';
 import * as vscode from 'vscode';
 import { PayaraServerInstance } from "../PayaraServerInstance";
@@ -63,8 +64,10 @@ export class RestEndpoints {
 
         let headers: OutgoingHttpHeaders = {};
         headers['Accept'] = 'application/xml';
-        if (this.payaraServer.isSecurityEnabled()) {
+        if(!_.isEmpty(this.payaraServer.getPassword())) {
             headers['Authorization'] = 'Basic ' + Buffer.from(this.payaraServer.getUsername() + ':' + this.payaraServer.getPassword()).toString('base64');
+        }
+        if (this.payaraServer.isSecurityEnabled()) {
             return https.get({
                 hostname: 'localhost',
                 port: this.payaraServer.getAdminPort(),

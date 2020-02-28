@@ -48,6 +48,12 @@ export class PayaraInstanceProvider {
                 if (instance.jdkHome) {
                     payaraServer.setJDKHome(instance.jdkHome);
                 }
+                if (instance.username) {
+                    payaraServer.setUsername(instance.username);
+                }
+                if (instance.password) {
+                    payaraServer.setPassword(instance.password);
+                }
                 this.addServer(payaraServer);
                 payaraServer.checkAliveStatusUsingJPS(() => {
                     payaraServer.connectOutput();
@@ -172,7 +178,7 @@ export class PayaraInstanceProvider {
                         path: instance.getPath(),
                         domainName: instance.getDomainName(),
                         username: instance.getUsername(),
-                        password: instance.getPassword()
+                        password: instance.getPassword(),
                         jdkHome: instance.getJDKHome()
                     };
                 })

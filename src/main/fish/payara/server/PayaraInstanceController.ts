@@ -26,7 +26,6 @@ import * as fs from "fs";
 import * as tmp from "tmp";
 import * as fse from "fs-extra";
 import * as cp from 'child_process';
-import * as xml2js from 'xml2js';
 import * as isPort from 'validator/lib/isPort';
 import * as ui from "./../../../UI";
 import { PayaraInstanceProvider } from "./PayaraInstanceProvider";
@@ -116,8 +115,6 @@ export class PayaraInstanceController {
         );
     }
 
-
-
     private async createDomain(
         callback: () => any,
         serverName: string,
@@ -150,15 +147,16 @@ export class PayaraInstanceController {
         args.push("-client");
         args.push("-jar");
         args.push(path.join(serverPath, "glassfish", "modules", "admin-cli.jar"));
-        args.push("create-domain");
         args.push("--user");
         args.push(username);
-        if (password === '') {
-            args.push("--nopassword");
-        } else {
+        if (password !== '') {
             passwordFile = this.createTempPasswordFile(password);
             args.push("--passwordfile");
             args.push(passwordFile.name);
+        }
+        args.push("create-domain");
+        if (password === '') {
+            args.push("--nopassword");
         }
         args.push("--domaindir");
         args.push(path.join(serverPath, "glassfish", "domains"));
@@ -512,14 +510,13 @@ export class PayaraInstanceController {
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
         let query: string = '?debug=' + debug;
         endpoints.invoke("restart-domain", async (res) => {
-            if (res.statusCode === 200) {
                 payaraServer.connectOutput();
                 payaraServer.setDebug(debug);
                 payaraServer.setState(InstanceState.RESTARTING);
                 this.refreshServerList();
                 payaraServer.getOutputChannel().show(false);
                 payaraServer.checkAliveStatusUsingRest(
-                    async () =>
+                    async () => {
                         payaraServer.setStarted(true);
                         this.refreshServerList();
                         payaraServer.connectOutput();
@@ -527,7 +524,7 @@ export class PayaraInstanceController {
                             callback(true);
                         }
                     },
-                    async () => {
+                    async (message?: string) => {
                         payaraServer.disconnectOutput();
                         payaraServer.setStarted(false);
                         this.refreshServerList();
@@ -542,10 +539,9 @@ export class PayaraInstanceController {
                         payaraServer.connectOutput();
                     }
                 );
-            } else {
-                vscode.window.showErrorMessage('Unable to restart the Payara Server.');
-            }
-        });
+            },
+            (res, message) => vscode.window.showErrorMessage('Unable to restart the Payara Server. ' + message)
+        );
     }
 
     public async stopServer(payaraServer: PayaraServerInstance): Promise<void> {
@@ -604,6 +600,7 @@ export class PayaraInstanceController {
                 }
             )
         );
+    }
 
     public async updateJDKHome(payaraServer: PayaraServerInstance): Promise<void> {
         let validateInput: (value: string) => any = path => {

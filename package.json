@@ -93,9 +93,9 @@
 			{
 				"command": "payara.server.credential",
 				"title": "Update Credential",
-        "category": "Payara"
+        			"category": "Payara"
 			},
-      {
+      			{
 				"command": "payara.server.jdk.home",
 				"title": "JDK Home",
 				"category": "Payara"

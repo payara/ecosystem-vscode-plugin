@@ -105,7 +105,7 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
     }
 
     public getJDKHome(): string | undefined {
-        if(this.jdkHome === null) {
+        if (this.jdkHome === null) {
             return JDKVersion.getDefaultJDKHome();
         }
         return this.jdkHome;
@@ -223,7 +223,7 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
         failureCallback: (message?: string) => any): Promise<void> {
 
         await new Promise(res => setTimeout(res, 3000));
-        let max = 20;
+        let max = 30;
         let trycount = 0;
         let endpoints: RestEndpoints = new RestEndpoints(this);
         let successHttpCallback: (res: IncomingMessage) => any;
@@ -231,12 +231,12 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
         let invoke = () => {
             ++trycount;
             let req = endpoints.invoke("list-virtual-servers", successHttpCallback, failureHttpCallback);
-            req.on('error', async (err: Error) => {
-                if (err.message.includes('ECONNREFUSED')) {
+            req.on('error', async (err: any) => {
+                if (err["code"] === 'ECONNREFUSED' || err["code"] === 'ECONNRESET') {
                     await new Promise(res => setTimeout(res, 3000));
                     invoke();
                 } else {
-                    failureCallback();
+                    failureCallback(err.message);
                 }
             });
         };
@@ -244,14 +244,15 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
             successCallback();
         };
         failureHttpCallback = async (res: IncomingMessage, message?: string) => {
-            if(res.statusCode === 200) { // https://payara.atlassian.net/browse/APPSERV-52
+            if (res.statusCode === 200) { // https://payara.atlassian.net/browse/APPSERV-52
                 successCallback();
-            }
-            await new Promise(res => setTimeout(res, 3000));
-            if (trycount < max) {
-                invoke(); // try again
             } else {
-                failureCallback(message);
+                await new Promise(res => setTimeout(res, 3000));
+                if (trycount < max) {
+                    invoke(); // try again
+                } else {
+                    failureCallback(message);
+                }
             }
         };
         invoke();
