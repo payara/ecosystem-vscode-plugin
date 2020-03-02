@@ -400,16 +400,16 @@ export class PayaraInstanceController {
             state.adminPort = adminPort;
             state.httpPort = httpPort;
         }
-        return (input: ui.MultiStepInput) => this.addCredential(step, totalSteps, true, input, state, callback);
+        return (input: ui.MultiStepInput) => this.addCredentials(step, totalSteps, true, input, state, callback);
     }
 
-    private async addCredential(step: number, totalSteps: number, showDefault: boolean,
+    private async addCredentials(step: number, totalSteps: number, showDefault: boolean,
         input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
 
         let decision: QuickPickItem | undefined = undefined;
         if (showDefault) {
             decision = await input.showQuickPick({
-                title: 'Default credential?',
+                title: 'Default credentials?',
                 step: ++step,
                 totalSteps: totalSteps,
                 placeholder: 'Default username (admin) and password (empty)',
@@ -584,19 +584,19 @@ export class PayaraInstanceController {
         payaraServer.dispose();
     }
 
-    public async updateCredential(payaraServer: PayaraServerInstance): Promise<void> {
+    public async updateCredentials(payaraServer: PayaraServerInstance): Promise<void> {
         let state: Partial<State> = {
             username: payaraServer.getUsername(),
             password: payaraServer.getPassword()
         };
         ui.MultiStepInput.run(
-            input => this.addCredential(
+            input => this.addCredentials(
                 0, 0, false, input, state,
                 () => {
                     payaraServer.setUsername(state.username ? state.username.trim() : ServerUtils.DEFAULT_USERNAME);
                     payaraServer.setPassword(state.password ? state.password.trim() : ServerUtils.DEFAULT_PASSWORD);
                     this.instanceProvider.updateServerConfig();
-                    vscode.window.showInformationMessage('Credential updated successfully.');
+                    vscode.window.showInformationMessage('Credentials updated successfully.');
                 }
             )
         );
