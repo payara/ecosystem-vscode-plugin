@@ -29,6 +29,7 @@
 		"onCommand:payara.server.stop",
 		"onCommand:payara.server.rename",
 		"onCommand:payara.server.remove",
+		"onCommand:payara.server.credentials",
 		"onCommand:payara.server.jdk.home",
 		"onCommand:payara.server.console.open",
 		"onCommand:payara.server.log.open",
@@ -90,6 +91,11 @@
 				"category": "Payara"
 			},
 			{
+				"command": "payara.server.credentials",
+				"title": "Update Admin Credentials",
+        			"category": "Payara"
+			},
+      			{
 				"command": "payara.server.jdk.home",
 				"title": "JDK Home",
 				"category": "Payara"
@@ -206,6 +212,10 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.server.credentials",
+					"when": "never"
+				},
+				{
 					"command": "payara.server.log.open",
 					"when": "never"
 				},
@@ -286,6 +296,11 @@
 					"group": "update@5"
 				},
 				{
+					"command": "payara.server.credentials",
+					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
+					"group": "update@6"
+				},
+				{
 					"command": "payara.server.jdk.home",
 					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
 					"group": "update@6"
@@ -333,7 +348,8 @@
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
 		"pretest": "yarn run compile",
-		"test": "node ./out/test/runTest.js"
+		"test": "node ./out/test/runTest.js",
+		"tslint": "tslint -t verbose src/**/*.ts"
 	},
 	"dependencies": {
 		"@types/tail": "^2.0.0",
@@ -344,7 +360,6 @@
 		"lodash": "^4.17.15",
 		"open": "^6.2.1 ",
 		"request": "^2.88.0",
-		"sync-request": "^6.1.0",
 		"tail": "^2.0.3",
 		"tmp": "^0.1.0",
 		"validator": "^12.2.0",

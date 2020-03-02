@@ -31,6 +31,7 @@ import { ServerUtils } from "./tooling/utils/ServerUtils";
 import { Tail } from "tail";
 import { ApplicationInstance } from "../project/ApplicationInstance";
 import { RestEndpoints } from "./endpoints/RestEndpoints";
+import { IncomingMessage } from "http";
 import { ChildProcess } from "child_process";
 
 export class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem {
@@ -48,6 +49,10 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
     private portReader: PortReader | null = null;
 
     private logStream: ChildProcess | null = null;
+
+    private username: string = ServerUtils.DEFAULT_USERNAME;
+    private password: string = ServerUtils.DEFAULT_PASSWORD;
+    private securityEnabled: boolean = false;
 
     private jdkHome: string | null = null;
 
@@ -75,8 +80,32 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
         return this.domainName;
     }
 
+    public getUsername(): string {
+        return this.username;
+    }
+
+    public setUsername(username: string) {
+        this.username = username;
+    }
+
+    public getPassword(): string {
+        return this.password;
+    }
+
+    public setPassword(password: string) {
+        this.password = password;
+    }
+
+    public isSecurityEnabled(): boolean {
+        return this.securityEnabled;
+    }
+
+    public setSecurityEnabled(securityEnabled: boolean) {
+        this.securityEnabled = securityEnabled;
+    }
+
     public getJDKHome(): string | undefined {
-        if(this.jdkHome === null) {
+        if (this.jdkHome === null) {
             return JDKVersion.getDefaultJDKHome();
         }
         return this.jdkHome;
@@ -191,32 +220,42 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
 
     public async checkAliveStatusUsingRest(
         successCallback: () => any,
-        failureCallback: () => any): Promise<void> {
+        failureCallback: (message?: string) => any): Promise<void> {
+
         await new Promise(res => setTimeout(res, 3000));
         let max = 30;
-        let p = Promise.reject<number>();
-        for (var i = 0; i < max; i++) {
-            p = p.catch(() => {
-                let endpoints: RestEndpoints = new RestEndpoints(this);
-                let response = endpoints.invokeSync("list-virtual-servers");
-                if (response.statusCode === 200) {
-                    return response.statusCode;
+        let trycount = 0;
+        let endpoints: RestEndpoints = new RestEndpoints(this);
+        let successHttpCallback: (res: IncomingMessage) => any;
+        let failureHttpCallback: (res: IncomingMessage, message?: string) => any;
+        let invoke = () => {
+            ++trycount;
+            let req = endpoints.invoke("list-virtual-servers", successHttpCallback, failureHttpCallback);
+            req.on('error', async (err: any) => {
+                if (err["code"] === 'ECONNREFUSED' || err["code"] === 'ECONNRESET') {
+                    await new Promise(res => setTimeout(res, 3000));
+                    invoke();
                 } else {
-                    throw response.statusCode;
+                    failureCallback(err.message);
                 }
-            }).catch(reason =>
-                new Promise((resolve, reject) => setTimeout(reject.bind(null, reason), 3000))
-            );
-        }
-        p.then(statusCode => {
-            if (statusCode === 200) {
+            });
+        };
+        successHttpCallback = async (res: IncomingMessage) => {
+            successCallback();
+        };
+        failureHttpCallback = async (res: IncomingMessage, message?: string) => {
+            if (res.statusCode === 200) { // https://payara.atlassian.net/browse/APPSERV-52
                 successCallback();
             } else {
-                failureCallback();
+                await new Promise(res => setTimeout(res, 3000));
+                if (trycount < max) {
+                    invoke(); // try again
+                } else {
+                    failureCallback(message);
+                }
             }
-        }).catch(err => {
-            failureCallback();
-        });
+        };
+        invoke();
     }
 
     public checkAliveStatusUsingJPS(callback: () => any): void {

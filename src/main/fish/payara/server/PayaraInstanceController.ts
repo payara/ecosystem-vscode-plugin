@@ -32,7 +32,7 @@ import { PayaraInstanceProvider } from "./PayaraInstanceProvider";
 import { PayaraServerInstance, InstanceState } from './PayaraServerInstance';
 import { JvmConfigReader } from './start/JvmConfigReader';
 import { JDKVersion } from './start/JDKVersion';
-import { QuickPickItem, CancellationToken, Uri, OutputChannel, QuickInputButton, OpenDialogOptions, workspace, InputBox } from 'vscode';
+import { QuickPickItem, CancellationToken, Uri, OutputChannel, QuickPick, QuickInputButton, OpenDialogOptions, workspace, InputBox } from 'vscode';
 import { JvmOption } from './start/JvmOption';
 import { StringUtils } from './tooling/utils/StringUtils';
 import { ServerUtils } from './tooling/utils/ServerUtils';
@@ -48,6 +48,7 @@ import { BuildSupport } from '../project/BuildSupport';
 import { DeploymentSupport } from '../project/DeploymentSupport';
 import { MyButton } from './../../../UI';
 import { FileResult } from 'tmp';
+import { userInfo } from 'os';
 
 export class PayaraInstanceController {
 
@@ -85,6 +86,8 @@ export class PayaraInstanceController {
 
                         let registerServer = () => {
                             let payaraServer = new PayaraServerInstance(serverName, serverPath, domainName);
+                            payaraServer.setUsername(state.username ? state.username.trim() : ServerUtils.DEFAULT_USERNAME);
+                            payaraServer.setPassword(state.password ? state.password.trim() : ServerUtils.DEFAULT_PASSWORD);
                             this.instanceProvider.addServer(payaraServer);
                             this.refreshServerList();
                             payaraServer.checkAliveStatusUsingJPS(() => {
@@ -112,12 +115,6 @@ export class PayaraInstanceController {
         );
     }
 
-    private DEFAULT_USERNAME: string = 'admin';
-    private DEFAULT_PASSWORD: string = '';
-    private MASTER_PASSWORD: string = 'changeit';
-    private DEFAULT_ADMIN_PORT: string = '4848';
-    private DEFAULT_HTTP_PORT: string = '8080';
-
     private async createDomain(
         callback: () => any,
         serverName: string,
@@ -130,16 +127,16 @@ export class PayaraInstanceController {
 
         let passwordFile: FileResult;
         if (!adminPort) {
-            adminPort = this.DEFAULT_ADMIN_PORT;
+            adminPort = ServerUtils.DEFAULT_ADMIN_PORT;
         }
         if (!instancePort) {
-            instancePort = this.DEFAULT_HTTP_PORT;
+            instancePort = ServerUtils.DEFAULT_HTTP_PORT;
         }
         if (!username) {
-            username = this.DEFAULT_USERNAME;
+            username = ServerUtils.DEFAULT_USERNAME;
         }
         if (!password) {
-            password = this.DEFAULT_PASSWORD;
+            password = ServerUtils.DEFAULT_PASSWORD;
         }
         let javaHome: string | undefined = JDKVersion.getDefaultJDKHome();
         if (!javaHome) {
@@ -150,15 +147,16 @@ export class PayaraInstanceController {
         args.push("-client");
         args.push("-jar");
         args.push(path.join(serverPath, "glassfish", "modules", "admin-cli.jar"));
-        args.push("create-domain");
         args.push("--user");
         args.push(username);
-        if (password === '') {
-            args.push("--nopassword");
-        } else {
+        if (password !== '') {
             passwordFile = this.createTempPasswordFile(password);
             args.push("--passwordfile");
             args.push(passwordFile.name);
+        }
+        args.push("create-domain");
+        if (password === '') {
+            args.push("--nopassword");
         }
         args.push("--domaindir");
         args.push(path.join(serverPath, "glassfish", "domains"));
@@ -199,7 +197,7 @@ export class PayaraInstanceController {
         console.log('File: ', tmpFile.name);
         let content = "AS_ADMIN_ADMINPASSWORD=" + password + '\n'; // to create domain
         content += "AS_ADMIN_PASSWORD=" + password + '\n'; // to start domain
-        content += "AS_ADMIN_MASTERPASSWORD=" + this.MASTER_PASSWORD;
+        content += "AS_ADMIN_MASTERPASSWORD=" + ServerUtils.MASTER_PASSWORD;
         if (fs.existsSync(tmpFile.name)) {
             fs.writeFileSync(tmpFile.name, content);
         }
@@ -336,7 +334,7 @@ export class PayaraInstanceController {
     }
 
     private async validateUserName(name: string): Promise<string | undefined> {
-        if (_.isEmpty(name)) {
+        if (_.isEmpty(name.trim())) {
             return 'Username cannot be empty.';
         }
         return undefined;
@@ -402,17 +400,25 @@ export class PayaraInstanceController {
             state.adminPort = adminPort;
             state.httpPort = httpPort;
         }
+        return (input: ui.MultiStepInput) => this.addCredentials(step, totalSteps, true, input, state, callback);
+    }
 
-        decision = await input.showQuickPick({
-            title: 'Use Default credentials?',
-            step: ++step,
-            totalSteps: totalSteps,
-            placeholder: 'Default username (admin) and password (empty)',
-            items: [{ label: 'Yes' }, { label: 'No' }],
-            activeItem: { label: 'Yes' },
-            shouldResume: this.shouldResume
-        });
-        if (decision.label === 'Yes') {
+    private async addCredentials(step: number, totalSteps: number, showDefault: boolean,
+        input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
+
+        let decision: QuickPickItem | undefined = undefined;
+        if (showDefault) {
+            decision = await input.showQuickPick({
+                title: 'Default credentials?',
+                step: ++step,
+                totalSteps: totalSteps,
+                placeholder: 'Default username (admin) and password (empty)',
+                items: [{ label: 'Yes' }, { label: 'No' }],
+                activeItem: { label: 'Yes' },
+                shouldResume: this.shouldResume
+            });
+        }
+        if (decision && decision.label === 'Yes') {
             callback(state);
         } else {
             totalSteps += 2;
@@ -420,7 +426,7 @@ export class PayaraInstanceController {
                 title: 'Username',
                 step: ++step,
                 totalSteps: totalSteps,
-                value: 'admin',
+                value: state.username ? state.username : ServerUtils.DEFAULT_USERNAME,
                 prompt: 'Enter the username',
                 placeHolder: 'Enter the username e.g admin',
                 validate: (value: string) => this.validateUserName(value),
@@ -430,12 +436,13 @@ export class PayaraInstanceController {
             passwordBox.title = 'Password';
             passwordBox.step = ++step;
             passwordBox.totalSteps = totalSteps;
-            passwordBox.value = '';
+            passwordBox.value = state.password ? state.password : ServerUtils.DEFAULT_PASSWORD;
             passwordBox.prompt = 'Enter the password';
             passwordBox.placeholder = 'Enter the password';
             passwordBox.password = true;
             passwordBox.show();
             passwordBox.onDidAccept(async () => {
+                passwordBox.hide();
                 state.password = passwordBox.value;
                 callback(state);
             });
@@ -484,13 +491,13 @@ export class PayaraInstanceController {
                         callback(true);
                     }
                 },
-                async () => {
+                async (message?: string) => {
                     payaraServer.setStarted(false);
                     this.refreshServerList();
                     if (callback) {
                         callback(false);
                     }
-                    vscode.window.showErrorMessage('Unable to start the Payara Server.');
+                    vscode.window.showErrorMessage('Unable to start the Payara Server. ' + message);
                 });
         }
     }
@@ -503,14 +510,13 @@ export class PayaraInstanceController {
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
         let query: string = '?debug=' + debug;
         endpoints.invoke("restart-domain", async (res) => {
-            if (res.statusCode === 200) {
                 payaraServer.connectOutput();
                 payaraServer.setDebug(debug);
                 payaraServer.setState(InstanceState.RESTARTING);
                 this.refreshServerList();
                 payaraServer.getOutputChannel().show(false);
                 payaraServer.checkAliveStatusUsingRest(
-                    async () =>
+                    async () => {
                         payaraServer.setStarted(true);
                         this.refreshServerList();
                         payaraServer.connectOutput();
@@ -518,14 +524,14 @@ export class PayaraInstanceController {
                             callback(true);
                         }
                     },
-                    async () => {
+                    async (message?: string) => {
                         payaraServer.disconnectOutput();
                         payaraServer.setStarted(false);
                         this.refreshServerList();
                         if (callback) {
                             callback(false);
                         }
-                        vscode.window.showErrorMessage('Unable to restart the Payara Server.');
+                         vscode.window.showErrorMessage('Unable to restart the Payara Server. ' + message);
                     }
                 );
                 payaraServer.checkAliveStatusUsingJPS(
@@ -533,10 +539,9 @@ export class PayaraInstanceController {
                         payaraServer.connectOutput();
                     }
                 );
-            } else {
-                vscode.window.showErrorMessage('Unable to restart the Payara Server.');
-            }
-        });
+            },
+            (res, message) => vscode.window.showErrorMessage('Unable to restart the Payara Server. ' + message)
+        );
     }
 
     public async stopServer(payaraServer: PayaraServerInstance): Promise<void> {
@@ -577,6 +582,24 @@ export class PayaraInstanceController {
         this.instanceProvider.removeServer(payaraServer);
         this.refreshServerList();
         payaraServer.dispose();
+    }
+
+    public async updateCredentials(payaraServer: PayaraServerInstance): Promise<void> {
+        let state: Partial<State> = {
+            username: payaraServer.getUsername(),
+            password: payaraServer.getPassword()
+        };
+        ui.MultiStepInput.run(
+            input => this.addCredentials(
+                0, 0, false, input, state,
+                () => {
+                    payaraServer.setUsername(state.username ? state.username.trim() : ServerUtils.DEFAULT_USERNAME);
+                    payaraServer.setPassword(state.password ? state.password.trim() : ServerUtils.DEFAULT_PASSWORD);
+                    this.instanceProvider.updateServerConfig();
+                    vscode.window.showInformationMessage('Credentials updated successfully.');
+                }
+            )
+        );
     }
 
     public async updateJDKHome(payaraServer: PayaraServerInstance): Promise<void> {

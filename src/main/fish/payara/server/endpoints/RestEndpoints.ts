@@ -18,31 +18,72 @@
  */
 
 import * as http from 'http';
-import * as syncHttp from 'sync-request';
+import * as https from 'https';
+import * as _ from "lodash";
+import * as xml2js from 'xml2js';
+import * as vscode from 'vscode';
 import { PayaraServerInstance } from "../PayaraServerInstance";
-import { ClientRequest, IncomingMessage } from 'http';
+import { ClientRequest, IncomingMessage, OutgoingHttpHeaders } from 'http';
+import { IncomingHttpHeaders } from 'http2';
 
 export class RestEndpoints {
 
     public constructor(public payaraServer: PayaraServerInstance) {
     }
 
-    public invoke(command: string, callback?: (res: IncomingMessage) => void): ClientRequest {
-        return http.get({
-            hostname: 'localhost',
-            port: this.payaraServer.getAdminPort(),
-            path: '/__asadmin/' + command,
-            headers: { 'Accept': 'application/xml' },
-            agent: false  // Create a new agent just for this one request
-        }, callback);
-    }
+    public invoke(
+        command: string, 
+        success?: (res: IncomingMessage) => void, 
+        failure?: (res: IncomingMessage, message?: string) => void): ClientRequest {
 
-    public invokeSync(command: string): syncHttp.Response {
-        return syncHttp.default('GET',
-            "http://localhost:" + this.payaraServer.getAdminPort() + '/__asadmin/' + command,
-            { headers: { 'Accept': 'application/xml' } }
-        );
-    }
+        let callback = (response: IncomingMessage) => {
+            if (response.statusCode === 200) {
+                response.on('data', data => {
+                    new xml2js.Parser().parseString(data.toString(),
+                        function (err: any, result: any) {
+                            let report = result['action-report'];
+                            let exitCode = report.$['exit-code'];
+                            if (exitCode === 'SUCCESS' && success) {
+                                success(response);
+                            } else if (failure) {
+                                failure(response, report['message-part'][0].$['message']);
+                            } else {
+                                vscode.window.showErrorMessage(report['message-part'][0].$['message']);
+                            }
+                        });
+                });
+            } else if (response.statusCode === 302 && !this.payaraServer.isSecurityEnabled()) {
+                this.payaraServer.setSecurityEnabled(true);
+                this.invoke(command, success, failure); // retry on https redirect
+            } else if (failure) {
+                failure(response);
+            } else {
+                vscode.window.showErrorMessage('Error in calling endpoint: ' + command + ', Response Code: ' + response.statusCode);
+            }
+        };
 
+        let headers: OutgoingHttpHeaders = {};
+        headers['Accept'] = 'application/xml';
+        if(!_.isEmpty(this.payaraServer.getPassword())) {
+            headers['Authorization'] = 'Basic ' + Buffer.from(this.payaraServer.getUsername() + ':' + this.payaraServer.getPassword()).toString('base64');
+        }
+        if (this.payaraServer.isSecurityEnabled()) {
+            return https.get({
+                hostname: 'localhost',
+                port: this.payaraServer.getAdminPort(),
+                path: '/__asadmin/' + command,
+                headers: headers,
+                rejectUnauthorized: false // permits self signed cert
+            }, callback);
+        } else {
+            return http.get({
+                hostname: 'localhost',
+                port: this.payaraServer.getAdminPort(),
+                path: '/__asadmin/' + command,
+                headers: headers
+            }, callback);
+        }
+
+    }
 
 }
