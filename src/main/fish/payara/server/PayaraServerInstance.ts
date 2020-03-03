@@ -351,19 +351,14 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
         let payaraServer = this;
         payaraServer.applicationInstances = new Array<ApplicationInstance>();
         let endpoints: RestEndpoints = new RestEndpoints(this);
-        endpoints.invoke("list-applications", async response => {
+        endpoints.invoke("list-applications", async (response, report) => {
             if (response.statusCode === 200) {
-                response.on('data', function (data) {
-                    new xml2js.Parser().parseString(data.toString(),
-                        function (err: any, result: any) {
-                            let message = result['action-report']['message-part'][0];
-                            for (let property of message.property) {
-                                payaraServer.addApplication(
-                                    new ApplicationInstance(payaraServer, property.$.name, property.$.value)
-                                );
-                            }
-                        });
-                });
+                let message = report['message-part'][0];
+                for (let property of message.property) {
+                    payaraServer.addApplication(
+                        new ApplicationInstance(payaraServer, property.$.name, property.$.value)
+                    );
+                }
             }
         });
     }

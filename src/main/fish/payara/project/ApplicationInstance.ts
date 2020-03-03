@@ -59,36 +59,24 @@ export class ApplicationInstance extends vscode.TreeItem {
         let payaraServer = this.payaraServer;
         let query = '?appname=' + encodeURIComponent(this.name) + '&modulename=' + encodeURIComponent(this.name);
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
-        endpoints.invoke("_get-context-root" + query, async response => {
+        endpoints.invoke("_get-context-root" + query, async (response, report) => {
             if (response.statusCode === 200) {
-                response.on('data', data => {
-                    let contextRoot: string | null = application.parseContextRoot(data.toString(), payaraServer);
-                    application.setContextPath(contextRoot);
-                    if (contextRoot) {
-                        callback(contextRoot);
-                    } else {
-                        vscode.window.showInformationMessage('Context path not found for the application: ' + application.name);
-                    }
-                });
-            }
-        });
-    }
-
-    private parseContextRoot(data: string, payaraServer: PayaraServerInstance): string | null {
-        let contextRoot: string | null = null;
-        new xml2js.Parser().parseString(data,
-            function (err: any, result: any) {
-                let message = result['action-report']['message-part'][0];
+                let message = report['message-part'][0];
                 if (message.property) {
                     let property = message.property[0].$;
                     if (property.name === 'contextRoot') {
-                        contextRoot = <string>property.value;
+                        let contextRoot = <string>property.value;
+                        application.setContextPath(contextRoot);
+                        if (contextRoot) {
+                            callback(contextRoot);
+                        } else {
+                            vscode.window.showInformationMessage('Context path not found for the application: ' + application.name);
+                        }
                     }
                 }
-            });
-        return contextRoot;
+            }
+        });
     }
-
 
     public getIcon(): string {
         let icon: string;
