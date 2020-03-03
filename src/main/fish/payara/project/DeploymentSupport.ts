@@ -31,7 +31,7 @@ export class DeploymentSupport {
     constructor(
         public controller: PayaraInstanceController) {
     }
-    
+
     public buildAndDeployApplication(uri: Uri, payaraServer: PayaraServerInstance) {
         return BuildSupport
             .getBuild(uri)
@@ -43,31 +43,18 @@ export class DeploymentSupport {
         payaraServer.getOutputChannel().show(false);
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
         let query: string = '?DEFAULT=' + encodeURIComponent(appPath) + '&force=true';
-        endpoints.invoke("deploy" + query, async response => {
+        endpoints.invoke("deploy" + query, async (response, report) => {
             if (response.statusCode === 200) {
-                response.on('data', data => {
-                    let appName: string | null = support.parseAppName(data.toString());
-                    if (appName) {
-                        support.controller.openApp(new ApplicationInstance(payaraServer, appName));
-                        payaraServer.reloadApplications();
-                        support.controller.refreshServerList();
-                    }
-                });
-            }
-        });
-    }
-
-    private parseAppName(data: string): string | null {
-        let appName: string | null = null;
-        new xml2js.Parser().parseString(data,
-            function (err: any, result: any) {
-                let message = result['action-report']['message-part'][0];
+                let message = report['message-part'][0];
                 let property = message.property[0].$;
                 if (property.name === 'name') {
-                    appName = <string>property.value;
+                    let appName = <string>property.value;
+                    support.controller.openApp(new ApplicationInstance(payaraServer, appName));
+                    payaraServer.reloadApplications();
+                    support.controller.refreshServerList();
                 }
-            });
-        return appName;
+            }
+        });
     }
 
 }

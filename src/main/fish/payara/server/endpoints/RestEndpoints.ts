@@ -33,7 +33,7 @@ export class RestEndpoints {
 
     public invoke(
         command: string, 
-        success?: (res: IncomingMessage) => void, 
+        success?: (res: IncomingMessage, report?: any) => void,
         failure?: (res: IncomingMessage, message?: string) => void): ClientRequest {
 
         let callback = (response: IncomingMessage) => {
@@ -44,7 +44,7 @@ export class RestEndpoints {
                             let report = result['action-report'];
                             let exitCode = report.$['exit-code'];
                             if (exitCode === 'SUCCESS' && success) {
-                                success(response);
+                                success(response, report);
                             } else if (failure) {
                                 failure(response, report['message-part'][0].$['message']);
                             } else {
