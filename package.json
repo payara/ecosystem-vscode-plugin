@@ -4,6 +4,7 @@
 	"description": "Payara Tools for Visual Studio Code",
 	"version": "0.0.1",
 	"publisher": "Payara",
+	"icon": "resources/payara.png",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/payara/ecosystem-vscode-plugin"
