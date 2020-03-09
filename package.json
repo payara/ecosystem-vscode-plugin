@@ -12,6 +12,7 @@
 	"keywords": [
 		"Java",
 		"Jakarta EE",
+		"MicroProfile",
 		"Payara"
 	],
 	"engines": {
