@@ -18,6 +18,7 @@
  */
 
 import { WorkspaceFolder, OutputChannel, Uri } from "vscode";
+import { PayaraMicroProject } from "../micro/PayaraMicroProject";
 
 export interface Build {
 
