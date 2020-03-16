@@ -22,15 +22,16 @@ import * as path from 'path';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
-import { WorkspaceFolder, OutputChannel } from "vscode";
+import { WorkspaceFolder, OutputChannel, Uri } from "vscode";
 import { Build } from './Build';
 import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';
+import { PayaraMicroProject } from '../micro/PayaraMicroProject';
 
 export class Maven implements Build {
 
     constructor(
-        public workspaceFolder: WorkspaceFolder) {
+        public workspaceFolder: WorkspaceFolder | null) {
     }
 
     public static detect(workspaceFolder: WorkspaceFolder): boolean {
@@ -48,9 +49,12 @@ export class Maven implements Build {
         if (!fse.pathExistsSync(mavenExe)) {
             throw new Error("Maven executable [" + mavenExe + "] not found");
         }
+        if (!this.workspaceFolder) {
+            throw new Error("WorkSpace path not found.");
+        }
         let pom = path.join(this.workspaceFolder.uri.fsPath, 'pom.xml');
         let process: ChildProcess = cp.spawn(mavenExe, ["clean", "install"], { cwd: this.workspaceFolder.uri.fsPath });
-        
+
         if (process.pid) {
             let outputChannel = vscode.window.createOutputChannel(path.basename(this.workspaceFolder.uri.fsPath));
             outputChannel.show(false);
@@ -80,7 +84,7 @@ export class Maven implements Build {
                             artifact = filename;
                         }
                     }
-                    if(artifact !== null) {
+                    if (artifact !== null) {
                         callback(artifact);
                     } else {
                         vscode.window.showErrorMessage(artifact + ' not found.');
@@ -89,7 +93,7 @@ export class Maven implements Build {
             });
         }
     }
- 
+
     public getDefaultHome(): string | undefined {
         const config = vscode.workspace.getConfiguration();
         let mavenHome: string | undefined = config.get<string>('maven.home');
@@ -111,12 +115,58 @@ export class Maven implements Build {
         }
         mavenExecStr += 'bin' + path.sep + 'mvn';
         if (JavaUtils.IS_WIN) {
-            if(fs.existsSync(mavenExecStr+'.bat')) {
+            if (fs.existsSync(mavenExecStr + '.bat')) {
                 mavenExecStr += ".bat";
-            } else if(fs.existsSync(mavenExecStr+'.cmd')) {
+            } else if (fs.existsSync(mavenExecStr + '.cmd')) {
                 mavenExecStr += ".cmd";
             }
         }
         return mavenExecStr;
+    }
+
+    public generateProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): void {
+        let mavenHome: string | undefined = this.getDefaultHome();
+        if (!mavenHome) {
+            throw new Error("Maven home path not found.");
+        }
+        let mavenExe: string = this.getExecutableFullPath(mavenHome);
+        // Maven executable should exist.
+        if (!fse.pathExistsSync(mavenExe)) {
+            throw new Error("Maven executable [" + mavenExe + "] not found");
+        }
+        const cmdArgs: string[] = [
+            "archetype:generate",
+            `-DarchetypeArtifactId=payara-micro-maven-archetype`,
+            `-DarchetypeGroupId=fish.payara.maven.archetypes`,
+            `-DgroupId=${project.groupId}`,
+            `-DartifactId=${project.artifactId}`,
+            `-Dversion=${project.version}`,
+            `-Dpackage=${project.package}`,
+            `-DpayaraMicroVersion=${project.payaraMicroVersion}`,
+            '-DaddPayaraApi=true',
+            '-DinteractiveMode=false'
+        ];
+        let process: ChildProcess = cp.spawn(mavenExe, cmdArgs, { cwd: project.targetFolder?.fsPath });
+
+        if (process.pid) {
+            let outputChannel = vscode.window.createOutputChannel(`${project.artifactId}`);
+            outputChannel.show(false);
+            let logCallback = (data: string | Buffer): void => outputChannel.append(data.toString());
+            if (process.stdout !== null) {
+                process.stdout.on('data', logCallback);
+            }
+            if (process.stderr !== null) {
+                process.stderr.on('data', logCallback);
+            }
+            process.on('error', (err: Error) => {
+                console.log('error: ' + err.message);
+            });
+            process.on('exit', (code: number) => {
+                if (code === 0 && project.targetFolder && project.artifactId) {
+                    callback(vscode.Uri.file(path.join(project.targetFolder.fsPath, project.artifactId)));
+                }
+            });
+        }
+
     }
 }

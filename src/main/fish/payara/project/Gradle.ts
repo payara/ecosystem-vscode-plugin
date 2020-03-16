@@ -22,15 +22,16 @@ import * as path from 'path';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
-import { WorkspaceFolder, OutputChannel } from "vscode";
+import { WorkspaceFolder, OutputChannel, Uri } from "vscode";
 import { Build } from './Build';
 import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';
+import { PayaraMicroProject } from '../micro/PayaraMicroProject';
 
 export class Gradle implements Build {
 
     constructor(
-        public workspaceFolder: WorkspaceFolder) {
+        public workspaceFolder: WorkspaceFolder | null) {
     }
 
     public static detect(workspaceFolder: WorkspaceFolder): boolean {
@@ -47,6 +48,9 @@ export class Gradle implements Build {
         // Gradle executable should exist.
         if (!fse.pathExistsSync(gradleExe)) {
             throw new Error("Gradle executable [" + gradleExe + "] not found");
+        }
+        if (!this.workspaceFolder) {
+            throw new Error("WorkSpace path not found.");
         }
         let gradle = path.join(this.workspaceFolder.uri.fsPath, 'build.gradle');
         let process: ChildProcess = cp.spawn(gradleExe, ["clean", "build"], { cwd: this.workspaceFolder.uri.fsPath });
@@ -116,6 +120,10 @@ export class Gradle implements Build {
             }
         }
         return gradleExecStr;
+    }
+
+    public generateProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): void {
+        throw new Error("Gradle project generator not supported yet.");
     }
 
 }
