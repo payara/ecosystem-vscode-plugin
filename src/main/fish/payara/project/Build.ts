@@ -19,6 +19,7 @@
 
 import { Uri } from "vscode";
 import { PayaraMicroProject } from "../micro/PayaraMicroProject";
+import { ChildProcess } from "child_process";
 
 export interface Build {
 
@@ -30,5 +31,24 @@ export interface Build {
 
     generateProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): void;
 
+    isPayaraMicro(): boolean;
+
+    startPayaraMicro(data: (data: string) => any, exit: (artifact: string) => any): ChildProcess;
+
+    reloadPayaraMicro(callback: (artifact: string) => any): void;
+
+    stopPayaraMicro(callback: (artifact: string) => any): void;
+
+    bundlePayaraMicro(callback: (artifact: string) => any): void;
+
+    getGroupId(): string;
+
+    getArtifactId(): string;
+
+    getVersion(): string;
+
+    getFinalName(): string;
+
+    getBuildDir(): string;
 
 }

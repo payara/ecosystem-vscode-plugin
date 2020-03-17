@@ -18,10 +18,11 @@
  */
 
 import * as vscode from 'vscode';
+import * as path from 'path';
 import * as _ from "lodash";
 import * as ui from "../../../UI";
 import { Maven } from '../project/Maven';
-import { OpenDialogOptions } from 'vscode';
+import { OpenDialogOptions, Uri, WorkspaceFolder } from 'vscode';
 import { PayaraMicroProject } from './PayaraMicroProject';
 
 const TITLE = 'Generate a Payara Micro project';
@@ -35,7 +36,7 @@ const PAYARA_MICRO_VERSIONS = [
     '5.184', '5.183', '5.182', '5.181'
 ];
 
-export class PayaraMicroController {
+export class PayaraMicroProjectGenerator {
 
     constructor(
         private context: vscode.ExtensionContext,
@@ -47,19 +48,27 @@ export class PayaraMicroController {
             input => this.groupId(input,
                 {},
                 project => {
-                    new Maven(null).generateProject(project, async (projectPath) => {
-                        const CURRENT_WORKSPACE = "Add to current workspace";
-                        const NEW_WORKSPACE = "Open in new window";
-                        const choice = await vscode.window.showInformationMessage(
-                            "Payara Micro project generated successfully. Would you like to:",
-                            ...[CURRENT_WORKSPACE, NEW_WORKSPACE,]
-                        );
-                        if (choice === CURRENT_WORKSPACE) {
-                            vscode.workspace.updateWorkspaceFolders(0, 0, { uri: projectPath });
-                        } else if (choice === NEW_WORKSPACE) {
-                            await vscode.commands.executeCommand("vscode.openFolder", projectPath, true);
-                        }
-                    });
+                    if (project.targetFolder && project.artifactId) {
+                        let workspaceFolder: WorkspaceFolder = {
+                            uri: vscode.Uri.file(path.join(project.targetFolder.fsPath, project.artifactId)),
+                            name: project.artifactId,
+                            index: 0
+                        };
+                        new Maven(workspaceFolder)
+                            .generateProject(project, async (projectPath) => {
+                                const CURRENT_WORKSPACE = "Add to current workspace";
+                                const NEW_WORKSPACE = "Open in new window";
+                                const choice = await vscode.window.showInformationMessage(
+                                    "Payara Micro project generated successfully. Would you like to:",
+                                    ...[CURRENT_WORKSPACE, NEW_WORKSPACE,]
+                                );
+                                if (choice === CURRENT_WORKSPACE) {
+                                    vscode.workspace.updateWorkspaceFolders(0, 0, { uri: projectPath });
+                                } else if (choice === NEW_WORKSPACE) {
+                                    await vscode.commands.executeCommand("vscode.openFolder", projectPath, true);
+                                }
+                            });
+                    }
                 })
         );
     }

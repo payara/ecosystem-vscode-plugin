@@ -126,4 +126,44 @@ export class Gradle implements Build {
         throw new Error("Gradle project generator not supported yet.");
     }
 
+    public isPayaraMicro(): boolean {
+        throw new Error("isPayaraMicro function not supported yet.");
+    }
+
+    public startPayaraMicro(data: (data: string) => any, exit: (artifact: string) => any): ChildProcess {
+        throw new Error("startPayaraMicro function not supported yet.");
+    }
+
+    public reloadPayaraMicro(callback: (artifact: string) => any) {
+        throw new Error("reloadPayaraMicro function not supported yet.");
+    }
+
+    public stopPayaraMicro(callback: (artifact: string) => any) {
+        throw new Error("stopPayaraMicro function not supported yet.");
+    }
+
+    public bundlePayaraMicro(callback: (artifact: string) => any) {
+        throw new Error("bundlePayaraMicro function not supported yet.");
+    }
+
+    public getGroupId(): string {
+        throw new Error("getGroupId function not supported yet.");
+    }
+
+    public getArtifactId(): string {
+        throw new Error("getArtifactId function not supported yet.");
+    }
+
+    public getVersion(): string {
+        throw new Error("getVersion function not supported yet.");
+    }
+
+    public getFinalName(): string {
+        throw new Error("getFinalName function not supported yet.");
+    }
+
+    public getBuildDir(): string {
+        throw new Error("getBuildDir function not supported yet.");
+    }
+
 }

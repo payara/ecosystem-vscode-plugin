@@ -39,8 +39,16 @@
 		"onCommand:payara.server.app.deploy",
 		"onCommand:payara.server.app.debug",
 		"onCommand:payara.micro.create.project",
+		"onCommand:payara.micro.refresh",
+		"onCommand:payara.micro.refresh.all",
+		"onCommand:payara.micro.start",
+		"onCommand:payara.micro.reload",
+		"onCommand:payara.micro.stop",
+		"onCommand:payara.micro.bundle",
 		"onView:payaraServerExplorer",
-		"onView:payaraServer"
+		"onView:payaraServer",
+		"onView:payaraMicroExplorer",
+		"onView:payaraMicro"
 	],
 	"main": "./out/main/extension.js",
 	"contributes": {
@@ -96,9 +104,9 @@
 			{
 				"command": "payara.server.credentials",
 				"title": "Update Admin Credentials",
-        			"category": "Payara"
+				"category": "Payara"
 			},
-      			{
+			{
 				"command": "payara.server.jdk.home",
 				"title": "JDK Home",
 				"category": "Payara"
@@ -152,6 +160,51 @@
 				"command": "payara.micro.create.project",
 				"title": "Generate a Payara Micro project",
 				"category": "Payara"
+			},
+			{
+				"command": "payara.micro.refresh.all",
+				"title": "Refresh Payara Micro Instances",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/refresh.svg",
+					"dark": "resources/theme/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "payara.micro.start",
+				"title": "Start",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/start.svg",
+					"dark": "resources/theme/dark/start.svg"
+				}
+			},
+			{
+				"command": "payara.micro.reload",
+				"title": "Reload",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/reload.svg",
+					"dark": "resources/theme/dark/reload.svg"
+				}
+			},
+			{
+				"command": "payara.micro.stop",
+				"title": "Stop",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/stop.svg",
+					"dark": "resources/theme/dark/stop.svg"
+				}
+			},
+			{
+				"command": "payara.micro.bundle",
+				"title": "Bundle",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/bundle.svg",
+					"dark": "resources/theme/dark/bundle.svg"
+				}
 			}
 		],
 		"views": {
@@ -159,12 +212,20 @@
 				{
 					"id": "payaraServerExplorer",
 					"name": "Payara Servers"
+				},
+				{
+					"id": "payaraMicroExplorer",
+					"name": "Payara Micro Instances"
 				}
 			],
 			"payaraActivitybar": [
 				{
 					"id": "payaraServer",
 					"name": "Servers"
+				},
+				{
+					"id": "payaraMicro",
+					"name": "Micro Instances"
 				}
 			]
 		},
@@ -188,6 +249,26 @@
 					"command": "payara.server.refresh.all",
 					"when": "view == payaraServerExplorer || view == payaraServer",
 					"group": "navigation@1"
+				},
+				{
+					"command": "payara.micro.refresh.all",
+					"when": "view == payaraMicroExplorer || view == payaraMicro",
+					"group": "navigation@2"
+				},
+				{
+					"command": "payara.micro.start",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "navigation@3"
+				},
+				{
+					"command": "payara.micro.reload",
+					"when": "viewItem == runningPayaraMicro",
+					"group": "navigation@4"
+				},
+				{
+					"command": "payara.micro.stop",
+					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro",
+					"group": "navigation@5"
 				}
 			],
 			"commandPalette": [
@@ -257,6 +338,22 @@
 				},
 				{
 					"command": "payara.server.app.home",
+					"when": "never"
+				},
+				{
+					"command": "payara.micro.start",
+					"when": "never"
+				},
+				{
+					"command": "payara.micro.reload",
+					"when": "never"
+				},
+				{
+					"command": "payara.micro.stop",
+					"when": "never"
+				},
+				{
+					"command": "payara.micro.bundle",
 					"when": "never"
 				}
 			],
@@ -347,6 +444,41 @@
 					"command": "payara.server.app.home",
 					"when": "viewItem == payara-application",
 					"group": "application@4"
+				},
+				{
+					"command": "payara.micro.start",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "inline"
+				},
+				{
+					"command": "payara.micro.reload",
+					"when": "viewItem == runningPayaraMicro",
+					"group": "inline"
+				},
+				{
+					"command": "payara.micro.stop",
+					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro",
+					"group": "inline"
+				},
+				{
+					"command": "payara.micro.start",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "micro@0"
+				},
+				{
+					"command": "payara.micro.reload",
+					"when": "viewItem == runningPayaraMicro",
+					"group": "micro@1"
+				},
+				{
+					"command": "payara.micro.stop",
+					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro",
+					"group": "micro@2"
+				},
+				{
+					"command": "payara.micro.bundle",
+					"when": "viewItem == stoppedPayaraMicro || viewItem == runningPayaraMicro",
+					"group": "micro@3"
 				}
 			]
 		}
