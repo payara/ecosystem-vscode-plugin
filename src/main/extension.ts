@@ -25,6 +25,8 @@ import { PayaraMicroProjectGenerator } from './fish/payara/micro/PayaraMicroProj
 import { PayaraMicroTreeDataProvider } from './fish/payara/micro/PayaraMicroTreeDataProvider';
 import { PayaraMicroInstanceProvider } from './fish/payara/micro/PayaraMicroInstanceProvider';
 import { PayaraMicroInstanceController } from './fish/payara/micro/PayaraMicroInstanceController';
+import * as path from 'path';
+import { exec } from 'child_process';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
@@ -126,7 +128,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			payaraServer => payaraServerInstanceController.updateCredentials(payaraServer)
 		)
 	);
-  	context.subscriptions.push(
+	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.jdk.home',
 			payaraServer => payaraServerInstanceController.updateJDKHome(payaraServer)
@@ -235,9 +237,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			() => payaraMicroProjectGenerator.createProject()
 		)
 	);
+
+	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
+		for (let payaraMicro of payaraMicroInstanceProvider.getMicroInstances()) {
+			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+			if (payaraMicro.isStarted()
+				&& workspaceFolder
+				&& workspaceFolder.uri === payaraMicro.getPath()) {
+				payaraMicroInstanceController.reloadMicro(payaraMicro);
+			}
+		}
+	});
+
 }
-
-
 
 // this method is called when your extension is deactivated
 export function deactivate() { }
