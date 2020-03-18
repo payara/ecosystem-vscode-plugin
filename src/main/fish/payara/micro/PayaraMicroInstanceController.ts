@@ -100,12 +100,6 @@ export class PayaraMicroInstanceController {
         payaraMicro.setState(InstanceState.LODING);
         this.refreshMicroList();
         build.reloadPayaraMicro(artifact => {
-            let explodedDir = path.join(build.getBuildDir(), build.getFinalName());
-            if (!fs.existsSync(explodedDir)) {
-                throw new Error(`${explodedDir} not found`);
-            }
-            let reloadFile = path.join(explodedDir, '.reload');
-            fs.writeFileSync(reloadFile, "");
             payaraMicro.setState(InstanceState.RUNNING);
             this.refreshMicroList();
         });

@@ -197,7 +197,8 @@ export class Maven implements Build {
         this.fireCommand([
             "resources:resources",
             "compiler:compile",
-            "war:exploded"
+            "war:exploded",
+            "payara-micro:reload"
         ], () => { }, callback);
     }
 
