@@ -19,11 +19,9 @@
  * under the License.
  */
 
-import { Uri, workspace } from 'vscode';
+import { workspace } from 'vscode';
 
-import * as fs from "fs";
 import * as fse from "fs-extra";
-import * as path from 'path';
 import * as cp from 'child_process';
 import { JavaUtils } from '../tooling/utils/JavaUtils';
 

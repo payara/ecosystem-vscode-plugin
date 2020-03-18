@@ -19,7 +19,6 @@
  * under the License.
  */
 
-import * as vscode from 'vscode';
 import * as fse from "fs-extra";
 import * as path from 'path';
 import * as cp from 'child_process';

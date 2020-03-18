@@ -19,18 +19,7 @@
 
 import * as vscode from 'vscode';
 import * as _ from "lodash";
-import * as path from "path";
-import * as open from "open";
-import * as xml2js from "xml2js";
-import * as fs from "fs";
-import * as tmp from "tmp";
-import * as fse from "fs-extra";
-import * as cp from 'child_process';
-import * as isPort from 'validator/lib/isPort';
 import * as ui from "../../../UI";
-import { URL } from 'url';
-import { FileResult } from 'tmp';
-import { userInfo } from 'os';
 import { Maven } from '../project/Maven';
 import { OpenDialogOptions } from 'vscode';
 import { PayaraMicroProject } from './PayaraMicroProject';

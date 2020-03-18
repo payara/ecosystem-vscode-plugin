@@ -19,7 +19,6 @@
 
 import * as fse from "fs-extra";
 import * as xml2js from "xml2js";
-import { JDKVersion } from "./JDKVersion";
 import { JvmOption } from "./JvmOption";
 
 export class JvmConfigReader {

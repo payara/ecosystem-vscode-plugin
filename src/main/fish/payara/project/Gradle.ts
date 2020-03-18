@@ -22,7 +22,7 @@ import * as path from 'path';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
-import { WorkspaceFolder, OutputChannel, Uri } from "vscode";
+import { WorkspaceFolder, Uri } from "vscode";
 import { Build } from './Build';
 import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';

@@ -21,7 +21,6 @@ import * as vscode from 'vscode';
 import { PayaraInstanceProvider } from "./fish/payara/server/PayaraInstanceProvider";
 import { PayaraInstanceController } from "./fish/payara/server/PayaraInstanceController";
 import { PayaraServerTreeDataProvider } from "./fish/payara/server/PayaraServerTreeDataProvider";
-import { PayaraServerInstance } from './fish/payara/server/PayaraServerInstance';
 import { PayaraMicroController } from './fish/payara/micro/PayaraMicroController';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
