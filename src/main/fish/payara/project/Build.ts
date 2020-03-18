@@ -19,6 +19,7 @@
 
 import { Uri } from "vscode";
 import { PayaraMicroProject } from "../micro/PayaraMicroProject";
+import { WorkspaceFolder, DebugConfiguration } from "vscode";
 import { ChildProcess } from "child_process";
 
 export interface Build {
@@ -33,13 +34,13 @@ export interface Build {
 
     isPayaraMicro(): boolean;
 
-    startPayaraMicro(data: (data: string) => any, exit: (artifact: string) => any): ChildProcess;
+    startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess;
 
-    reloadPayaraMicro(callback: (artifact: string) => any): void;
+    reloadPayaraMicro(onExit: (artifact: string) => any): void;
 
-    stopPayaraMicro(callback: (artifact: string) => any): void;
+    stopPayaraMicro(onExit: (artifact: string) => any): void;
 
-    bundlePayaraMicro(callback: (artifact: string) => any): void;
+    bundlePayaraMicro(onExit: (artifact: string) => any): void;
 
     getGroupId(): string;
 
@@ -50,5 +51,7 @@ export interface Build {
     getFinalName(): string;
 
     getBuildDir(): string;
+
+    getWorkSpaceFolder(): WorkspaceFolder;
 
 }

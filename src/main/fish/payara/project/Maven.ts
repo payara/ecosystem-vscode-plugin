@@ -22,7 +22,7 @@ import * as path from 'path';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
-import { WorkspaceFolder, Uri } from "vscode";
+import { WorkspaceFolder, Uri, DebugConfiguration } from "vscode";
 import { Build } from './Build';
 import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';
@@ -35,7 +35,6 @@ export class Maven implements Build {
     private pomReader: PomReader | undefined;
 
     constructor(public workspaceFolder: WorkspaceFolder) {
-        
     }
 
     public static detect(workspaceFolder: WorkspaceFolder): boolean {
@@ -184,30 +183,36 @@ export class Maven implements Build {
         return microPluginReader.isPluginFound();
     }
 
-    public startPayaraMicro(data: (data: string) => any, exit: (artifact: string) => any): ChildProcess {
-        return this.fireCommand([
+    public startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess {
+        let cmds = [
             "resources:resources",
             "compiler:compile",
             "war:exploded",
-            "payara-micro:start"
-        ], data, exit);
+            "payara-micro:start",
+            "-Dexploded=true",
+            "-DdeployWar=true"
+        ];
+        if (debugConfig) {
+            cmds.push("-Ddebug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=" + debugConfig.port);
+        }
+        return this.fireCommand(cmds, onData, onExit);
     }
 
-    public reloadPayaraMicro(callback: (artifact: string) => any) {
+    public reloadPayaraMicro(onExit: (artifact: string) => any) {
         this.fireCommand([
             "resources:resources",
             "compiler:compile",
             "war:exploded",
             "payara-micro:reload"
-        ], () => { }, callback);
+        ], () => { }, onExit);
     }
 
-    public stopPayaraMicro(callback: (artifact: string) => any) {
-        this.fireCommand(["payara-micro:stop"], () => { }, callback);
+    public stopPayaraMicro(onExit: (artifact: string) => any) {
+        this.fireCommand(["payara-micro:stop"], () => { }, onExit);
     }
 
-    public bundlePayaraMicro(callback: (artifact: string) => any) {
-        this.fireCommand(["payara-micro:bundle"], () => { }, callback);
+    public bundlePayaraMicro(onExit: (artifact: string) => any) {
+        this.fireCommand(["payara-micro:bundle"], () => { }, onExit);
     }
 
     public getGroupId(): string {
@@ -250,4 +255,9 @@ export class Maven implements Build {
             this.pomReader = new PomReader(pom);
         }
     }
+
+    public getWorkSpaceFolder(): WorkspaceFolder {
+        return this.workspaceFolder;
+    }
+
 }

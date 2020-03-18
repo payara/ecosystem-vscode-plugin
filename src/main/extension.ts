@@ -215,6 +215,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
+			'payara.micro.start.debug',
+			payaraMicro => payaraMicroInstanceController.startMicro(payaraMicro, true)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
 			'payara.micro.reload',
 			payaraMicro => payaraMicroInstanceController.reloadMicro(payaraMicro)
 		)

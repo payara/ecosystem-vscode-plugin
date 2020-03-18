@@ -42,6 +42,7 @@
 		"onCommand:payara.micro.refresh",
 		"onCommand:payara.micro.refresh.all",
 		"onCommand:payara.micro.start",
+		"onCommand:payara.micro.start.debug",
 		"onCommand:payara.micro.reload",
 		"onCommand:payara.micro.stop",
 		"onCommand:payara.micro.bundle",
@@ -177,6 +178,15 @@
 				"icon": {
 					"light": "resources/theme/light/start.svg",
 					"dark": "resources/theme/dark/start.svg"
+				}
+			},
+			{
+				"command": "payara.micro.start.debug",
+				"title": "Start in Debug Mode",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/debug.svg",
+					"dark": "resources/theme/dark/debug.svg"
 				}
 			},
 			{
@@ -345,6 +355,10 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.micro.start.debug",
+					"when": "never"
+				},
+				{
 					"command": "payara.micro.reload",
 					"when": "never"
 				},
@@ -451,6 +465,11 @@
 					"group": "inline"
 				},
 				{
+					"command": "payara.micro.start.debug",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "inline"
+				},
+				{
 					"command": "payara.micro.reload",
 					"when": "viewItem == runningPayaraMicro",
 					"group": "inline"
@@ -463,22 +482,27 @@
 				{
 					"command": "payara.micro.start",
 					"when": "viewItem == stoppedPayaraMicro",
-					"group": "micro@0"
+					"group": "payara-micro@0"
+				},
+				{
+					"command": "payara.micro.start.debug",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "payara-micro@1"
 				},
 				{
 					"command": "payara.micro.reload",
 					"when": "viewItem == runningPayaraMicro",
-					"group": "micro@1"
+					"group": "payara-micro@2"
 				},
 				{
 					"command": "payara.micro.stop",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro",
-					"group": "micro@2"
+					"group": "payara-micro@3"
 				},
 				{
 					"command": "payara.micro.bundle",
 					"when": "viewItem == stoppedPayaraMicro || viewItem == runningPayaraMicro",
-					"group": "micro@3"
+					"group": "payara-micro@4"
 				}
 			]
 		}

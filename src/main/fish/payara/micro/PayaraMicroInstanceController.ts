@@ -28,7 +28,7 @@ import * as fse from "fs-extra";
 import * as cp from 'child_process';
 import * as isPort from 'validator/lib/isPort';
 import * as ui from "../../../UI";
-import { QuickPickItem, CancellationToken, Uri, OutputChannel, QuickPick, QuickInputButton, OpenDialogOptions, workspace, InputBox } from 'vscode';
+import { QuickPickItem, CancellationToken, Uri, OutputChannel, QuickPick, QuickInputButton, OpenDialogOptions, workspace, InputBox, DebugConfiguration } from 'vscode';
 import { ChildProcess } from 'child_process';
 import { URL } from 'url';
 import { ApplicationInstance } from '../project/ApplicationInstance';
@@ -41,6 +41,7 @@ import { FileResult } from 'tmp';
 import { userInfo } from 'os';
 import { PayaraMicroInstance, InstanceState } from './PayaraMicroInstance';
 import { PayaraMicroInstanceProvider } from './PayaraMicroInstanceProvider';
+import { DebugManager } from '../project/DebugManager';
 
 export class PayaraMicroInstanceController {
 
@@ -63,23 +64,33 @@ export class PayaraMicroInstanceController {
             vscode.window.showErrorMessage('Payara Micro instance already running.');
             return;
         }
+        let workspace = vscode.workspace.getWorkspaceFolder(payaraMicro.getPath());
         let build = BuildSupport.getBuild(payaraMicro.getPath());
+
+        let debugConfig: DebugConfiguration | undefined;
+        if (debug) {
+            let debugManager: DebugManager = new DebugManager();
+            debugConfig = debugManager.getPayaraMicroDebugConfig(build.getWorkSpaceFolder());
+            if (!debugConfig) {
+                debugConfig = debugManager.createDebugConfiguration(
+                    build.getWorkSpaceFolder(),
+                    debugManager.getDefaultMicroDebugConfig()
+                );
+            }
+        }
+
         payaraMicro.setState(InstanceState.LODING);
         this.refreshMicroList();
-        let process: ChildProcess = build.startPayaraMicro(
+        let process: ChildProcess = build.startPayaraMicro(debugConfig,
             data => {
                 if (!payaraMicro.isStarted()) {
-                    if (data.indexOf("Payara Micro URLs:") > 0) {
+                    if (debugConfig && data.indexOf("Listening for transport dt_socket at address:") > -1) {
+                        vscode.debug.startDebugging(build.getWorkSpaceFolder(), debugConfig);
+                        debugConfig = undefined;
+                    }
+                    if (this.parseApplicationUrl(data, payaraMicro)) {
                         payaraMicro.setState(InstanceState.RUNNING);
                         this.refreshMicroList();
-                        let lines = data.substring(data.indexOf("Payara Micro URLs:")).split("\n");
-                        if (lines.length > 1) {
-                            payaraMicro.setHomePage(lines[1]);
-                        }
-                        let homePage = payaraMicro.getHomePage();
-                        if (homePage !== undefined) {
-                            open(homePage);
-                        }
                     }
                 }
             },
@@ -90,6 +101,21 @@ export class PayaraMicroInstanceController {
         payaraMicro.setProcess(process);
     }
 
+    private parseApplicationUrl(data: string, payaraMicro: PayaraMicroInstance): boolean {
+        let urlIndex = data.indexOf("Payara Micro URLs:");
+        if (urlIndex > -1) {
+            let lines = data.substring(urlIndex).split("\n");
+            if (lines.length > 1) {
+                payaraMicro.setHomePage(lines[1]);
+            }
+            let homePage = payaraMicro.getHomePage();
+            if (homePage !== undefined && !_.isEmpty(homePage)) {
+                open(homePage);
+            }
+            return true;
+        }
+        return false;
+    }
 
     public async reloadMicro(payaraMicro: PayaraMicroInstance): Promise<void> {
         if (payaraMicro.isStopped()) {

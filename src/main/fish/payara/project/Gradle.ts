@@ -22,7 +22,7 @@ import * as path from 'path';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
-import { WorkspaceFolder, Uri } from "vscode";
+import { WorkspaceFolder, Uri, DebugConfiguration } from "vscode";
 import { Build } from './Build';
 import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';
@@ -30,8 +30,7 @@ import { PayaraMicroProject } from '../micro/PayaraMicroProject';
 
 export class Gradle implements Build {
 
-    constructor(
-        public workspaceFolder: WorkspaceFolder | null) {
+    constructor(public workspaceFolder: WorkspaceFolder) {
     }
 
     public static detect(workspaceFolder: WorkspaceFolder): boolean {
@@ -130,19 +129,19 @@ export class Gradle implements Build {
         throw new Error("isPayaraMicro function not supported yet.");
     }
 
-    public startPayaraMicro(data: (data: string) => any, exit: (artifact: string) => any): ChildProcess {
+    public startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess {
         throw new Error("startPayaraMicro function not supported yet.");
     }
 
-    public reloadPayaraMicro(callback: (artifact: string) => any) {
+    public reloadPayaraMicro(onExit: (artifact: string) => any) {
         throw new Error("reloadPayaraMicro function not supported yet.");
     }
 
-    public stopPayaraMicro(callback: (artifact: string) => any) {
+    public stopPayaraMicro(onExit: (artifact: string) => any) {
         throw new Error("stopPayaraMicro function not supported yet.");
     }
 
-    public bundlePayaraMicro(callback: (artifact: string) => any) {
+    public bundlePayaraMicro(onExit: (artifact: string) => any) {
         throw new Error("bundlePayaraMicro function not supported yet.");
     }
 
@@ -164,6 +163,10 @@ export class Gradle implements Build {
 
     public getBuildDir(): string {
         throw new Error("getBuildDir function not supported yet.");
+    }
+
+    public getWorkSpaceFolder(): WorkspaceFolder {
+        return this.workspaceFolder;
     }
 
 }
