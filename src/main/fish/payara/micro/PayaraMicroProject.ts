@@ -16,19 +16,15 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
-
 import { Uri } from "vscode";
-import { PayaraMicroProject } from "../micro/PayaraMicroProject";
 
-export interface Build {
-
-    buildProject(callback: (artifact: string) => any): void;
-
-    getDefaultHome(): string | undefined;
-
-    getExecutableFullPath(mavenHome: string): string;
-
-    generateProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): void;
-
-
+ export interface PayaraMicroProject {
+    name: string;
+    targetFolder: Uri;
+    package: string;
+    groupId: string;
+    artifactId: string;
+    version: string;
+    contextRoot: string;
+    payaraMicroVersion: string;
 }

@@ -24,7 +24,6 @@ import * as xml2js from 'xml2js';
 import * as vscode from 'vscode';
 import { PayaraServerInstance } from "../PayaraServerInstance";
 import { ClientRequest, IncomingMessage, OutgoingHttpHeaders } from 'http';
-import { IncomingHttpHeaders } from 'http2';
 
 export class RestEndpoints {
 

@@ -38,6 +38,7 @@
 		"onCommand:payara.server.config.open",
 		"onCommand:payara.server.app.deploy",
 		"onCommand:payara.server.app.debug",
+		"onCommand:payara.micro.create.project",
 		"onView:payaraServerExplorer",
 		"onView:payaraServer"
 	],
@@ -145,6 +146,11 @@
 			{
 				"command": "payara.server.app.home",
 				"title": "Open in Browser",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.micro.create.project",
+				"title": "Generate a Payara Micro project",
 				"category": "Payara"
 			}
 		],

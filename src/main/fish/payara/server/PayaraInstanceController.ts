@@ -21,7 +21,6 @@ import * as vscode from 'vscode';
 import * as _ from "lodash";
 import * as path from "path";
 import * as open from "open";
-import * as xml2js from "xml2js";
 import * as fs from "fs";
 import * as tmp from "tmp";
 import * as fse from "fs-extra";
@@ -30,11 +29,8 @@ import * as isPort from 'validator/lib/isPort';
 import * as ui from "./../../../UI";
 import { PayaraInstanceProvider } from "./PayaraInstanceProvider";
 import { PayaraServerInstance, InstanceState } from './PayaraServerInstance';
-import { JvmConfigReader } from './start/JvmConfigReader';
 import { JDKVersion } from './start/JDKVersion';
 import { QuickPickItem, CancellationToken, Uri, OutputChannel, QuickPick, QuickInputButton, OpenDialogOptions, workspace, InputBox } from 'vscode';
-import { JvmOption } from './start/JvmOption';
-import { StringUtils } from './tooling/utils/StringUtils';
 import { ServerUtils } from './tooling/utils/ServerUtils';
 import { JavaUtils } from './tooling/utils/JavaUtils';
 import { StartTask } from './start/StartTask';
@@ -42,13 +38,9 @@ import { ChildProcess } from 'child_process';
 import { RestEndpoints } from './endpoints/RestEndpoints';
 import { URL } from 'url';
 import { ApplicationInstance } from '../project/ApplicationInstance';
-import { IncomingMessage } from 'http';
-import { Build } from '../project/Build';
-import { BuildSupport } from '../project/BuildSupport';
 import { DeploymentSupport } from '../project/DeploymentSupport';
 import { MyButton } from './../../../UI';
 import { FileResult } from 'tmp';
-import { userInfo } from 'os';
 
 export class PayaraInstanceController {
 
