@@ -24,6 +24,7 @@ import * as ui from "../../../UI";
 import { Maven } from '../project/Maven';
 import { OpenDialogOptions, Uri, WorkspaceFolder } from 'vscode';
 import { PayaraMicroProject } from './PayaraMicroProject';
+import { PayaraMicroInstanceController } from './PayaraMicroInstanceController';
 
 const TITLE = 'Generate a Payara Micro project';
 const TOTAL_STEP = 7;
@@ -38,9 +39,7 @@ const PAYARA_MICRO_VERSIONS = [
 
 export class PayaraMicroProjectGenerator {
 
-    constructor(
-        private context: vscode.ExtensionContext,
-        private extensionPath: string) {
+    constructor(private instanceController: PayaraMicroInstanceController) {
     }
 
     public createProject(): void {
@@ -64,6 +63,7 @@ export class PayaraMicroProjectGenerator {
                                 );
                                 if (choice === CURRENT_WORKSPACE) {
                                     vscode.workspace.updateWorkspaceFolders(0, 0, { uri: projectPath });
+                                    this.instanceController.refreshMicroList();
                                 } else if (choice === NEW_WORKSPACE) {
                                     await vscode.commands.executeCommand("vscode.openFolder", projectPath, true);
                                 }
