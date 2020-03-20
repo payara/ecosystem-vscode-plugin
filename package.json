@@ -370,7 +370,7 @@
 		"request": "^2.88.0",
 		"tail": "^2.0.3",
 		"tmp": "^0.1.0",
-		"validator": "^12.2.0",
+		"validator": "^13.0.0",
 		"xml2js": "^0.4.23"
 	},
 	"devDependencies": {
