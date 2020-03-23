@@ -39,15 +39,14 @@ export class PayaraMicroInstanceProvider {
         if (vscode.workspace.workspaceFolders) {
             for (let folder of vscode.workspace.workspaceFolders) {
                 let build = BuildSupport.getBuild(folder.uri);
-                if (build.isPayaraMicro()) {
                     let key = `${folder.uri.fsPath}#${build.getArtifactId()}`;
                     let instance = this.instances.get(key);
                     if(!instance) {
                         instance = new PayaraMicroInstance(this.context, build.getArtifactId(), folder.uri);
                         this.instances.set(key, instance);
                     }
+                    instance.setBuildPluginExist(build.getMicroPluginReader().isPluginFound());
                     instances.push(instance);
-                }
             }
         }
         return instances;

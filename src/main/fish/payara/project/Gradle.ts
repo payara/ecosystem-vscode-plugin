@@ -27,6 +27,7 @@ import { Build } from './Build';
 import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';
 import { PayaraMicroProject } from '../micro/PayaraMicroProject';
+import { MicroPluginReader } from '../micro/MicroPluginReader';
 
 export class Gradle implements Build {
 
@@ -125,8 +126,8 @@ export class Gradle implements Build {
         throw new Error("Gradle project generator not supported yet.");
     }
 
-    public isPayaraMicro(): boolean {
-        throw new Error("isPayaraMicro function not supported yet.");
+    public getMicroPluginReader(): MicroPluginReader {
+        throw new Error("getMicroPluginReader function not supported yet.");
     }
 
     public startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess {

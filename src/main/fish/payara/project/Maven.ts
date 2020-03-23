@@ -29,10 +29,13 @@ import { JavaUtils } from '../server/tooling/utils/JavaUtils';
 import { PayaraMicroProject } from '../micro/PayaraMicroProject';
 import { MicroPluginReader } from '../micro/MicroPluginReader';
 import { PomReader } from './PomReader';
+import { PayaraMicroPlugin } from '../micro/PayaraMicroPlugin';
 
 export class Maven implements Build {
 
     private pomReader: PomReader | undefined;
+
+    private microPluginReader: MicroPluginReader | undefined;
 
     constructor(public workspaceFolder: WorkspaceFolder) {
     }
@@ -65,6 +68,7 @@ export class Maven implements Build {
         if (process.pid) {
             let outputChannel = vscode.window.createOutputChannel(path.basename(this.workspaceFolder.uri.fsPath));
             outputChannel.show(false);
+            outputChannel.append("> " + mavenExe + ' ' + command.join(" ") + '\n');
             let logCallback = (data: string | Buffer): void => {
                 outputChannel.append(data.toString());
                 dataCallback(data.toString());
@@ -177,25 +181,29 @@ export class Maven implements Build {
         }
     }
 
-    public isPayaraMicro(): boolean {
-        let pom = path.join(this.workspaceFolder.uri.fsPath, 'pom.xml');
-        let microPluginReader = new MicroPluginReader(pom);
-        return microPluginReader.isPluginFound();
-    }
-
     public startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess {
-        let cmds = [
-            "resources:resources",
-            "compiler:compile",
-            "war:exploded",
-            "payara-micro:start",
-            "-Dexploded=true",
-            "-DdeployWar=true"
-        ];
+        let cmds: string[] = [];
+        if(this.getMicroPluginReader().isUberJarEnabled() === true) {
+            cmds = [
+                "install",
+                `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.BUNDLE_GOAL}`,
+                `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.START_GOAL}`
+            ];
+        } else {
+            cmds = [
+                "resources:resources",
+                "compiler:compile",
+                "war:exploded",
+                `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.START_GOAL}`,
+                "-Dexploded=true",
+                "-DdeployWar=true"
+            ];
+        }
         if (debugConfig) {
             cmds.push("-Ddebug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=" + debugConfig.port);
         }
         return this.fireCommand(cmds, onData, onExit);
+
     }
 
     public reloadPayaraMicro(onExit: (artifact: string) => any) {
@@ -203,16 +211,22 @@ export class Maven implements Build {
             "resources:resources",
             "compiler:compile",
             "war:exploded",
-            "payara-micro:reload"
+            `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.RELOAD_GOAL}`
         ], () => { }, onExit);
     }
 
     public stopPayaraMicro(onExit: (artifact: string) => any) {
-        this.fireCommand(["payara-micro:stop"], () => { }, onExit);
+        this.fireCommand([
+            `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.STOP_GOAL}`
+        ], () => { }, onExit);
     }
 
     public bundlePayaraMicro(onExit: (artifact: string) => any) {
-        this.fireCommand(["payara-micro:bundle"], () => { }, onExit);
+        let cmds = [
+            "install",
+            `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.BUNDLE_GOAL}`
+        ];
+        this.fireCommand(cmds, () => { }, onExit);
     }
 
     public getGroupId(): string {
@@ -253,6 +267,23 @@ export class Maven implements Build {
         if (Maven.detect(this.workspaceFolder)) {
             let pom = path.join(this.workspaceFolder.uri.fsPath, 'pom.xml');
             this.pomReader = new PomReader(pom);
+        }
+    }
+
+    public getMicroPluginReader(): MicroPluginReader {
+        if (!this.microPluginReader) {
+            this.initializeMicroPluginReader();
+        }
+        if (!this.microPluginReader) {
+            throw Error("Pom reader not initilized yet");
+        }
+        return this.microPluginReader;
+    }
+
+    private initializeMicroPluginReader() {
+        if (Maven.detect(this.workspaceFolder)) {
+            let pom = path.join(this.workspaceFolder.uri.fsPath, 'pom.xml');
+            this.microPluginReader = new MicroPluginReader(pom);
         }
     }
 

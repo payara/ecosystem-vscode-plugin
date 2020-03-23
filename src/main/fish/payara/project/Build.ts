@@ -21,6 +21,7 @@ import { Uri } from "vscode";
 import { PayaraMicroProject } from "../micro/PayaraMicroProject";
 import { WorkspaceFolder, DebugConfiguration } from "vscode";
 import { ChildProcess } from "child_process";
+import { MicroPluginReader } from "../micro/MicroPluginReader";
 
 export interface Build {
 
@@ -32,7 +33,7 @@ export interface Build {
 
     generateProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): void;
 
-    isPayaraMicro(): boolean;
+    getMicroPluginReader(): MicroPluginReader;
 
     startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess;
 

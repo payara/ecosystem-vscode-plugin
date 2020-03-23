@@ -19,10 +19,17 @@
 
 import * as fse from "fs-extra";
 import * as xml2js from "xml2js";
+import { PayaraMicroPlugin } from "./PayaraMicroPlugin";
 
 export class MicroPluginReader {
 
     private pluginFound: boolean = false;
+
+    private deployWar: boolean | undefined;
+
+    private useUberJar: boolean | undefined;
+
+    private exploded: boolean | undefined;
 
     public constructor(public pom: string) {
         this.parsePom();
@@ -39,38 +46,60 @@ export class MicroPluginReader {
         parser.parseString(data,
             function (err: any, result: any) {
                 if (result.project) {
-                    reader.pluginFound = reader.parseBuild(result.project.build);
-                    if (result.project.profiles) {
+                    let plugin = reader.parseBuild(result.project.build);
+                    reader.pluginFound = plugin !== undefined;
+                    if (!reader.pluginFound && result.project.profiles) {
                         for (let profile of result.project.profiles[0].profile) {
                             if (reader.pluginFound) {
                                 break;
                             }
-                            reader.pluginFound = reader.parseBuild(profile.build);
+                            let plugin = reader.parseBuild(profile.build);
+                            reader.pluginFound = plugin !== undefined;
                         }
+                    }
+                    if (plugin
+                        && plugin.configuration[0]) {
+                        let config = plugin.configuration[0];
+                        reader.deployWar = config.deployWar ? JSON.parse(config.deployWar[0]) : undefined;
+                        reader.exploded = config.exploded ? JSON.parse(config.exploded[0]) : undefined;
+                        reader.useUberJar = config.useUberJar ? JSON.parse(config.useUberJar[0]) : undefined;
                     }
                 }
             }
         );
     }
 
-    private parseBuild(build: any): boolean {
+    private parseBuild(build: any) {
         if (build
             && build[0]
-            && build[0].plugins[0]) {
+            && build[0].plugins[0]
+            && build[0].plugins[0].plugin) {
             for (let plugin of build[0].plugins[0].plugin) {
                 let groupId = plugin.groupId[0];
                 let artifactId = plugin.artifactId[0];
-                if (groupId === 'fish.payara.maven.plugins'
-                    && artifactId === 'payara-micro-maven-plugin') {
-                    return true;
+                if (groupId === PayaraMicroPlugin.GROUP_ID
+                    && artifactId === PayaraMicroPlugin.ARTIFACT_ID) {
+                    return plugin;
                 }
             }
         }
-        return false;
+        return undefined;
     }
 
     public isPluginFound(): boolean {
         return this.pluginFound;
+    }
+
+    public isDeployWarEnabled() {
+        return this.deployWar;
+    }
+
+    public isUberJarEnabled() {
+        return this.useUberJar;
+    }
+
+    public isExplodedEnabled() {
+        return this.exploded;
     }
 
 }

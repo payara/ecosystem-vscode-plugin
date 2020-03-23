@@ -17,31 +17,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
 
-import * as vscode from 'vscode';
-import * as _ from "lodash";
-import * as path from "path";
-import * as open from "open";
-import * as xml2js from "xml2js";
-import * as fs from "fs";
-import * as tmp from "tmp";
-import * as fse from "fs-extra";
-import * as cp from 'child_process';
-import * as isPort from 'validator/lib/isPort';
-import * as ui from "../../../UI";
-import { QuickPickItem, CancellationToken, Uri, OutputChannel, QuickPick, QuickInputButton, OpenDialogOptions, workspace, InputBox, DebugConfiguration } from 'vscode';
 import { ChildProcess } from 'child_process';
-import { URL } from 'url';
-import { ApplicationInstance } from '../project/ApplicationInstance';
-import { IncomingMessage } from 'http';
-import { Build } from '../project/Build';
+import * as _ from "lodash";
+import * as open from "open";
+import * as vscode from 'vscode';
+import { DebugConfiguration, OutputChannel } from 'vscode';
 import { BuildSupport } from '../project/BuildSupport';
-import { DeploymentSupport } from '../project/DeploymentSupport';
-import { MyButton } from '../../../UI';
-import { FileResult } from 'tmp';
-import { userInfo } from 'os';
-import { PayaraMicroInstance, InstanceState } from './PayaraMicroInstance';
-import { PayaraMicroInstanceProvider } from './PayaraMicroInstanceProvider';
 import { DebugManager } from '../project/DebugManager';
+import { InstanceState, PayaraMicroInstance } from './PayaraMicroInstance';
+import { PayaraMicroInstanceProvider } from './PayaraMicroInstanceProvider';
 
 export class PayaraMicroInstanceController {
 
@@ -52,11 +36,6 @@ export class PayaraMicroInstanceController {
         private instanceProvider: PayaraMicroInstanceProvider,
         private extensionPath: string) {
         this.outputChannel = vscode.window.createOutputChannel("payara");
-        this.init();
-    }
-
-    private async init(): Promise<void> {
-        this.refreshMicroList();
     }
 
     public async startMicro(payaraMicro: PayaraMicroInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {
@@ -66,6 +45,11 @@ export class PayaraMicroInstanceController {
         }
         let workspace = vscode.workspace.getWorkspaceFolder(payaraMicro.getPath());
         let build = BuildSupport.getBuild(payaraMicro.getPath());
+
+        if (build.getMicroPluginReader().isDeployWarEnabled() === false
+            && build.getMicroPluginReader().isUberJarEnabled() === false) {
+            vscode.window.showWarningMessage('Please either enable the deployWar or useUberJar option in payara-micro-maven-plugin configuration to deploy the application.');
+        }
 
         let debugConfig: DebugConfiguration | undefined;
         if (debug) {
@@ -79,23 +63,21 @@ export class PayaraMicroInstanceController {
             }
         }
 
-        payaraMicro.setState(InstanceState.LODING);
-        this.refreshMicroList();
+        await payaraMicro.setState(InstanceState.LODING);
         let process: ChildProcess = build.startPayaraMicro(debugConfig,
-            data => {
+            async data => {
                 if (!payaraMicro.isStarted()) {
                     if (debugConfig && data.indexOf("Listening for transport dt_socket at address:") > -1) {
                         vscode.debug.startDebugging(build.getWorkSpaceFolder(), debugConfig);
                         debugConfig = undefined;
                     }
                     if (this.parseApplicationUrl(data, payaraMicro)) {
-                        payaraMicro.setState(InstanceState.RUNNING);
-                        this.refreshMicroList();
+                        await payaraMicro.setState(InstanceState.RUNNING);
                     }
                 }
             },
-            artifact => {
-                payaraMicro.setState(InstanceState.STOPPED);
+            async artifact => {
+                await payaraMicro.setState(InstanceState.STOPPED);
             }
         );
         payaraMicro.setProcess(process);
@@ -123,11 +105,9 @@ export class PayaraMicroInstanceController {
             return;
         }
         let build = BuildSupport.getBuild(payaraMicro.getPath());
-        payaraMicro.setState(InstanceState.LODING);
-        this.refreshMicroList();
-        build.reloadPayaraMicro(artifact => {
-            payaraMicro.setState(InstanceState.RUNNING);
-            this.refreshMicroList();
+        await payaraMicro.setState(InstanceState.LODING);
+        build.reloadPayaraMicro(async artifact => {
+            await payaraMicro.setState(InstanceState.RUNNING);
         });
     }
 
@@ -137,9 +117,8 @@ export class PayaraMicroInstanceController {
             return;
         }
         let build = BuildSupport.getBuild(payaraMicro.getPath());
-        build.stopPayaraMicro(artifact => {
-            payaraMicro.setState(InstanceState.STOPPED);
-            this.refreshMicroList();
+        build.stopPayaraMicro(async artifact => {
+            await payaraMicro.setState(InstanceState.STOPPED);
         });
     }
 

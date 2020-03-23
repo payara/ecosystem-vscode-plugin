@@ -42,12 +42,14 @@ export class PomReader {
         parser.parseString(data,
             function (err: any, result: any) {
                 if (result.project) {
-                    reader.groupId = result.project.groupId[0];
-                    reader.artifactId = result.project.artifactId[0];
-                    reader.version = result.project.version[0];
-                    reader.finalName = reader.parseBuild(result.project.build);
-                    if (result.project.profiles) {
-                        for (let profile of result.project.profiles[0].profile) {
+                    let project = result.project;
+                    reader.groupId = project.groupId[0];
+                    reader.artifactId = project.artifactId[0];
+                    reader.version = project.version[0];
+                    reader.finalName = reader.parseBuild(project.build);
+                    if (project.profiles
+                        && project.profiles[0].profile) {
+                        for (let profile of project.profiles[0].profile) {
                             if (reader.finalName.length > 0) {
                                 break;
                             }

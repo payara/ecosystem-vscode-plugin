@@ -6,7 +6,7 @@
  *  https://github.com/microsoft/vscode-extension-samples/
  *--------------------------------------------------------------------------------------------*/
 
-import { QuickPickItem, window, Disposable, CancellationToken, QuickInputButton, QuickInput, ExtensionContext, QuickInputButtons, Uri } from 'vscode';
+import { Disposable, QuickInput, QuickInputButton, QuickInputButtons, QuickPickItem, Uri, window } from 'vscode';
 
 
 // -------------------------------------------------------

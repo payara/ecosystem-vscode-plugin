@@ -17,30 +17,30 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
 
-import * as vscode from 'vscode';
-import * as _ from "lodash";
-import * as path from "path";
-import * as open from "open";
-import * as fs from "fs";
-import * as tmp from "tmp";
-import * as fse from "fs-extra";
 import * as cp from 'child_process';
-import * as isPort from 'validator/lib/isPort';
-import * as ui from "./../../../UI";
-import { PayaraInstanceProvider } from "./PayaraInstanceProvider";
-import { PayaraServerInstance, InstanceState } from './PayaraServerInstance';
-import { JDKVersion } from './start/JDKVersion';
-import { QuickPickItem, CancellationToken, Uri, OutputChannel, QuickPick, QuickInputButton, OpenDialogOptions, workspace, InputBox } from 'vscode';
-import { ServerUtils } from './tooling/utils/ServerUtils';
-import { JavaUtils } from './tooling/utils/JavaUtils';
-import { StartTask } from './start/StartTask';
 import { ChildProcess } from 'child_process';
-import { RestEndpoints } from './endpoints/RestEndpoints';
+import * as fs from "fs";
+import * as fse from "fs-extra";
+import * as _ from "lodash";
+import * as open from "open";
+import * as path from "path";
+import * as tmp from "tmp";
+import { FileResult } from 'tmp';
 import { URL } from 'url';
+import * as isPort from 'validator/lib/isPort';
+import * as vscode from 'vscode';
+import { OpenDialogOptions, OutputChannel, QuickPickItem, Uri } from 'vscode';
 import { ApplicationInstance } from '../project/ApplicationInstance';
 import { DeploymentSupport } from '../project/DeploymentSupport';
-import { MyButton } from './../../../UI';
-import { FileResult } from 'tmp';
+import * as ui from "../../../UI";
+import { MyButton } from '../../../UI';
+import { RestEndpoints } from './endpoints/RestEndpoints';
+import { PayaraInstanceProvider } from "./PayaraInstanceProvider";
+import { InstanceState, PayaraServerInstance } from './PayaraServerInstance';
+import { JDKVersion } from './start/JDKVersion';
+import { StartTask } from './start/StartTask';
+import { JavaUtils } from './tooling/utils/JavaUtils';
+import { ServerUtils } from './tooling/utils/ServerUtils';
 
 export class PayaraInstanceController {
 

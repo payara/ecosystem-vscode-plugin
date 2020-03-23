@@ -17,19 +17,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
 
-import * as vscode from "vscode";
-import * as _ from "lodash";
-import * as path from "path";
-import * as fs from "fs";
-import * as fse from "fs-extra";
-import * as cp from 'child_process';
-import * as xml2js from "xml2js";
-import { Tail } from "tail";
-import { ApplicationInstance } from "../project/ApplicationInstance";
-import { IncomingMessage } from "http";
 import { ChildProcess } from "child_process";
-import { JDKVersion } from "../server/start/JDKVersion";
+import * as path from "path";
+import * as vscode from "vscode";
 import { Uri } from "vscode";
+import { JDKVersion } from "../server/start/JDKVersion";
 
 export class PayaraMicroInstance extends vscode.TreeItem implements vscode.QuickPickItem {
 
@@ -47,11 +39,13 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
 
     private process: ChildProcess | undefined;
 
+    private buildPluginExist: boolean = false;
+
     constructor(private context: vscode.ExtensionContext, private name: string, private path: Uri) {
         super(name);
         this.label = name;
         this.outputChannel = vscode.window.createOutputChannel(name);
-        this.setStarted(false);
+        this.setState(InstanceState.STOPPED);
     }
 
     public getName(): string {
@@ -77,7 +71,6 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
         this.jdkHome = jdkHome;
     }
 
-
     public isLoading(): boolean {
         return this.state === InstanceState.LODING;
     }
@@ -90,24 +83,16 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
         return this.state === InstanceState.STOPPED;
     }
 
-    public setState(state: InstanceState): void {
+    public async setState(state: InstanceState): Promise<void> {
         this.state = state;
-        this.stateUpdated();
+        this.iconPath = this.context.asAbsolutePath(path.join('resources', this.getIcon()));
+        this.contextValue = this.getState();
+        this.tooltip = this.getPath().fsPath;
+        vscode.commands.executeCommand('payara.micro.refresh', this);
     }
 
     public getState(): InstanceState {
         return this.state;
-    }
-
-    public setStarted(started: boolean): void {
-        this.state = started ? InstanceState.RUNNING : InstanceState.STOPPED;
-        this.stateUpdated();
-    }
-
-    private stateUpdated() {
-        this.iconPath = this.context.asAbsolutePath(path.join('resources', this.getIcon()));
-        this.contextValue = this.getState();
-        this.tooltip = this.getPath().fsPath;// + '[' + server.getDomainName() + ']';
     }
 
     public getIcon(): string {
@@ -126,6 +111,14 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
 
     public setHomePage(homePage: string) {
         this.homePage = homePage;
+    }
+
+    public isBuildPluginExist() {
+        return this.buildPluginExist;
+    }
+
+    public setBuildPluginExist(buildPluginExist: boolean) {
+        this.buildPluginExist = buildPluginExist;
     }
 
     public getProcess() {
