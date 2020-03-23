@@ -183,7 +183,7 @@ export class Maven implements Build {
 
     public startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess {
         let cmds: string[] = [];
-        if(this.getMicroPluginReader().isUberJarEnabled() === true) {
+        if(this.getMicroPluginReader().isUberJarEnabled()) {
             cmds = [
                 "install",
                 `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.BUNDLE_GOAL}`,
@@ -207,6 +207,10 @@ export class Maven implements Build {
     }
 
     public reloadPayaraMicro(onExit: (artifact: string) => any) {
+        if(this.getMicroPluginReader().isUberJarEnabled()) {
+            vscode.window.showWarningMessage('The reload action not supported for UberJar artifact.');
+            return;
+        }
         this.fireCommand([
             "resources:resources",
             "compiler:compile",
