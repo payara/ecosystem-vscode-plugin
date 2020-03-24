@@ -22,16 +22,16 @@ import * as path from 'path';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
-import { WorkspaceFolder, Uri } from "vscode";
+import { WorkspaceFolder, Uri, DebugConfiguration } from "vscode";
 import { Build } from './Build';
 import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';
 import { PayaraMicroProject } from '../micro/PayaraMicroProject';
+import { MicroPluginReader } from '../micro/MicroPluginReader';
 
 export class Gradle implements Build {
 
-    constructor(
-        public workspaceFolder: WorkspaceFolder | null) {
+    constructor(public workspaceFolder: WorkspaceFolder) {
     }
 
     public static detect(workspaceFolder: WorkspaceFolder): boolean {
@@ -124,6 +124,50 @@ export class Gradle implements Build {
 
     public generateProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): void {
         throw new Error("Gradle project generator not supported yet.");
+    }
+
+    public getMicroPluginReader(): MicroPluginReader {
+        throw new Error("getMicroPluginReader function not supported yet.");
+    }
+
+    public startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess {
+        throw new Error("startPayaraMicro function not supported yet.");
+    }
+
+    public reloadPayaraMicro(onExit: (artifact: string) => any) {
+        throw new Error("reloadPayaraMicro function not supported yet.");
+    }
+
+    public stopPayaraMicro(onExit: (artifact: string) => any) {
+        throw new Error("stopPayaraMicro function not supported yet.");
+    }
+
+    public bundlePayaraMicro(onExit: (artifact: string) => any) {
+        throw new Error("bundlePayaraMicro function not supported yet.");
+    }
+
+    public getGroupId(): string {
+        throw new Error("getGroupId function not supported yet.");
+    }
+
+    public getArtifactId(): string {
+        throw new Error("getArtifactId function not supported yet.");
+    }
+
+    public getVersion(): string {
+        throw new Error("getVersion function not supported yet.");
+    }
+
+    public getFinalName(): string {
+        throw new Error("getFinalName function not supported yet.");
+    }
+
+    public getBuildDir(): string {
+        throw new Error("getBuildDir function not supported yet.");
+    }
+
+    public getWorkSpaceFolder(): WorkspaceFolder {
+        return this.workspaceFolder;
     }
 
 }
