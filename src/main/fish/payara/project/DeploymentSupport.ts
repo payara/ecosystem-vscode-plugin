@@ -17,12 +17,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
 
-import { Uri } from "vscode";
+import * as vscode from 'vscode';
+import * as path from 'path';
+import { Uri, DebugConfiguration } from "vscode";
 import { PayaraServerInstance } from "../server/PayaraServerInstance";
 import { BuildSupport } from "./BuildSupport";
 import { RestEndpoints } from "../server/endpoints/RestEndpoints";
 import { ApplicationInstance } from "./ApplicationInstance";
 import { PayaraInstanceController } from "../server/PayaraInstanceController";
+import { DebugManager } from "./DebugManager";
+import * as fs from 'fs';
 
 export class DeploymentSupport {
 
@@ -30,13 +34,13 @@ export class DeploymentSupport {
         public controller: PayaraInstanceController) {
     }
 
-    public buildAndDeployApplication(uri: Uri, payaraServer: PayaraServerInstance) {
+    public buildAndDeployApplication(uri: Uri, payaraServer: PayaraServerInstance, debug: boolean) {
         return BuildSupport
             .getBuild(uri)
-            .buildProject(artifact => this.deployApplication(artifact, payaraServer));
+            .buildProject(artifact => this.deployApplication(artifact, payaraServer, debug));
     }
 
-    public deployApplication(appPath: string, payaraServer: PayaraServerInstance) {
+    public deployApplication(appPath: string, payaraServer: PayaraServerInstance, debug: boolean) {
         let support = this;
         payaraServer.getOutputChannel().show(false);
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
@@ -47,6 +51,29 @@ export class DeploymentSupport {
                 let property = message.property[0].$;
                 if (property.name === 'name') {
                     let appName = <string>property.value;
+                    let workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(appPath));
+
+                    if (debug && workspaceFolder) {
+                        let debugConfig: DebugConfiguration | undefined;
+                        let debugManager: DebugManager = new DebugManager();
+                        debugConfig = debugManager.getPayaraServerDebugConfig(workspaceFolder);
+                        if (!debugConfig) {
+                            debugConfig = debugManager.createDebugConfiguration(
+                                workspaceFolder,
+                                debugManager.getDefaultServerDebugConfig()
+                            );
+                        }
+                        if (vscode.debug.activeDebugSession) {
+                            let session = vscode.debug.activeDebugSession;
+                            if (session.configuration.port !== debugConfig.port
+                                || session.configuration.type !== debugConfig.type) {
+                                    vscode.debug.startDebugging(workspaceFolder, debugConfig);
+                            }
+                        } else {
+                            vscode.debug.startDebugging(workspaceFolder, debugConfig);
+                        }
+                    }
+
                     support.controller.openApp(new ApplicationInstance(payaraServer, appName));
                     payaraServer.reloadApplications();
                     support.controller.refreshServerList();

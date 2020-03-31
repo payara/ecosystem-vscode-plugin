@@ -29,7 +29,7 @@ import { FileResult } from 'tmp';
 import { URL } from 'url';
 import * as isPort from 'validator/lib/isPort';
 import * as vscode from 'vscode';
-import { OpenDialogOptions, OutputChannel, QuickPickItem, Uri } from 'vscode';
+import { OpenDialogOptions, OutputChannel, QuickPickItem, Uri, DebugConfiguration } from 'vscode';
 import { ApplicationInstance } from '../project/ApplicationInstance';
 import { DeploymentSupport } from '../project/DeploymentSupport';
 import * as ui from "../../../UI";
@@ -41,6 +41,8 @@ import { JDKVersion } from './start/JDKVersion';
 import { StartTask } from './start/StartTask';
 import { JavaUtils } from './tooling/utils/JavaUtils';
 import { ServerUtils } from './tooling/utils/ServerUtils';
+import { DebugManager } from '../project/DebugManager';
+import { BuildSupport } from '../project/BuildSupport';
 
 export class PayaraInstanceController {
 
@@ -452,6 +454,7 @@ export class PayaraInstanceController {
             vscode.window.showErrorMessage('Payara Server instance already running.');
             return;
         }
+
         let process: ChildProcess = new StartTask().startServer(payaraServer, debug);
         if (process.pid) {
             payaraServer.setDebug(debug);
@@ -703,9 +706,9 @@ export class PayaraInstanceController {
             let deploy = (status: boolean) => {
                 if (status) {
                     if (uri.fsPath.endsWith('.war') || uri.fsPath.endsWith('.jar')) {
-                        support.deployApplication(uri.fsPath, server);
+                        support.deployApplication(uri.fsPath, server, debug);
                     } else {
-                        support.buildAndDeployApplication(uri, server);
+                        support.buildAndDeployApplication(uri, server, debug);
                     }
                 } else {
                     vscode.window.showErrorMessage('Unable to deploy the application as Payara Server instance not running.');

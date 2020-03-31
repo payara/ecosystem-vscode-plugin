@@ -43,7 +43,7 @@ export class PayaraMicroInstanceController {
             vscode.window.showErrorMessage('Payara Micro instance already running.');
             return;
         }
-        let workspace = vscode.workspace.getWorkspaceFolder(payaraMicro.getPath());
+        let workspaceFolder = vscode.workspace.getWorkspaceFolder(payaraMicro.getPath());
         let build = BuildSupport.getBuild(payaraMicro.getPath());
 
         if (build.getMicroPluginReader().isDeployWarEnabled() === false
@@ -52,12 +52,12 @@ export class PayaraMicroInstanceController {
         }
 
         let debugConfig: DebugConfiguration | undefined;
-        if (debug) {
+        if (debug && workspaceFolder) {
             let debugManager: DebugManager = new DebugManager();
-            debugConfig = debugManager.getPayaraMicroDebugConfig(build.getWorkSpaceFolder());
+            debugConfig = debugManager.getPayaraMicroDebugConfig(workspaceFolder);
             if (!debugConfig) {
                 debugConfig = debugManager.createDebugConfiguration(
-                    build.getWorkSpaceFolder(),
+                    workspaceFolder,
                     debugManager.getDefaultMicroDebugConfig()
                 );
             }
@@ -68,7 +68,7 @@ export class PayaraMicroInstanceController {
             async data => {
                 if (!payaraMicro.isStarted()) {
                     if (debugConfig && data.indexOf("Listening for transport dt_socket at address:") > -1) {
-                        vscode.debug.startDebugging(build.getWorkSpaceFolder(), debugConfig);
+                        vscode.debug.startDebugging(workspaceFolder, debugConfig);
                         debugConfig = undefined;
                     }
                     if (this.parseApplicationUrl(data, payaraMicro)) {
