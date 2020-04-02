@@ -18,15 +18,15 @@
  */
 
 import * as fs from "fs";
-import { WorkspaceFolder, OutputChannel, DebugConfiguration, workspace, WorkspaceConfiguration } from "vscode";
+import { WorkspaceFolder, OutputChannel, DebugConfiguration, workspace, WorkspaceConfiguration, Uri } from "vscode";
 import { BuildSupport } from "./BuildSupport";
+import { PayaraServerInstance } from "../server/PayaraServerInstance";
 
 export class DebugManager {
 
     public getPayaraMicroDebugConfig(workspaceFolder: WorkspaceFolder): DebugConfiguration | undefined {
 
-        const debugConfig: DebugConfiguration[] = this.getDebugConfigurations(workspaceFolder);
-        for (const config of debugConfig) {
+        for (const config of this.getDebugConfigurations(workspaceFolder.uri)) {
             if (config.name && config.name.startsWith('Payara Micro')) {
                 return config;
             }
@@ -34,8 +34,18 @@ export class DebugManager {
         return undefined;
     }
 
-    private getDebugConfigurations(workspaceFolder: WorkspaceFolder): DebugConfiguration[] {
-        let workspaceConfiguration: WorkspaceConfiguration = workspace.getConfiguration('launch', workspaceFolder.uri);
+    public getPayaraServerDebugConfig(workspaceFolder: WorkspaceFolder): DebugConfiguration | undefined {
+
+        for (const config of this.getDebugConfigurations(workspaceFolder.uri)) {
+            if (config.name && config.name.startsWith('Payara Server')) {
+                return config;
+            }
+        }
+        return undefined;
+    }
+
+    public getDebugConfigurations(target: Uri): DebugConfiguration[] {
+        let workspaceConfiguration: WorkspaceConfiguration = workspace.getConfiguration('launch', target);
         let configurations: DebugConfiguration[] | undefined = workspaceConfiguration.get<DebugConfiguration[]>('configurations');
         return configurations ? configurations : [];
     }
@@ -82,7 +92,7 @@ export class DebugManager {
             request: "attach",
             hostName: "localhost",
             name: "Payara Server application",
-            port: 9009
+            port: 9006
         };
     }
 

@@ -75,22 +75,38 @@
 			{
 				"command": "payara.server.start",
 				"title": "Start",
-				"category": "Payara"
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/start.svg",
+					"dark": "resources/theme/dark/start.svg"
+				}
 			},
 			{
 				"command": "payara.server.start.debug",
 				"title": "Start in Debug Mode",
-				"category": "Payara"
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/debug.svg",
+					"dark": "resources/theme/dark/debug.svg"
+				}
 			},
 			{
 				"command": "payara.server.restart",
 				"title": "Restart",
-				"category": "Payara"
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/reload.svg",
+					"dark": "resources/theme/dark/reload.svg"
+				}
 			},
 			{
 				"command": "payara.server.stop",
 				"title": "Stop",
-				"category": "Payara"
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/stop.svg",
+					"dark": "resources/theme/dark/stop.svg"
+				}
 			},
 			{
 				"command": "payara.server.remove",
@@ -384,6 +400,26 @@
 				}
 			],
 			"view/item/context": [
+				{
+					"command": "payara.server.start",
+					"when": "viewItem == stoppedPayara",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.start.debug",
+					"when": "viewItem == stoppedPayara",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.restart",
+					"when": "viewItem == runningPayara",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.stop",
+					"when": "viewItem == loadingPayara || viewItem == runningPayara",
+					"group": "inline"
+				},
 				{
 					"command": "payara.server.start",
 					"when": "viewItem == stoppedPayara",
