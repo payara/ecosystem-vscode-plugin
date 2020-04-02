@@ -21,6 +21,7 @@ import * as vscode from "vscode";
 import * as xml2js from "xml2js";
 import { PayaraServerInstance } from '../server/PayaraServerInstance';
 import { RestEndpoints } from "../server/endpoints/RestEndpoints";
+import { ProjectOutputWindowProvider } from "./ProjectOutputWindowProvider";
 
 export class ApplicationInstance extends vscode.TreeItem {
 
@@ -35,7 +36,7 @@ export class ApplicationInstance extends vscode.TreeItem {
         public name: string,
         public appType?: string | null) {
         super(name);
-        this.outputChannel = vscode.window.createOutputChannel(name);
+        this.outputChannel = ProjectOutputWindowProvider.getInstance().get(name);
     }
 
     public setEnabled(status: boolean): void {

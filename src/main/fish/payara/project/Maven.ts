@@ -30,6 +30,7 @@ import { PayaraMicroProject } from '../micro/PayaraMicroProject';
 import { MicroPluginReader } from '../micro/MicroPluginReader';
 import { PomReader } from './PomReader';
 import { PayaraMicroPlugin } from '../micro/PayaraMicroPlugin';
+import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
 
 export class Maven implements Build {
 
@@ -66,7 +67,7 @@ export class Maven implements Build {
         let process: ChildProcess = cp.spawn(mavenExe, command, { cwd: this.workspaceFolder.uri.fsPath });
 
         if (process.pid) {
-            let outputChannel = vscode.window.createOutputChannel(path.basename(this.workspaceFolder.uri.fsPath));
+            let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
             outputChannel.show(false);
             outputChannel.append("> " + mavenExe + ' ' + command.join(" ") + '\n');
             let logCallback = (data: string | Buffer): void => {
@@ -161,7 +162,7 @@ export class Maven implements Build {
         let process: ChildProcess = cp.spawn(mavenExe, cmdArgs, { cwd: project.targetFolder?.fsPath });
 
         if (process.pid) {
-            let outputChannel = vscode.window.createOutputChannel(`${project.artifactId}`);
+            let outputChannel = ProjectOutputWindowProvider.getInstance().get(`${project.artifactId}`);
             outputChannel.show(false);
             let logCallback = (data: string | Buffer): void => outputChannel.append(data.toString());
             if (process.stdout !== null) {
