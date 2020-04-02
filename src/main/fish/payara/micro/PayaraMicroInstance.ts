@@ -41,6 +41,8 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
 
     private buildPluginExist: boolean = false;
 
+    private debug: boolean = false;
+
     constructor(private context: vscode.ExtensionContext, private name: string, private path: Uri) {
         super(name);
         this.label = name;
@@ -69,6 +71,14 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
 
     public setJDKHome(jdkHome: string) {
         this.jdkHome = jdkHome;
+    }
+
+    public setDebug(debug: boolean): void {
+        this.debug = debug;
+    }
+
+    public isDebug(): boolean {
+        return this.debug;
     }
 
     public isLoading(): boolean {
@@ -100,7 +110,11 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
         if (this.isLoading()) {
             icon = `payara-loading.svg`;
         } else if (this.isStarted()) {
-            icon = `payara-started.svg`;
+            if (this.isDebug()) {
+                icon = `payara-started-debug.svg`;
+            } else {
+                icon = `payara-started.svg`;
+            }
         }
         return icon;
     }

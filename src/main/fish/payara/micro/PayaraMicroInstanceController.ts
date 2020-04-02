@@ -63,6 +63,7 @@ export class PayaraMicroInstanceController {
             }
         }
 
+        payaraMicro.setDebug(debug);
         await payaraMicro.setState(InstanceState.LODING);
         let process: ChildProcess = build.startPayaraMicro(debugConfig,
             async data => {
@@ -118,6 +119,7 @@ export class PayaraMicroInstanceController {
         }
         let build = BuildSupport.getBuild(payaraMicro.getPath());
         build.stopPayaraMicro(async artifact => {
+            payaraMicro.setDebug(false);
             await payaraMicro.setState(InstanceState.STOPPED);
         });
     }
