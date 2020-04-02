@@ -21,7 +21,7 @@ import { ChildProcess } from 'child_process';
 import * as _ from "lodash";
 import * as open from "open";
 import * as vscode from 'vscode';
-import { DebugConfiguration, OutputChannel } from 'vscode';
+import { DebugConfiguration } from 'vscode';
 import { BuildSupport } from '../project/BuildSupport';
 import { DebugManager } from '../project/DebugManager';
 import { InstanceState, PayaraMicroInstance } from './PayaraMicroInstance';
@@ -29,13 +29,10 @@ import { PayaraMicroInstanceProvider } from './PayaraMicroInstanceProvider';
 
 export class PayaraMicroInstanceController {
 
-    private outputChannel: OutputChannel;
-
     constructor(
         private context: vscode.ExtensionContext,
         private instanceProvider: PayaraMicroInstanceProvider,
         private extensionPath: string) {
-        this.outputChannel = vscode.window.createOutputChannel("payara");
     }
 
     public async startMicro(payaraMicro: PayaraMicroInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {

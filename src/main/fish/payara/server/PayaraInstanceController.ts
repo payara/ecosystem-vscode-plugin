@@ -43,16 +43,14 @@ import { JavaUtils } from './tooling/utils/JavaUtils';
 import { ServerUtils } from './tooling/utils/ServerUtils';
 import { DebugManager } from '../project/DebugManager';
 import { BuildSupport } from '../project/BuildSupport';
+import { ProjectOutputWindowProvider } from '../project/ProjectOutputWindowProvider';
 
 export class PayaraInstanceController {
-
-    private outputChannel: OutputChannel;
 
     constructor(
         private context: vscode.ExtensionContext,
         private instanceProvider: PayaraInstanceProvider,
         private extensionPath: string) {
-        this.outputChannel = vscode.window.createOutputChannel("payara");
         this.init();
     }
 
@@ -161,9 +159,10 @@ export class PayaraInstanceController {
         args.push(domainName);
         let process: ChildProcess = cp.spawn(javaVmExe, args, { cwd: serverPath });
         if (process.pid) {
-            this.outputChannel.show(false);
-            this.outputChannel.append('Running the create-domain asadmin command ... \n');
-            let logCallback = (data: string | Buffer): void => this.outputChannel.append(data.toString());
+            let outputChannel = ProjectOutputWindowProvider.getInstance().get(serverName);
+            outputChannel.show(false);
+            outputChannel.append('Running the create-domain asadmin command ... \n');
+            let logCallback = (data: string | Buffer): void => outputChannel.append(data.toString());
             if (process.stdout !== null) {
                 process.stdout.on('data', logCallback);
             }

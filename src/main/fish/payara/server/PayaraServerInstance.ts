@@ -31,6 +31,7 @@ import { ApplicationInstance } from "../project/ApplicationInstance";
 import { RestEndpoints } from "./endpoints/RestEndpoints";
 import { IncomingMessage } from "http";
 import { ChildProcess } from "child_process";
+import { ProjectOutputWindowProvider } from "../project/ProjectOutputWindowProvider";
 
 export class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem {
 
@@ -59,7 +60,7 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
     constructor(private name: string, private path: string, private domainName: string) {
         super(name);
         this.label = name;
-        this.outputChannel = vscode.window.createOutputChannel(name);
+        this.outputChannel = ProjectOutputWindowProvider.getInstance().get(name);
     }
 
     public getName(): string {

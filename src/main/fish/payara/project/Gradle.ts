@@ -28,6 +28,7 @@ import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';
 import { PayaraMicroProject } from '../micro/PayaraMicroProject';
 import { MicroPluginReader } from '../micro/MicroPluginReader';
+import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
 
 export class Gradle implements Build {
 
@@ -56,7 +57,7 @@ export class Gradle implements Build {
         let process: ChildProcess = cp.spawn(gradleExe, ["clean", "build"], { cwd: this.workspaceFolder.uri.fsPath });
 
         if (process.pid) {
-            let outputChannel = vscode.window.createOutputChannel(path.basename(this.workspaceFolder.uri.fsPath));
+            let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
             outputChannel.show(false);
             let logCallback = (data: string | Buffer): void => outputChannel.append(data.toString());
             if (process.stdout !== null) {

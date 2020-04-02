@@ -22,6 +22,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { Uri } from "vscode";
 import { JDKVersion } from "../server/start/JDKVersion";
+import { ProjectOutputWindowProvider } from "../project/ProjectOutputWindowProvider";
 
 export class PayaraMicroInstance extends vscode.TreeItem implements vscode.QuickPickItem {
 
@@ -46,7 +47,7 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
     constructor(private context: vscode.ExtensionContext, private name: string, private path: Uri) {
         super(name);
         this.label = name;
-        this.outputChannel = vscode.window.createOutputChannel(name);
+        this.outputChannel = ProjectOutputWindowProvider.getInstance().get(name);
         this.setState(InstanceState.STOPPED);
     }
 
