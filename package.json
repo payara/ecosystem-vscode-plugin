@@ -1,6 +1,6 @@
 {
 	"name": "payara-vscode",
-	"displayName": "Payara VSCode",
+	"displayName": "Payara Tools",
 	"description": "Payara Tools for Visual Studio Code",
 	"version": "0.0.3-SNAPSHOT",
 	"publisher": "Payara",
@@ -13,7 +13,9 @@
 		"Java",
 		"Jakarta EE",
 		"MicroProfile",
-		"Payara"
+		"Payara",
+		"Payara Server",
+		"Payara Micro"
 	],
 	"engines": {
 		"vscode": "^1.22.0"
