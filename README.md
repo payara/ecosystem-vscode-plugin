@@ -39,4 +39,4 @@
 
 #### Usage
 
-![start micro instance](resources/PayaraMicror.gif)
+![start micro instance](resources/PayaraMicro.gif)
