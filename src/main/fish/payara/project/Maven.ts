@@ -21,24 +21,26 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as cp from 'child_process';
 import * as fs from 'fs';
-import * as fse from 'fs-extra';
 import { WorkspaceFolder, Uri, DebugConfiguration } from "vscode";
 import { Build } from './Build';
 import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';
 import { PayaraMicroProject } from '../micro/PayaraMicroProject';
-import { MicroPluginReader } from '../micro/MicroPluginReader';
-import { PomReader } from './PomReader';
-import { PayaraMicroPlugin } from '../micro/PayaraMicroPlugin';
+import { MicroPluginReader } from './MicroPluginReader';
+import { MavenPomReader } from './MavenPomReader';
+import { PayaraMicroMavenPlugin } from '../micro/PayaraMicroMavenPlugin';
 import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
+import { MavenMicroPluginReader } from './MavenMicroPluginReader';
+import { BuildReader } from './BuildReader';
 
 export class Maven implements Build {
 
-    private pomReader: PomReader | undefined;
+    private pomReader: BuildReader | undefined;
 
     private microPluginReader: MicroPluginReader | undefined;
 
     constructor(public workspaceFolder: WorkspaceFolder) {
+        this.readBuildConfig();
     }
 
     public static detect(workspaceFolder: WorkspaceFolder): boolean {
@@ -47,17 +49,49 @@ export class Maven implements Build {
     }
 
     public buildProject(callback: (artifact: string) => any): void {
-        this.fireCommand(["clean", "install"], () => { }, callback);
+        this.fireCommand(["clean", "install"],
+            () => { },
+            (code) => {
+                if (code === 0 && this.workspaceFolder) {
+                    let targetDir = this.getBuildDir();
+                    let artifacts = fs.readdirSync(targetDir);
+                    let artifact: string | null = null;
+                    for (var i = 0; i < artifacts.length; i++) {
+                        var filename = path.join(targetDir, artifacts[i]);
+                        if (artifacts[i].endsWith('.war')
+                            || artifacts[i].endsWith('.jar')
+                            || artifacts[i] === this.getBuildReader().getFinalName()) {
+                            artifact = filename;
+                        }
+                    }
+                    if (artifact !== null) {
+                        callback(artifact);
+                    } else {
+                        vscode.window.showErrorMessage(artifact + ' not found.');
+                    }
+                }
+                if (code !== 0) {
+                    console.warn(`buildProject task failed with exit code ${code}`);
+                }
+            },
+            (error) => { 
+                console.error(`Error on executing buildProject task: ${error.message}`);
+             }
+        );
     }
 
-    public fireCommand(command: string[], dataCallback: (data: string) => any, exitcallback: (artifact: string) => any): ChildProcess {
+    public fireCommand(command: string[],
+        dataCallback: (data: string) => any,
+        exitCallback: (code: number) => any,
+        errorCallback: (err: Error) => any): ChildProcess {
+
         let mavenHome: string | undefined = this.getDefaultHome();
         if (!mavenHome) {
             throw new Error("Maven home path not found.");
         }
         let mavenExe: string = this.getExecutableFullPath(mavenHome);
         // Maven executable should exist.
-        if (!fse.pathExistsSync(mavenExe)) {
+        if (!fs.existsSync(mavenExe)) {
             throw new Error("Maven executable [" + mavenExe + "] not found");
         }
         if (!this.workspaceFolder) {
@@ -80,29 +114,8 @@ export class Maven implements Build {
             if (process.stderr !== null) {
                 process.stderr.on('data', logCallback);
             }
-            process.on('error', (err: Error) => {
-                console.log('error: ' + err.message);
-            });
-            process.on('exit', (code: number) => {
-                if (code === 0 && this.workspaceFolder) {
-                    let targetDir = this.getBuildDir();
-                    let artifacts = fs.readdirSync(targetDir);
-                    let artifact: string | null = null;
-                    for (var i = 0; i < artifacts.length; i++) {
-                        var filename = path.join(targetDir, artifacts[i]);
-                        if (artifacts[i].endsWith('.war')
-                            || artifacts[i].endsWith('.jar')
-                            || artifacts[i] === this.getFinalName()) {
-                            artifact = filename;
-                        }
-                    }
-                    if (artifact !== null) {
-                        exitcallback(artifact);
-                    } else {
-                        vscode.window.showErrorMessage(artifact + ' not found.');
-                    }
-                }
-            });
+            process.on('error', errorCallback);
+            process.on('exit', exitCallback);
         }
         return process;
     }
@@ -137,14 +150,47 @@ export class Maven implements Build {
         return mavenExecStr;
     }
 
-    public generateProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): void {
+    public getBuildDir(): string {
+        let targetDir = path.join(this.workspaceFolder.uri.fsPath, 'target');
+        if (!fs.existsSync(targetDir)) {
+            throw Error("no target dir found: " + targetDir);
+        }
+        return targetDir;
+    }
+
+    public getWorkSpaceFolder(): WorkspaceFolder {
+        return this.workspaceFolder;
+    }
+
+    public getBuildReader(): BuildReader {
+        if (!this.pomReader) {
+            throw Error("Pom reader not initilized yet");
+        }
+        return this.pomReader;
+    }
+
+    public getMicroPluginReader(): MicroPluginReader {
+        if (!this.microPluginReader) {
+            throw Error("Pom reader not initilized yet");
+        }
+        return this.microPluginReader;
+    }
+
+    public readBuildConfig() {
+        if (Maven.detect(this.workspaceFolder)) {
+            this.microPluginReader = new MavenMicroPluginReader(this.workspaceFolder);
+            this.pomReader = new MavenPomReader(this.workspaceFolder);
+        }
+    }
+
+    public generateMicroProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): ChildProcess | undefined {
         let mavenHome: string | undefined = this.getDefaultHome();
         if (!mavenHome) {
             throw new Error("Maven home path not found.");
         }
         let mavenExe: string = this.getExecutableFullPath(mavenHome);
         // Maven executable should exist.
-        if (!fse.pathExistsSync(mavenExe)) {
+        if (!fs.existsSync(mavenExe)) {
             throw new Error("Maven executable [" + mavenExe + "] not found");
         }
         const cmdArgs: string[] = [
@@ -181,120 +227,81 @@ export class Maven implements Build {
                 }
             });
         }
+        return process;
     }
 
-    public startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess {
+    public startPayaraMicro(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+
         let cmds: string[] = [];
-        if(this.getMicroPluginReader().isUberJarEnabled()) {
+
+        if (this.getMicroPluginReader().isDeployWarEnabled() === false
+            && this.getMicroPluginReader().isUberJarEnabled() === false) {
+            vscode.window.showWarningMessage('Please either enable the deployWar or useUberJar option in payara-micro-maven-plugin configuration to deploy the application.');
+            return;
+        }
+
+        if (this.getMicroPluginReader().isUberJarEnabled()) {
             cmds = [
                 "install",
-                `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.BUNDLE_GOAL}`,
-                `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.START_GOAL}`
+                `${PayaraMicroMavenPlugin.GROUP_ID}:${PayaraMicroMavenPlugin.ARTIFACT_ID}:${PayaraMicroMavenPlugin.BUNDLE_GOAL}`,
+                `${PayaraMicroMavenPlugin.GROUP_ID}:${PayaraMicroMavenPlugin.ARTIFACT_ID}:${PayaraMicroMavenPlugin.START_GOAL}`
             ];
         } else {
             cmds = [
                 "resources:resources",
                 "compiler:compile",
                 "war:exploded",
-                `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.START_GOAL}`,
+                `${PayaraMicroMavenPlugin.GROUP_ID}:${PayaraMicroMavenPlugin.ARTIFACT_ID}:${PayaraMicroMavenPlugin.START_GOAL}`,
                 "-Dexploded=true",
                 "-DdeployWar=true"
             ];
         }
         if (debugConfig) {
-            cmds.push("-Ddebug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=" + debugConfig.port);
+            cmds.push(`-Ddebug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugConfig.port}`);
         }
-        return this.fireCommand(cmds, onData, onExit);
+        return this.fireCommand(cmds, onData, onExit, onError);
 
     }
 
-    public reloadPayaraMicro(onExit: (artifact: string) => any) {
-        if(this.getMicroPluginReader().isUberJarEnabled()) {
+    public reloadPayaraMicro(
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        if (this.getMicroPluginReader().isUberJarEnabled()) {
             vscode.window.showWarningMessage('The reload action not supported for UberJar artifact.');
             return;
         }
-        this.fireCommand([
+        return this.fireCommand([
             "resources:resources",
             "compiler:compile",
             "war:exploded",
-            `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.RELOAD_GOAL}`
-        ], () => { }, onExit);
+            `${PayaraMicroMavenPlugin.GROUP_ID}:${PayaraMicroMavenPlugin.ARTIFACT_ID}:${PayaraMicroMavenPlugin.RELOAD_GOAL}`
+        ], () => { }, onExit, onError);
     }
 
-    public stopPayaraMicro(onExit: (artifact: string) => any) {
-        this.fireCommand([
-            `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.STOP_GOAL}`
-        ], () => { }, onExit);
+    public stopPayaraMicro(
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        return this.fireCommand([
+            `${PayaraMicroMavenPlugin.GROUP_ID}:${PayaraMicroMavenPlugin.ARTIFACT_ID}:${PayaraMicroMavenPlugin.STOP_GOAL}`
+        ], () => { }, onExit, onError);
     }
 
-    public bundlePayaraMicro(onExit: (artifact: string) => any) {
+    public bundlePayaraMicro(
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
         let cmds = [
             "install",
-            `${PayaraMicroPlugin.GROUP_ID}:${PayaraMicroPlugin.ARTIFACT_ID}:${PayaraMicroPlugin.BUNDLE_GOAL}`
+            `${PayaraMicroMavenPlugin.GROUP_ID}:${PayaraMicroMavenPlugin.ARTIFACT_ID}:${PayaraMicroMavenPlugin.BUNDLE_GOAL}`
         ];
-        this.fireCommand(cmds, () => { }, onExit);
-    }
-
-    public getGroupId(): string {
-        return this.getPomReader().getGroupId();
-    }
-
-    public getArtifactId(): string {
-        return this.getPomReader().getArtifactId();
-    }
-
-    public getVersion(): string {
-        return this.getPomReader().getVersion();
-    }
-
-    public getFinalName(): string {
-        return this.getPomReader().getFinalName();
-    }
-
-    public getBuildDir(): string {
-        let targetDir = path.join(this.workspaceFolder.uri.fsPath, 'target');
-        if (!fs.existsSync(targetDir)) {
-            throw Error("no target dir found: " + targetDir);
-        }
-        return targetDir;
-    }
-
-    public getPomReader(): PomReader {
-        if (!this.pomReader) {
-            this.initializePomReader();
-        }
-        if (!this.pomReader) {
-            throw Error("Pom reader not initilized yet");
-        }
-        return this.pomReader;
-    }
-
-    private initializePomReader() {
-        if (Maven.detect(this.workspaceFolder)) {
-            let pom = path.join(this.workspaceFolder.uri.fsPath, 'pom.xml');
-            this.pomReader = new PomReader(pom);
-        }
-    }
-
-    public getMicroPluginReader(): MicroPluginReader {
-        if (!this.microPluginReader) {
-            this.initializeMicroPluginReader();
-        }
-        if (!this.microPluginReader) {
-            throw Error("Pom reader not initilized yet");
-        }
-        return this.microPluginReader;
-    }
-
-    private initializeMicroPluginReader() {
-        if (Maven.detect(this.workspaceFolder)) {
-            let pom = path.join(this.workspaceFolder.uri.fsPath, 'pom.xml');
-            this.microPluginReader = new MicroPluginReader(pom);
-        }
-    }
-
-    public getWorkSpaceFolder(): WorkspaceFolder {
-        return this.workspaceFolder;
+        return this.fireCommand(cmds, () => { }, onExit, onError);
     }
 
 }

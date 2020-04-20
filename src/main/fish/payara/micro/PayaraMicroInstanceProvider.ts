@@ -18,15 +18,9 @@
  */
 
 import * as vscode from "vscode";
-import * as path from "path";
-import * as os from "os";
 import * as _ from "lodash";
-import * as fs from "fs";
-import * as fse from "fs-extra";
 import { PayaraMicroInstance } from "./PayaraMicroInstance";
-import { ServerUtils } from "../server/tooling/utils/ServerUtils";
 import { BuildSupport } from "../project/BuildSupport";
-import { Maven } from "../project/Maven";
 
 export class PayaraMicroInstanceProvider {
 
@@ -39,16 +33,16 @@ export class PayaraMicroInstanceProvider {
         let instances: Array<PayaraMicroInstance> = new Array<PayaraMicroInstance>();
         if (vscode.workspace.workspaceFolders) {
             for (let folder of vscode.workspace.workspaceFolders) {
-                let build = BuildSupport.getBuild(folder.uri);
-                if (Maven.detect(build.getWorkSpaceFolder())) {
-                    let key = `${folder.uri.fsPath}#${build.getArtifactId()}`;
-                    let instance = this.instances.get(key);
+                try {
+                    let instance = this.instances.get(folder.uri.fsPath);
                     if (!instance) {
-                        instance = new PayaraMicroInstance(this.context, build.getArtifactId(), folder.uri);
-                        this.instances.set(key, instance);
+                        let build = BuildSupport.getBuild(folder.uri);
+                        instance = new PayaraMicroInstance(this.context, build.getBuildReader().getArtifactId(), folder.uri);
+                        this.instances.set(folder.uri.fsPath, instance);
                     }
-                    instance.setBuildPluginExist(build.getMicroPluginReader().isPluginFound());
                     instances.push(instance);
+                } catch (e) {
+                    // ..skip
                 }
             }
         }

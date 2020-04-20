@@ -18,14 +18,9 @@
  */
 
 import * as vscode from "vscode";
-import * as path from "path";
 import * as _ from "lodash";
 import { TreeItem } from "vscode";
-import { ApplicationInstance } from '../project/ApplicationInstance';
-import { PayaraMicroInstance } from "./PayaraMicroInstance";
-import { PayaraInstanceProvider } from "../server/PayaraInstanceProvider";
 import { PayaraMicroInstanceProvider } from "./PayaraMicroInstanceProvider";
-import { BuildSupport } from '../project/BuildSupport';
 
 export class PayaraMicroTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 

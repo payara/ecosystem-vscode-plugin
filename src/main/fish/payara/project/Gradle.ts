@@ -21,18 +21,26 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as cp from 'child_process';
 import * as fs from 'fs';
-import * as fse from 'fs-extra';
 import { WorkspaceFolder, Uri, DebugConfiguration } from "vscode";
 import { Build } from './Build';
 import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';
 import { PayaraMicroProject } from '../micro/PayaraMicroProject';
-import { MicroPluginReader } from '../micro/MicroPluginReader';
+import { MicroPluginReader } from './MicroPluginReader';
 import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
+import { GradleBuildReader } from './GradleBuildReader';
+import { GradleMicroPluginReader } from './GradleMicroPluginReader';
+import { PayaraMicroGradlePlugin } from '../micro/PayaraMicroGradlePlugin';
+import { BuildReader } from './BuildReader';
 
 export class Gradle implements Build {
 
+    private buildReader: GradleBuildReader | undefined;
+
+    private microPluginReader: GradleMicroPluginReader | undefined;
+
     constructor(public workspaceFolder: WorkspaceFolder) {
+        this.readBuildConfig();
     }
 
     public static detect(workspaceFolder: WorkspaceFolder): boolean {
@@ -40,48 +48,19 @@ export class Gradle implements Build {
         return fs.existsSync(build);
     }
 
-    public buildProject(callback: (artifact: string) => any): void {
-        let gradleHome: string | undefined = this.getDefaultHome();
-        if (!gradleHome) {
-            throw new Error("Gradle home path not found.");
-        }
-        let gradleExe: string = this.getExecutableFullPath(gradleHome);
-        // Gradle executable should exist.
-        if (!fse.pathExistsSync(gradleExe)) {
-            throw new Error("Gradle executable [" + gradleExe + "] not found");
-        }
-        if (!this.workspaceFolder) {
-            throw new Error("WorkSpace path not found.");
-        }
-        let gradle = path.join(this.workspaceFolder.uri.fsPath, 'build.gradle');
-        let process: ChildProcess = cp.spawn(gradleExe, ["clean", "build"], { cwd: this.workspaceFolder.uri.fsPath });
-
-        if (process.pid) {
-            let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
-            outputChannel.show(false);
-            let logCallback = (data: string | Buffer): void => outputChannel.append(data.toString());
-            if (process.stdout !== null) {
-                process.stdout.on('data', logCallback);
-            }
-            if (process.stderr !== null) {
-                process.stderr.on('data', logCallback);
-            }
-            process.on('error', (err: Error) => {
-                console.log('error: ' + err.message);
-            });
-            process.on('exit', (code: number) => {
+    public buildProject(callback: (artifact: string) => any): ChildProcess {
+        return this.fireCommand(["clean", "build"],
+            () => { },
+            (code) => {
                 if (code === 0 && this.workspaceFolder) {
-                    let targetDir = path.join(this.workspaceFolder.uri.fsPath, 'build', 'libs');
-                    if (!fs.existsSync(targetDir)) {
-                        console.log("no build dir found ", targetDir);
-                        return;
-                    }
-                    let artifacts = fs.readdirSync(targetDir);
+                    let buildDir = this.getBuildDir();
+                    let artifacts = fs.readdirSync(buildDir);
                     let artifact: string | null = null;
                     for (var i = 0; i < artifacts.length; i++) {
-                        var filename = path.join(targetDir, artifacts[i]);
+                        var filename = path.join(buildDir, artifacts[i]);
                         if (artifacts[i].endsWith('.war')
-                            || artifacts[i].endsWith('.jar')) {
+                            || artifacts[i].endsWith('.jar')
+                            || artifacts[i] === this.getBuildReader().getFinalName()) {
                             artifact = filename;
                             break;
                         }
@@ -92,8 +71,51 @@ export class Gradle implements Build {
                         vscode.window.showErrorMessage(artifact + ' not found.');
                     }
                 }
+                if (code !== 0) {
+                    console.warn(`buildProject task failed with exit code ${code}`);
+                }
+            },
+            (error) => {
+                console.error(`Error on executing buildProject task: ${error.message}`);
             });
+    }
+
+    public fireCommand(command: string[],
+        dataCallback: (data: string) => any,
+        exitCallback: (code: number) => any,
+        errorCallback: (err: Error) => any): ChildProcess {
+        let gradleHome: string | undefined = this.getDefaultHome();
+        if (!gradleHome) {
+            throw new Error("Gradle home path not found.");
         }
+        let gradleExe: string = this.getExecutableFullPath(gradleHome);
+        // Gradle executable should exist.
+        if (!fs.existsSync(gradleExe)) {
+            throw new Error("Gradle executable [" + gradleExe + "] not found");
+        }
+        if (!this.workspaceFolder) {
+            throw new Error("WorkSpace path not found.");
+        }
+        let process: ChildProcess = cp.spawn(gradleExe, command, { cwd: this.workspaceFolder.uri.fsPath });
+
+        if (process.pid) {
+            let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
+            outputChannel.show(false);
+            outputChannel.append("> " + gradleExe + ' ' + command.join(" ") + '\n');
+            let logCallback = (data: string | Buffer): void => {
+                outputChannel.append(data.toString());
+                dataCallback(data.toString());
+            };
+            if (process.stdout !== null) {
+                process.stdout.on('data', logCallback);
+            }
+            if (process.stderr !== null) {
+                process.stderr.on('data', logCallback);
+            }
+            process.on('error', errorCallback);
+            process.on('exit', exitCallback);
+        }
+        return process;
     }
 
     public getDefaultHome(): string | undefined {
@@ -106,6 +128,16 @@ export class Gradle implements Build {
     }
 
     public getExecutableFullPath(gradleHome: string): string {
+        if (this.workspaceFolder &&
+            fs.existsSync(path.join(this.workspaceFolder.uri.fsPath, 'gradle', 'wrapper'))) {
+            let executor = this.workspaceFolder.uri.fsPath + path.sep + 'gradlew';
+            if (JavaUtils.IS_WIN && fs.existsSync(executor + '.bat')) {
+                return executor + '.bat';
+            } else if (fs.existsSync(executor)) {
+                return executor + '.bat';
+            }
+        }
+
         let homeEndsWithPathSep: boolean = gradleHome.charAt(gradleHome.length - 1) === path.sep;
         // Build string.
         let gradleExecStr: string = gradleHome;
@@ -123,52 +155,105 @@ export class Gradle implements Build {
         return gradleExecStr;
     }
 
-    public generateProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): void {
-        throw new Error("Gradle project generator not supported yet.");
-    }
-
-    public getMicroPluginReader(): MicroPluginReader {
-        throw new Error("getMicroPluginReader function not supported yet.");
-    }
-
-    public startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess {
-        throw new Error("startPayaraMicro function not supported yet.");
-    }
-
-    public reloadPayaraMicro(onExit: (artifact: string) => any) {
-        throw new Error("reloadPayaraMicro function not supported yet.");
-    }
-
-    public stopPayaraMicro(onExit: (artifact: string) => any) {
-        throw new Error("stopPayaraMicro function not supported yet.");
-    }
-
-    public bundlePayaraMicro(onExit: (artifact: string) => any) {
-        throw new Error("bundlePayaraMicro function not supported yet.");
-    }
-
-    public getGroupId(): string {
-        throw new Error("getGroupId function not supported yet.");
-    }
-
-    public getArtifactId(): string {
-        throw new Error("getArtifactId function not supported yet.");
-    }
-
-    public getVersion(): string {
-        throw new Error("getVersion function not supported yet.");
-    }
-
-    public getFinalName(): string {
-        throw new Error("getFinalName function not supported yet.");
-    }
-
     public getBuildDir(): string {
-        throw new Error("getBuildDir function not supported yet.");
+        let buildDir = path.join(this.workspaceFolder.uri.fsPath, 'build', 'libs');
+        if (!fs.existsSync(buildDir)) {
+            throw Error("no build dir found: " + buildDir);
+        }
+        return buildDir;
     }
 
     public getWorkSpaceFolder(): WorkspaceFolder {
         return this.workspaceFolder;
+    }
+
+    public getBuildReader(): BuildReader {
+        if (!this.buildReader) {
+            throw Error("Build reader not initilized yet");
+        }
+        return this.buildReader;
+    }
+
+    public getMicroPluginReader(): MicroPluginReader {
+        if (!this.microPluginReader) {
+            throw Error("Build reader not initilized yet");
+        }
+        return this.microPluginReader;
+    }
+
+    public async readBuildConfig() {
+        if (Gradle.detect(this.workspaceFolder)) {
+            this.microPluginReader = new GradleMicroPluginReader(this.workspaceFolder);
+            this.buildReader = new GradleBuildReader(this.workspaceFolder);
+        }
+    }
+
+    public generateMicroProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): ChildProcess {
+        throw new Error("Gradle project generator not supported yet.");
+    }
+
+    public startPayaraMicro(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+
+        let cmds: string[] = [];
+
+        if (this.getMicroPluginReader().isDeployWarEnabled() === false
+            && this.getMicroPluginReader().isUberJarEnabled() === false) {
+            vscode.window.showWarningMessage('Please either enable the deployWar or useUberJar option in fish.payara.micro-gradle-plugin configuration to deploy the application.');
+            return;
+        }
+
+        if (this.getMicroPluginReader().isUberJarEnabled()) {
+            cmds = [
+                PayaraMicroGradlePlugin.BUNDLE_GOAL,
+                PayaraMicroGradlePlugin.START_GOAL
+            ];
+        } else {
+            cmds = [
+                PayaraMicroGradlePlugin.WAR_EXPLODE_GOAL,
+                PayaraMicroGradlePlugin.START_GOAL,
+                '-DpayaraMicro.exploded=true',
+                '-DpayaraMicro.deployWar=true'
+            ];
+        }
+        if (debugConfig) {
+            cmds.push("-DpayaraMicro.debug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=" + debugConfig.port);
+        }
+        return this.fireCommand(cmds, onData, onExit, onError);
+    }
+
+    public reloadPayaraMicro(
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+
+        if (this.getMicroPluginReader().isUberJarEnabled()) {
+            vscode.window.showWarningMessage('The reload action not supported for UberJar artifact.');
+            return;
+        }
+        let cmds: string[] = [
+            PayaraMicroGradlePlugin.WAR_EXPLODE_GOAL,
+            PayaraMicroGradlePlugin.RELOAD_GOAL,
+        ];
+        return this.fireCommand(cmds, () => { }, onExit, onError);
+    }
+
+    public stopPayaraMicro(
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        return this.fireCommand([PayaraMicroGradlePlugin.STOP_GOAL], () => { }, onExit, onError);
+    }
+
+    public bundlePayaraMicro(
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        return this.fireCommand([PayaraMicroGradlePlugin.BUNDLE_GOAL], () => { }, onExit, onError);
     }
 
 }

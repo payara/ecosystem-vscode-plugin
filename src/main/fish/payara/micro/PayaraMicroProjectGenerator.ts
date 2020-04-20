@@ -54,7 +54,7 @@ export class PayaraMicroProjectGenerator {
                             index: 0
                         };
                         new Maven(workspaceFolder)
-                            .generateProject(project, async (projectPath) => {
+                            .generateMicroProject(project, async (projectPath) => {
                                 const CURRENT_WORKSPACE = "Add to current workspace";
                                 const NEW_WORKSPACE = "Open in new window";
                                 const choice = await vscode.window.showInformationMessage(
