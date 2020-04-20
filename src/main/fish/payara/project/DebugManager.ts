@@ -18,9 +18,7 @@
  */
 
 import * as fs from "fs";
-import { WorkspaceFolder, OutputChannel, DebugConfiguration, workspace, WorkspaceConfiguration, Uri } from "vscode";
-import { BuildSupport } from "./BuildSupport";
-import { PayaraServerInstance } from "../server/PayaraServerInstance";
+import { WorkspaceFolder, DebugConfiguration, workspace, WorkspaceConfiguration, Uri } from "vscode";
 
 export class DebugManager {
 

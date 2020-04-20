@@ -247,6 +247,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
 		for (let payaraMicro of payaraMicroInstanceProvider.getMicroInstances()) {
 			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+			let fileName = path.basename(document.uri.fsPath);
+			if(fileName === "pom.xml"
+			|| fileName === "build.gradle"
+			|| fileName === "settings.gradle") {
+				payaraMicro.getBuild().readBuildConfig();
+			}
 			if (payaraMicro.isStarted()
 				&& workspaceFolder
 				&& workspaceFolder.uri === payaraMicro.getPath()) {

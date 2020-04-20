@@ -17,14 +17,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
 
+export interface MicroPluginReader {
 
-export namespace  PayaraMicroPlugin {
+    isPluginFound(): boolean;
 
-    export const ARTIFACT_ID = 'payara-micro-maven-plugin';
-    export const GROUP_ID = 'fish.payara.maven.plugins';
-    export const START_GOAL = 'start';
-    export const STOP_GOAL = 'stop';
-    export const BUNDLE_GOAL = 'bundle';
-    export const RELOAD_GOAL = 'reload';
+    isDeployWarEnabled(): boolean | undefined;
+
+    isUberJarEnabled(): boolean | undefined;
+
+    isExplodedEnabled(): boolean | undefined;
 
 }

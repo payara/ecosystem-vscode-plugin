@@ -18,7 +18,6 @@
  */
 
 import * as vscode from "vscode";
-import * as xml2js from "xml2js";
 import { PayaraServerInstance } from '../server/PayaraServerInstance';
 import { RestEndpoints } from "../server/endpoints/RestEndpoints";
 import { ProjectOutputWindowProvider } from "./ProjectOutputWindowProvider";

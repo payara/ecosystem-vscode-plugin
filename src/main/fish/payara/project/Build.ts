@@ -21,7 +21,8 @@ import { Uri } from "vscode";
 import { PayaraMicroProject } from "../micro/PayaraMicroProject";
 import { WorkspaceFolder, DebugConfiguration } from "vscode";
 import { ChildProcess } from "child_process";
-import { MicroPluginReader } from "../micro/MicroPluginReader";
+import { MicroPluginReader } from "./MicroPluginReader";
+import { BuildReader } from "./BuildReader";
 
 export interface Build {
 
@@ -29,30 +30,40 @@ export interface Build {
 
     getDefaultHome(): string | undefined;
 
-    getExecutableFullPath(mavenHome: string): string;
-
-    generateProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): void;
-
-    getMicroPluginReader(): MicroPluginReader;
-
-    startPayaraMicro(debugConfig: DebugConfiguration | undefined, onData: (data: string) => any, onExit: (artifact: string) => any): ChildProcess;
-
-    reloadPayaraMicro(onExit: (artifact: string) => any): void;
-
-    stopPayaraMicro(onExit: (artifact: string) => any): void;
-
-    bundlePayaraMicro(onExit: (artifact: string) => any): void;
-
-    getGroupId(): string;
-
-    getArtifactId(): string;
-
-    getVersion(): string;
-
-    getFinalName(): string;
+    getExecutableFullPath(buildHome: string): string;
 
     getBuildDir(): string;
 
     getWorkSpaceFolder(): WorkspaceFolder;
+
+    getBuildReader(): BuildReader;
+
+    getMicroPluginReader(): MicroPluginReader;
+
+    readBuildConfig(): void;
+
+    generateMicroProject(project: Partial<PayaraMicroProject>, callback: (projectPath: Uri) => any): ChildProcess | undefined;
+
+    startPayaraMicro(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined;
+
+    reloadPayaraMicro(
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined;
+
+    stopPayaraMicro(
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined;
+
+    bundlePayaraMicro(
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined;
 
 }

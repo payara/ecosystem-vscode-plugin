@@ -18,7 +18,6 @@
  */
 
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { Uri, DebugConfiguration } from "vscode";
 import { PayaraServerInstance } from "../server/PayaraServerInstance";
 import { BuildSupport } from "./BuildSupport";
@@ -26,7 +25,6 @@ import { RestEndpoints } from "../server/endpoints/RestEndpoints";
 import { ApplicationInstance } from "./ApplicationInstance";
 import { PayaraInstanceController } from "../server/PayaraInstanceController";
 import { DebugManager } from "./DebugManager";
-import * as fs from 'fs';
 
 export class DeploymentSupport {
 
