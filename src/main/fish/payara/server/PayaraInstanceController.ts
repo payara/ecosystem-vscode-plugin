@@ -44,6 +44,7 @@ import { ServerUtils } from './tooling/utils/ServerUtils';
 import { DebugManager } from '../project/DebugManager';
 import { BuildSupport } from '../project/BuildSupport';
 import { ProjectOutputWindowProvider } from '../project/ProjectOutputWindowProvider';
+import { RestEndpoint } from '../project/RestEndpoint';
 
 export class PayaraInstanceController {
 
@@ -799,6 +800,15 @@ export class PayaraInstanceController {
             );
         }
     }
+
+    public openRestEndpoint(restEndpoint: RestEndpoint) {
+        open(new URL(
+            "http://localhost:"
+            + restEndpoint.application.payaraServer.getHttpPort()
+            + restEndpoint.endpoint).toString()
+        );
+    }
+
 }
 
 interface State {

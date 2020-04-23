@@ -176,6 +176,15 @@
 				"category": "Payara"
 			},
 			{
+				"command": "payara.server.app.rest.endpoint",
+				"title": "Open in Browser",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/endpoint.svg",
+					"dark": "resources/theme/dark/endpoint.svg"
+				}
+			},
+			{
 				"command": "payara.micro.create.project",
 				"title": "Generate a Payara Micro project",
 				"category": "Payara"
@@ -369,6 +378,10 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.server.app.rest.endpoint",
+					"when": "never"
+				},
+				{
 					"command": "payara.micro.start",
 					"when": "never"
 				},
@@ -496,6 +509,11 @@
 					"command": "payara.server.app.home",
 					"when": "viewItem == payara-application",
 					"group": "application@4"
+				},
+				{
+					"command": "payara.server.app.rest.endpoint",
+					"when": "viewItem == application-rest-endpoint",
+					"group": "inline"
 				},
 				{
 					"command": "payara.micro.start",

@@ -23,6 +23,7 @@ import { TreeItem } from "vscode";
 import { PayaraInstanceProvider } from './PayaraInstanceProvider';
 import { PayaraServerInstance } from "./PayaraServerInstance";
 import { ApplicationInstance } from '../project/ApplicationInstance';
+import { RestEndpoint } from "../project/RestEndpoint";
 
 export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
@@ -52,13 +53,20 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Tre
                 server.tooltip = server.getPath() + '[' + server.getDomainName() + ']';
                 return server;
             });
-        } else if(item instanceof PayaraServerInstance && item.isStarted()){
+        } else if (item instanceof PayaraServerInstance && item.isStarted()) {
             return item.getApplications().map((application: ApplicationInstance) => {
                 application.iconPath = this.context.asAbsolutePath(path.join('resources', application.getIcon()));
-                // application.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+                application.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
                 application.label = application.name;
                 application.contextValue = "payara-application";
                 return application;
+            });
+        } else if (item instanceof ApplicationInstance) {
+            return item.getRestEndpoints().map((endpoint: RestEndpoint) => {
+                endpoint.iconPath = this.context.asAbsolutePath(path.join('resources', 'rest-endpoint.svg'));
+                endpoint.label = endpoint.httpMethod + " " + endpoint.endpoint;
+                endpoint.contextValue = "application-rest-endpoint";
+                return endpoint;
             });
         }
         return [];
