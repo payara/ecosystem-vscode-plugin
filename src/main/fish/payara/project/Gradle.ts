@@ -21,7 +21,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as cp from 'child_process';
 import * as fs from 'fs';
-import { WorkspaceFolder, Uri, DebugConfiguration } from "vscode";
+import { WorkspaceFolder, Uri, DebugConfiguration, TaskDefinition } from "vscode";
 import { Build } from './Build';
 import { ChildProcess } from 'child_process';
 import { JavaUtils } from '../server/tooling/utils/JavaUtils';
@@ -32,6 +32,7 @@ import { GradleBuildReader } from './GradleBuildReader';
 import { GradleMicroPluginReader } from './GradleMicroPluginReader';
 import { PayaraMicroGradlePlugin } from '../micro/PayaraMicroGradlePlugin';
 import { BuildReader } from './BuildReader';
+import { TaskManager } from './TaskManager';
 
 export class Gradle implements Build {
 
@@ -49,7 +50,11 @@ export class Gradle implements Build {
     }
 
     public buildProject(callback: (artifact: string) => any): ChildProcess {
-        return this.fireCommand(["clean", "build"],
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition: TaskDefinition | undefined;
+        taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerBuildConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        return this.fireCommand(commands,
             () => { },
             (code) => {
                 if (code === 0 && this.workspaceFolder) {
@@ -72,36 +77,41 @@ export class Gradle implements Build {
                     }
                 }
                 if (code !== 0) {
-                    console.warn(`buildProject task failed with exit code ${code}`);
+                    vscode.window.showErrorMessage(`Gradle Build Failure: ${this.workspaceFolder.name}`);
                 }
             },
             (error) => {
-                console.error(`Error on executing buildProject task: ${error.message}`);
+                vscode.window.showErrorMessage(`Error building project ${this.workspaceFolder.name}: ${error.message}`);
             });
     }
 
-    public fireCommand(command: string[],
+    public fireCommand(commands: string[],
         dataCallback: (data: string) => any,
         exitCallback: (code: number) => any,
         errorCallback: (err: Error) => any): ChildProcess {
-        let gradleHome: string | undefined = this.getDefaultHome();
-        if (!gradleHome) {
-            throw new Error("Gradle home path not found.");
+
+        if (commands.length <= 1) {
+            throw new Error(`Invalid command definition ${commands.join(" ")}`);
         }
-        let gradleExe: string = this.getExecutableFullPath(gradleHome);
-        // Gradle executable should exist.
-        if (!fs.existsSync(gradleExe)) {
-            throw new Error("Gradle executable [" + gradleExe + "] not found");
+
+        let gradleExe = commands[0];
+        let args = commands.splice(1, commands.length);
+
+        if (gradleExe === "gradlew") {
+            gradleExe = this.getWrapperFullPath();
+        } else {
+            gradleExe = this.getExecutableFullPath(undefined);
         }
+
         if (!this.workspaceFolder) {
             throw new Error("WorkSpace path not found.");
         }
-        let process: ChildProcess = cp.spawn(gradleExe, command, { cwd: this.workspaceFolder.uri.fsPath });
+        let process: ChildProcess = cp.spawn(gradleExe, args, { cwd: this.workspaceFolder.uri.fsPath });
 
         if (process.pid) {
             let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
             outputChannel.show(false);
-            outputChannel.append("> " + gradleExe + ' ' + command.join(" ") + '\n');
+            outputChannel.append("> " + gradleExe + ' ' + args.join(" ") + '\n');
             let logCallback = (data: string | Buffer): void => {
                 outputChannel.append(data.toString());
                 dataCallback(data.toString());
@@ -127,30 +137,59 @@ export class Gradle implements Build {
         return gradleHome;
     }
 
-    public getExecutableFullPath(gradleHome: string): string {
+    public getExecutableFullPath(gradleHome: string | undefined): string {
+        if (!gradleHome) {
+            gradleHome = this.getDefaultHome();
+        }
+        if (!gradleHome) {
+            throw new Error("Gradle home path not found.");
+        }
+        let homeEndsWithPathSep: boolean = gradleHome.charAt(gradleHome.length - 1) === path.sep;
+        let gradleExecStr;
+        let executor: string = gradleHome;
+        if (!homeEndsWithPathSep) {
+            executor += path.sep;
+        }
+        executor += 'bin' + path.sep + 'gradle';
+        if (JavaUtils.IS_WIN) {
+            if (fs.existsSync(executor + '.bat')) {
+                gradleExecStr = executor + ".bat";
+            } else if (fs.existsSync(executor + '.cmd')) {
+                gradleExecStr = executor + ".cmd";
+            } else {
+                throw new Error(`Gradle executable ${executor}.cmd not found.`);
+            }
+        } else if (fs.existsSync(executor)) {
+            gradleExecStr = executor;
+        }
+        // Gradle executable should exist.
+        if (!gradleExecStr || !fs.existsSync(gradleExecStr)) {
+            throw new Error(`Gradle executable [${gradleExecStr}] not found`);
+        }
+        return gradleExecStr;
+    }
+
+    public getWrapperFullPath(): string {
+        let executor;
+        let gradleExecStr;
+
         if (this.workspaceFolder &&
             fs.existsSync(path.join(this.workspaceFolder.uri.fsPath, 'gradle', 'wrapper'))) {
-            let executor = this.workspaceFolder.uri.fsPath + path.sep + 'gradlew';
-            if (JavaUtils.IS_WIN && fs.existsSync(executor + '.bat')) {
-                return executor + '.bat';
+            executor = this.workspaceFolder.uri.fsPath + path.sep + 'gradlew';
+            if (JavaUtils.IS_WIN) {
+                if (fs.existsSync(executor + '.bat')) {
+                    gradleExecStr = executor + '.bat';
+                } else if (fs.existsSync(executor + '.cmd')) {
+                    gradleExecStr = executor + '.cmd';
+                } else {
+                    throw new Error(`${executor}.bat not found in the workspace.`);
+                }
             } else if (fs.existsSync(executor)) {
-                return executor + '.bat';
+                gradleExecStr = executor;
             }
         }
-
-        let homeEndsWithPathSep: boolean = gradleHome.charAt(gradleHome.length - 1) === path.sep;
-        // Build string.
-        let gradleExecStr: string = gradleHome;
-        if (!homeEndsWithPathSep) {
-            gradleExecStr += path.sep;
-        }
-        gradleExecStr += 'bin' + path.sep + 'gradle';
-        if (JavaUtils.IS_WIN) {
-            if (fs.existsSync(gradleExecStr + '.bat')) {
-                gradleExecStr += ".bat";
-            } else if (fs.existsSync(gradleExecStr + '.cmd')) {
-                gradleExecStr += ".cmd";
-            }
+        if (!gradleExecStr || !fs.existsSync(gradleExecStr)) {
+            throw new Error(`${executor} not found in the workspace.`);
         }
         return gradleExecStr;
     }
@@ -199,31 +238,29 @@ export class Gradle implements Build {
         onError: (err: Error) => any
     ): ChildProcess | undefined {
 
-        let cmds: string[] = [];
-
         if (this.getMicroPluginReader().isDeployWarEnabled() === false
             && this.getMicroPluginReader().isUberJarEnabled() === false) {
             vscode.window.showWarningMessage('Please either enable the deployWar or useUberJar option in fish.payara.micro-gradle-plugin configuration to deploy the application.');
             return;
         }
 
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition;
         if (this.getMicroPluginReader().isUberJarEnabled()) {
-            cmds = [
-                PayaraMicroGradlePlugin.BUNDLE_GOAL,
-                PayaraMicroGradlePlugin.START_GOAL
-            ];
+            taskDefinition = taskManager.getPayaraConfig(
+                this.workspaceFolder,
+                this.getDefaultMicroStartUberJarConfig());
         } else {
-            cmds = [
-                PayaraMicroGradlePlugin.WAR_EXPLODE_GOAL,
-                PayaraMicroGradlePlugin.START_GOAL,
-                '-DpayaraMicro.exploded=true',
-                '-DpayaraMicro.deployWar=true'
-            ];
+            taskDefinition = taskManager.getPayaraConfig(
+                this.workspaceFolder,
+                this.getDefaultMicroStartExplodedWarConfig());
         }
+        let commands = taskDefinition.command.split(/\s+/);
+
         if (debugConfig) {
-            cmds.push("-DpayaraMicro.debug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=" + debugConfig.port);
+            commands.push(`-DpayaraMicro.debug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugConfig.port}`);
         }
-        return this.fireCommand(cmds, onData, onExit, onError);
+        return this.fireCommand(commands, onData, onExit, onError);
     }
 
     public reloadPayaraMicro(
@@ -235,25 +272,84 @@ export class Gradle implements Build {
             vscode.window.showWarningMessage('The reload action not supported for UberJar artifact.');
             return;
         }
-        let cmds: string[] = [
-            PayaraMicroGradlePlugin.WAR_EXPLODE_GOAL,
-            PayaraMicroGradlePlugin.RELOAD_GOAL,
-        ];
-        return this.fireCommand(cmds, () => { }, onExit, onError);
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultMicroReloadConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        return this.fireCommand(commands, () => { }, onExit, onError);
     }
 
     public stopPayaraMicro(
         onExit: (code: number) => any,
         onError: (err: Error) => any
     ): ChildProcess | undefined {
-        return this.fireCommand([PayaraMicroGradlePlugin.STOP_GOAL], () => { }, onExit, onError);
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultMicroStopConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        return this.fireCommand(commands, () => { }, onExit, onError);
     }
 
     public bundlePayaraMicro(
         onExit: (code: number) => any,
         onError: (err: Error) => any
     ): ChildProcess | undefined {
-        return this.fireCommand([PayaraMicroGradlePlugin.BUNDLE_GOAL], () => { }, onExit, onError);
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultMicroBundleConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        return this.fireCommand(commands, () => { }, onExit, onError);
+    }
+
+    public getDefaultServerBuildConfig(): TaskDefinition {
+        return {
+            label: "payara-server-build",
+            type: "shell",
+            command: "gradle clean build",
+            group: "build"
+        };
+    }
+
+    private getDefaultMicroBundleConfig(): TaskDefinition {
+        return {
+            label: "payara-micro-bundle",
+            type: "shell",
+            command: `gradle ${PayaraMicroGradlePlugin.BUNDLE_GOAL}`,
+            group: "build"
+        };
+    }
+
+    private getDefaultMicroStartUberJarConfig(): TaskDefinition {
+        return {
+            label: "payara-micro-uber-jar-start",
+            type: "shell",
+            command: `gradle ${PayaraMicroGradlePlugin.BUNDLE_GOAL} ${PayaraMicroGradlePlugin.START_GOAL}`,
+            group: "build"
+        };
+    }
+
+    private getDefaultMicroStartExplodedWarConfig(): TaskDefinition {
+        return {
+            label: "payara-micro-exploded-war-start",
+            type: "shell",
+            command: `gradle -DpayaraMicro.exploded=true -DpayaraMicro.deployWar=true ${PayaraMicroGradlePlugin.WAR_EXPLODE_GOAL} ${PayaraMicroGradlePlugin.START_GOAL}`,
+            group: "build"
+        };
+    }
+
+    private getDefaultMicroReloadConfig(): TaskDefinition {
+        return {
+            label: "payara-micro-reload",
+            type: "shell",
+            command: `gradle ${PayaraMicroGradlePlugin.WAR_EXPLODE_GOAL} ${PayaraMicroGradlePlugin.RELOAD_GOAL}`,
+            group: "build"
+        };
+    }
+
+    private getDefaultMicroStopConfig(): TaskDefinition {
+        return {
+            label: "payara-micro-stop",
+            type: "shell",
+            command: `gradle ${PayaraMicroGradlePlugin.STOP_GOAL}`,
+            group: "build"
+        };
     }
 
 }

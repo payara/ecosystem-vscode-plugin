@@ -707,7 +707,11 @@ export class PayaraInstanceController {
                     if (uri.fsPath.endsWith('.war') || uri.fsPath.endsWith('.jar')) {
                         support.deployApplication(uri.fsPath, server, debug);
                     } else {
+                        try {
                         support.buildAndDeployApplication(uri, server, debug);
+                        } catch(error) {
+                            vscode.window.showErrorMessage(error.message);
+                        }
                     }
                 } else {
                     vscode.window.showErrorMessage('Unable to deploy the application as Payara Server instance not running.');
