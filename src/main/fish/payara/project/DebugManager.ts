@@ -22,33 +22,26 @@ import { WorkspaceFolder, DebugConfiguration, workspace, WorkspaceConfiguration,
 
 export class DebugManager {
 
-    public getPayaraMicroDebugConfig(workspaceFolder: WorkspaceFolder): DebugConfiguration | undefined {
-
-        for (const config of this.getDebugConfigurations(workspaceFolder.uri)) {
-            if (config.name && config.name.startsWith('Payara Micro')) {
-                return config;
+    public getPayaraConfig(workspaceFolder: WorkspaceFolder, defaultConfiguration: DebugConfiguration): DebugConfiguration {
+        let configuration: DebugConfiguration | undefined = undefined;
+        for (const config of this.getConfigurations(workspaceFolder.uri)) {
+            if (config.name && config.name === defaultConfiguration.name) {
+                configuration = config;
             }
         }
-        return undefined;
-    }
-
-    public getPayaraServerDebugConfig(workspaceFolder: WorkspaceFolder): DebugConfiguration | undefined {
-
-        for (const config of this.getDebugConfigurations(workspaceFolder.uri)) {
-            if (config.name && config.name.startsWith('Payara Server')) {
-                return config;
-            }
+        if(!configuration) {
+            configuration = this.createConfiguration(workspaceFolder, defaultConfiguration);
         }
-        return undefined;
+        return configuration;
     }
 
-    public getDebugConfigurations(target: Uri): DebugConfiguration[] {
+    public getConfigurations(target: Uri): DebugConfiguration[] {
         let workspaceConfiguration: WorkspaceConfiguration = workspace.getConfiguration('launch', target);
         let configurations: DebugConfiguration[] | undefined = workspaceConfiguration.get<DebugConfiguration[]>('configurations');
         return configurations ? configurations : [];
     }
 
-    public createDebugConfiguration(workspaceFolder: WorkspaceFolder, defaultConfig: DebugConfiguration): DebugConfiguration {
+    private createConfiguration(workspaceFolder: WorkspaceFolder, defaultConfig: DebugConfiguration): DebugConfiguration {
         let vscodeDir = this.getVSCodeDir(workspaceFolder);
         let launchFile = vscodeDir + '/launch.json';
         let configurations: DebugConfiguration[] = [];
@@ -66,7 +59,7 @@ export class DebugManager {
         return defaultConfig;
     }
 
-    private async getVSCodeDir(workspaceFolder: WorkspaceFolder) {
+    private getVSCodeDir(workspaceFolder: WorkspaceFolder) {
         let vscodeDir = workspaceFolder.uri.fsPath + '/.vscode';
         if (!fs.existsSync(vscodeDir)) {
             fs.mkdirSync(vscodeDir);
@@ -74,23 +67,23 @@ export class DebugManager {
         return vscodeDir;
     }
 
-    public getDefaultMicroDebugConfig(): DebugConfiguration {
+    public getDefaultMicroConfig(): DebugConfiguration {
         return {
             type: "java",
             request: "attach",
             hostName: "localhost",
-            name: "Payara Micro application",
+            name: "payara-micro",
             port: 5005
         };
     }
 
-    public getDefaultServerDebugConfig(): DebugConfiguration {
+    public getDefaultServerConfig(): DebugConfiguration {
         return {
             type: "java",
             request: "attach",
             hostName: "localhost",
-            name: "Payara Server application",
-            port: 9006
+            name: "payara-server",
+            port: 9009
         };
     }
 

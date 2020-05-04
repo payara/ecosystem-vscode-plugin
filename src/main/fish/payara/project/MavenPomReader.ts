@@ -46,6 +46,9 @@ export class MavenPomReader implements BuildReader {
                 });
             parser.parseString(data,
                 function (err: any, result: any) {
+                    if(err) {
+                        throw new Error(`Unable to parse file ${pomPath} : ${err.message}`);
+                    }
                     if (result.project) {
                         let project = result.project;
                         reader.groupId = project.groupId[0];

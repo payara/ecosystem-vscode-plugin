@@ -52,9 +52,13 @@ export class JvmConfigReader {
 
     private parseDomainXML(): void {
         let reader: JvmConfigReader = this;
-        let data = fse.readFileSync(this.domainXmlPath);
+        let file = this.domainXmlPath;
+        let data = fse.readFileSync(file);
         new xml2js.Parser().parseString(data,
             function (err: any, result: any) {
+                if(err) {
+                    throw new Error(`Unable to parse file ${file} : ${err.message}`);
+                }
                 if (result && result.domain
                     && result.domain.servers
                     && result.domain.configs) {

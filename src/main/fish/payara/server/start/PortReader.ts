@@ -41,7 +41,8 @@ export class PortReader {
 
     private parseDomainXML(): void {
         let reader: PortReader = this;
-        let data = fse.readFileSync(this.domainXmlPath);
+        let file = this.domainXmlPath;
+        let data = fse.readFileSync(file);
         let parser = new xml2js.Parser(
             {
                 trim: true,
@@ -49,7 +50,9 @@ export class PortReader {
             });
         parser.parseString(data,
             function (err: any, result: any) {
-
+                if(err) {
+                    throw new Error(`Unable to parse file ${file} : ${err.message}`);
+                }
                 if (result && result.domain
                     && result.domain.servers
                     && result.domain.configs) {

@@ -50,6 +50,9 @@ export class MavenMicroPluginReader implements MicroPluginReader {
                 });
             parser.parseString(data,
                 function (err: any, result: any) {
+                    if(err) {
+                        throw new Error(`Unable to parse file ${pomPath} : ${err.message}`);
+                    }
                     if (result.project) {
                         let plugin = reader.parseBuild(result.project.build);
                         reader.pluginFound = plugin !== undefined;

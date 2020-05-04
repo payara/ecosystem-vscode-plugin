@@ -54,13 +54,7 @@ export class DeploymentSupport {
                     if (debug && workspaceFolder) {
                         let debugConfig: DebugConfiguration | undefined;
                         let debugManager: DebugManager = new DebugManager();
-                        debugConfig = debugManager.getPayaraServerDebugConfig(workspaceFolder);
-                        if (!debugConfig) {
-                            debugConfig = debugManager.createDebugConfiguration(
-                                workspaceFolder,
-                                debugManager.getDefaultServerDebugConfig()
-                            );
-                        }
+                        debugConfig = debugManager.getPayaraConfig(workspaceFolder, debugManager.getDefaultServerConfig());
                         if (vscode.debug.activeDebugSession) {
                             let session = vscode.debug.activeDebugSession;
                             if (session.configuration.port !== debugConfig.port
