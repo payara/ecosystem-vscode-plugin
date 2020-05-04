@@ -81,7 +81,7 @@ export class JvmConfigReader {
                             for (var jvmOption of javaConfig["jvm-options"]) {
                                 reader.jvmOptions.push(new JvmOption(jvmOption));
                             }
-                            for(let key of Object.keys(javaConfig.$)){
+                            for (let key of Object.keys(javaConfig.$)){
                                 reader.propMap.set(key, javaConfig.$[key]);
                             }
                         }

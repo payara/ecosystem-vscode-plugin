@@ -21,6 +21,7 @@ import * as vscode from "vscode";
 import { PayaraServerInstance } from '../server/PayaraServerInstance';
 import { RestEndpoints } from "../server/endpoints/RestEndpoints";
 import { ProjectOutputWindowProvider } from "./ProjectOutputWindowProvider";
+import { RestEndpoint } from "./RestEndpoint";
 
 export class ApplicationInstance extends vscode.TreeItem {
 
@@ -30,12 +31,15 @@ export class ApplicationInstance extends vscode.TreeItem {
 
     private outputChannel: vscode.OutputChannel;
 
+    private restEndpoints: Array<RestEndpoint> = new Array<RestEndpoint>();
+
     constructor(
         public payaraServer: PayaraServerInstance,
         public name: string,
         public appType?: string | null) {
         super(name);
         this.outputChannel = ProjectOutputWindowProvider.getInstance().get(name);
+        this.fetchRestEndpoints();
     }
 
     public setEnabled(status: boolean): void {
@@ -76,6 +80,31 @@ export class ApplicationInstance extends vscode.TreeItem {
                 }
             }
         });
+    }
+
+    public fetchRestEndpoints() {
+        let application = this;
+        let payaraServer = this.payaraServer;
+        let query = '?appname=' + encodeURIComponent(this.name);
+        let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
+        endpoints.invoke("list-rest-endpoints" + query, async (response, report) => {
+            if (response.statusCode === 200) {
+                let message = report['message-part'][0];
+                if (message) {
+                    application.restEndpoints.splice(0, application.restEndpoints.length); // clear
+                    for(let endpoint of message.$.message.split('\n')) {
+                        let endpointInfo = endpoint.split('\t');
+                        application.restEndpoints.push(
+                            new RestEndpoint(application, endpointInfo[0], endpointInfo[1])
+                        );
+                    }
+                }
+            }
+        });
+    }
+
+    public getRestEndpoints(): Array<RestEndpoint> {
+        return this.restEndpoints;
     }
 
     public getIcon(): string {

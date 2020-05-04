@@ -188,6 +188,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			application => payaraServerInstanceController.openApp(application)
 		)
 	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.app.rest.endpoint',
+			restEndpoint => payaraServerInstanceController.openRestEndpoint(restEndpoint)
+		)
+	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
