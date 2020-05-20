@@ -587,7 +587,7 @@
 		"xml2js": "^0.4.23"
 	},
 	"devDependencies": {
-		"@types/fs-extra": "^8.1.0",
+		"@types/fs-extra": "^9.0.1",
 		"@types/glob": "^7.1.1",
 		"@types/lodash": "^4.14.149",
 		"@types/mocha": "^7.0.2",
