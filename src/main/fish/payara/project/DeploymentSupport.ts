@@ -46,29 +46,31 @@ export class DeploymentSupport {
         endpoints.invoke("deploy" + query, async (response, report) => {
             if (response.statusCode === 200) {
                 let message = report['message-part'][0];
-                let property = message.property[0].$;
-                if (property.name === 'name') {
-                    let appName = <string>property.value;
-                    let workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(appPath));
+                if (message && message.property) {
+                    let property = message.property[0].$;
+                    if (property.name === 'name') {
+                        let appName = <string>property.value;
+                        let workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(appPath));
 
-                    if (debug && workspaceFolder) {
-                        let debugConfig: DebugConfiguration | undefined;
-                        let debugManager: DebugManager = new DebugManager();
-                        debugConfig = debugManager.getPayaraConfig(workspaceFolder, debugManager.getDefaultServerConfig());
-                        if (vscode.debug.activeDebugSession) {
-                            let session = vscode.debug.activeDebugSession;
-                            if (session.configuration.port !== debugConfig.port
-                                || session.configuration.type !== debugConfig.type) {
+                        if (debug && workspaceFolder) {
+                            let debugConfig: DebugConfiguration | undefined;
+                            let debugManager: DebugManager = new DebugManager();
+                            debugConfig = debugManager.getPayaraConfig(workspaceFolder, debugManager.getDefaultServerConfig());
+                            if (vscode.debug.activeDebugSession) {
+                                let session = vscode.debug.activeDebugSession;
+                                if (session.configuration.port !== debugConfig.port
+                                    || session.configuration.type !== debugConfig.type) {
                                     vscode.debug.startDebugging(workspaceFolder, debugConfig);
+                                }
+                            } else {
+                                vscode.debug.startDebugging(workspaceFolder, debugConfig);
                             }
-                        } else {
-                            vscode.debug.startDebugging(workspaceFolder, debugConfig);
                         }
-                    }
 
-                    support.controller.openApp(new ApplicationInstance(payaraServer, appName));
-                    payaraServer.reloadApplications();
-                    support.controller.refreshServerList();
+                        support.controller.openApp(new ApplicationInstance(payaraServer, appName));
+                        payaraServer.reloadApplications();
+                        support.controller.refreshServerList();
+                    }
                 }
             }
         });
