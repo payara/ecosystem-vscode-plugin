@@ -268,7 +268,7 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
             throw new Error("Java Process " + javaProcessExe + " executable for " + this.getName() + " was not found");
         }
 
-        let output: Buffer = cp.execSync(javaProcessExe + ' -mlv');
+        let output: string = cp.execFileSync(javaProcessExe, ['-mlv']);
         let lines: string[] = output.toString().split(/(?:\r\n|\r|\n)/g);
         for (let line of lines) {
             let result: string[] = line.split(" ");
@@ -333,6 +333,7 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
 
     public addApplication(application: ApplicationInstance): void {
         this.applicationInstances.push(application);
+        vscode.commands.executeCommand('payara.server.refresh');
     }
 
     public removeApplication(application: ApplicationInstance): void {
@@ -353,10 +354,12 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
         endpoints.invoke("list-applications", async (response, report) => {
             if (response.statusCode === 200) {
                 let message = report['message-part'][0];
-                for (let property of message.property) {
-                    payaraServer.addApplication(
-                        new ApplicationInstance(payaraServer, property.$.name, property.$.value)
-                    );
+                if (message && message.property) {
+                    for (let property of message.property) {
+                        payaraServer.addApplication(
+                            new ApplicationInstance(payaraServer, property.$.name, property.$.value)
+                        );
+                    }
                 }
             }
         });
