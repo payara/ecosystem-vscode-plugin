@@ -40,7 +40,7 @@ export class Maven implements Build {
 
     private microPluginReader: MicroPluginReader | undefined;
 
-    constructor(public workspaceFolder: WorkspaceFolder) {
+    constructor(public payaraInstance: PayaraInstance | null, public workspaceFolder: WorkspaceFolder) {
         this.readBuildConfig();
     }
 
@@ -105,12 +105,21 @@ export class Maven implements Build {
         if (!this.workspaceFolder) {
             throw new Error("WorkSpace path not found.");
         }
-        let pom = path.join(this.workspaceFolder.uri.fsPath, 'pom.xml');
-        let process: ChildProcess = cp.spawn(mavenExe, args, { cwd: this.workspaceFolder.uri.fsPath });
+
+        let jdkHome;
+        let env: any = {};
+        if (this.payaraInstance && (jdkHome = this.payaraInstance.getJDKHome())) {
+            env['JAVA_HOME'] = jdkHome;
+        }
+
+        let process: ChildProcess = cp.spawn(mavenExe, args, { cwd: this.workspaceFolder.uri.fsPath, env:  env  });
 
         if (process.pid) {
             let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
             outputChannel.show(false);
+            if(jdkHome) {
+                outputChannel.append("Java Platform: " + jdkHome + '\n');
+            }
             outputChannel.append("> " + mavenExe + ' ' + args.join(" ") + '\n');
             let logCallback = (data: string | Buffer): void => {
                 outputChannel.append(data.toString());

@@ -20,7 +20,7 @@
  */
 
 import { workspace } from 'vscode';
-
+import * as _ from "lodash";
 import * as fse from "fs-extra";
 import * as cp from 'child_process';
 import { JavaUtils } from '../tooling/utils/JavaUtils';
@@ -246,12 +246,19 @@ export class JDKVersion {
 
     public static getDefaultJDKHome(): string | undefined {
         const config = workspace.getConfiguration();
-        let javaHome: string | undefined = config.get<string>('java.home');
+        let javaHome;
+        let javaHomeConfig = config.inspect<string>('java.home');
+        if (javaHomeConfig && javaHomeConfig.workspaceValue && !_.isEmpty(javaHomeConfig.workspaceValue)) {
+            javaHome = javaHomeConfig.workspaceValue;
+        }
+        if (!javaHome && javaHomeConfig && javaHomeConfig.globalValue && !_.isEmpty(javaHomeConfig.globalValue)) {
+            javaHome = javaHomeConfig.globalValue;
+        }
         if (!javaHome) {
             javaHome = process.env.JDK_HOME;
-            if (!javaHome) {
-                javaHome = process.env.JAVA_HOME;
-            }
+        }
+        if (!javaHome) {
+            javaHome = process.env.JAVA_HOME;
         }
         return javaHome;
     }

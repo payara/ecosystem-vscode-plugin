@@ -45,13 +45,15 @@ import { DebugManager } from '../project/DebugManager';
 import { BuildSupport } from '../project/BuildSupport';
 import { ProjectOutputWindowProvider } from '../project/ProjectOutputWindowProvider';
 import { RestEndpoint } from '../project/RestEndpoint';
+import { PayaraInstanceController } from '../common/PayaraInstanceController';
 
-export class PayaraInstanceController {
+export class PayaraServerInstanceController extends PayaraInstanceController {
 
     constructor(
-        private context: vscode.ExtensionContext,
+        context: vscode.ExtensionContext,
         private instanceProvider: PayaraInstanceProvider,
         private extensionPath: string) {
+        super(context);
         this.init();
     }
 
@@ -458,7 +460,7 @@ export class PayaraInstanceController {
         let process: ChildProcess = new StartTask().startServer(payaraServer, debug);
         if (process.pid) {
             payaraServer.setDebug(debug);
-            payaraServer.setState(InstanceState.LODING);
+            payaraServer.setState(InstanceState.LOADING);
             this.refreshServerList();
             payaraServer.getOutputChannel().show(false);
             let logCallback = (data: string | Buffer): void => payaraServer.getOutputChannel().append(data.toString());
@@ -597,84 +599,6 @@ export class PayaraInstanceController {
         );
     }
 
-    public async updateJDKHome(payaraServer: PayaraServerInstance): Promise<void> {
-        let validateInput: (value: string) => any = path => {
-            let errorMessage = 'Invalid JDK Home path.';
-            try {
-                let version = JDKVersion.getJDKVersion(path.trim());
-                if (!version) {
-                    return errorMessage;
-                }
-            } catch (error) {
-                console.error(error.toString());
-                return errorMessage;
-            }
-            return true;
-        };
-        let items: QuickPickItem[] = [];
-        let activeItem: QuickPickItem | undefined = undefined;
-        let javaHome: string | undefined = payaraServer.getJDKHome();
-        let defaultJavaHome = JDKVersion.getDefaultJDKHome();
-        if (javaHome) {
-            activeItem = { label: javaHome };
-            items.push({ label: javaHome });
-        }
-        if (defaultJavaHome && defaultJavaHome !== javaHome) {
-            let item = { label: defaultJavaHome };
-            items.push(item);
-            if (!activeItem) {
-                activeItem = item;
-            }
-        }
-        ui.MultiStepInput.run(
-            async (input: ui.MultiStepInput) => {
-                let browseJDKButtonLabel = 'Browse the JDK Home...';
-                const browseJDKButton = new MyButton({
-                    dark: Uri.file(this.context.asAbsolutePath('resources/theme/dark/add.svg')),
-                    light: Uri.file(this.context.asAbsolutePath('resources/theme/light/add.svg')),
-                }, browseJDKButtonLabel);
-                let pick = await input.showQuickPick({
-                    title: 'JDK Home',
-                    step: 1,
-                    totalSteps: 1,
-                    items: items,
-                    activeItem: activeItem,
-                    placeholder: (javaHome ? javaHome : 'Enter the JDK Home'),
-                    validate: validateInput,
-                    buttons: [browseJDKButton],
-                    shouldResume: this.shouldResume
-                });
-                let value;
-                if (pick instanceof ui.MyButton || pick.label === browseJDKButtonLabel) {
-                    let fileUris = await vscode.window.showOpenDialog({
-                        defaultUri: javaHome ? vscode.Uri.file(javaHome) : (vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined),
-                        canSelectFiles: false,
-                        canSelectFolders: true,
-                        canSelectMany: false,
-                        openLabel: 'Select JDK Home'
-                    });
-                    if (!fileUris) {
-                        return;
-                    }
-                    const serverPaths: vscode.Uri[] = fileUris ? fileUris : [] as vscode.Uri[];
-                    if (_.isEmpty(fileUris)
-                        || !fileUris[0].fsPath
-                        || !validateInput(fileUris[0].fsPath)) {
-                        vscode.window.showErrorMessage("Selected JDK Home path is invalid.");
-                        return;
-                    }
-                    value = fileUris[0].fsPath;
-                } else {
-                    value = pick.label;
-                }
-                if (value && value.trim() !== javaHome) {
-                    payaraServer.setJDKHome(value.trim());
-                    this.instanceProvider.updateServerConfig();
-                    vscode.window.showInformationMessage('JDK Home [' + payaraServer.getJDKHome() + '] updated successfully.');
-                }
-            });
-    }
-
     public async openConsole(payaraServer: PayaraServerInstance): Promise<void> {
         open(new URL("http://localhost:" + payaraServer.getAdminPort()).toString());
     }
@@ -693,11 +617,6 @@ export class PayaraInstanceController {
 
     public async refreshServerList(): Promise<void> {
         vscode.commands.executeCommand('payara.server.refresh');
-    }
-
-    private async shouldResume(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-        });
     }
 
     public deployApp(uri: Uri, debug: boolean) {
@@ -811,6 +730,10 @@ export class PayaraInstanceController {
             + restEndpoint.application.payaraServer.getHttpPort()
             + restEndpoint.endpoint).toString()
         );
+    }
+
+    updateConfig(): void {
+        this.instanceProvider.updateServerConfig();
     }
 
 }

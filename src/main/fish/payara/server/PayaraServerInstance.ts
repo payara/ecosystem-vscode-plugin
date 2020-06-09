@@ -33,7 +33,7 @@ import { IncomingMessage } from "http";
 import { ChildProcess } from "child_process";
 import { ProjectOutputWindowProvider } from "../project/ProjectOutputWindowProvider";
 
-export class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem {
+export class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem, PayaraInstance {
 
     public label: string;
 
@@ -104,10 +104,10 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
     }
 
     public getJDKHome(): string | undefined {
-        if (this.jdkHome === null) {
-            return JDKVersion.getDefaultJDKHome();
+        if (this.jdkHome !== null) {
+            return this.jdkHome;
         }
-        return this.jdkHome;
+        return JDKVersion.getDefaultJDKHome();
     }
 
     public setJDKHome(jdkHome: string) {
@@ -143,7 +143,7 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
     }
 
     public isLoading(): boolean {
-        return this.state === InstanceState.LODING;
+        return this.state === InstanceState.LOADING;
     }
 
     public isRestarting(): boolean {
@@ -371,7 +371,7 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
 
 export enum InstanceState {
     RUNNING = "runningPayara",
-    LODING = "loadingPayara",
+    LOADING = "loadingPayara",
     RESTARTING = "restartingPayara",
     STOPPED = "stoppedPayara"
 }

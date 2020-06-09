@@ -36,7 +36,7 @@ export class PayaraMicroInstanceProvider {
                 try {
                     let instance = this.instances.get(folder.uri.fsPath);
                     if (!instance) {
-                        let build = BuildSupport.getBuild(folder.uri);
+                        let build = BuildSupport.getBuild(null, folder.uri);
                         instance = new PayaraMicroInstance(this.context, build.getBuildReader().getArtifactId(), folder.uri);
                         this.instances.set(folder.uri.fsPath, instance);
                     }

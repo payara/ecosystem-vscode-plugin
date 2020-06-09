@@ -19,14 +19,15 @@
 
 import { ChildProcess } from "child_process";
 import * as path from "path";
+import * as _ from "lodash";
 import * as vscode from "vscode";
-import { Uri } from "vscode";
+import { Uri, workspace } from "vscode";
 import { JDKVersion } from "../server/start/JDKVersion";
 import { ProjectOutputWindowProvider } from "../project/ProjectOutputWindowProvider";
 import { BuildSupport } from "../project/BuildSupport";
 import { Build } from "../project/Build";
 
-export class PayaraMicroInstance extends vscode.TreeItem implements vscode.QuickPickItem {
+export class PayaraMicroInstance extends vscode.TreeItem implements vscode.QuickPickItem, PayaraInstance {
 
     public label: string;
 
@@ -35,8 +36,6 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
     private outputChannel: vscode.OutputChannel;
 
     private state: InstanceState = InstanceState.STOPPED;
-
-    private jdkHome: string | null = null;
 
     private homePage: string | undefined;
 
@@ -53,7 +52,7 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
         this.label = name;
         this.outputChannel = ProjectOutputWindowProvider.getInstance().get(name);
         this.setState(InstanceState.STOPPED);
-        this.build = BuildSupport.getBuild(this.path);
+        this.build = BuildSupport.getBuild(this, this.path);
     }
 
     public getBuild() {
@@ -73,14 +72,11 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
     }
 
     public getJDKHome(): string | undefined {
-        if (this.jdkHome === null) {
-            return JDKVersion.getDefaultJDKHome();
-        }
-        return this.jdkHome;
+        return JDKVersion.getDefaultJDKHome();
     }
 
     public setJDKHome(jdkHome: string) {
-        this.jdkHome = jdkHome;
+        workspace.getConfiguration("java").update("home", jdkHome);
     }
 
     public setDebug(debug: boolean): void {
@@ -92,7 +88,7 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
     }
 
     public isLoading(): boolean {
-        return this.state === InstanceState.LODING;
+        return this.state === InstanceState.LOADING;
     }
 
     public isStarted(): boolean {
@@ -165,6 +161,6 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
 
 export enum InstanceState {
     RUNNING = "runningPayaraMicro",
-    LODING = "loadingPayaraMicro",
+    LOADING = "loadingPayaraMicro",
     STOPPED = "stoppedPayaraMicro"
 }

@@ -40,7 +40,7 @@ export class Gradle implements Build {
 
     private microPluginReader: GradleMicroPluginReader | undefined;
 
-    constructor(public workspaceFolder: WorkspaceFolder) {
+    constructor(public payaraInstance: PayaraInstance | null, public workspaceFolder: WorkspaceFolder) {
         this.readBuildConfig();
     }
 
@@ -106,11 +106,21 @@ export class Gradle implements Build {
         if (!this.workspaceFolder) {
             throw new Error("WorkSpace path not found.");
         }
-        let process: ChildProcess = cp.spawn(gradleExe, args, { cwd: this.workspaceFolder.uri.fsPath });
+
+        let jdkHome;
+        let env: any = {};
+        if (this.payaraInstance && (jdkHome = this.payaraInstance.getJDKHome())) {
+            env['JAVA_HOME'] = jdkHome;
+        }
+
+        let process: ChildProcess = cp.spawn(gradleExe, args, { cwd: this.workspaceFolder.uri.fsPath, env:  env });
 
         if (process.pid) {
             let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
             outputChannel.show(false);
+            if(jdkHome) {
+                outputChannel.append("Java Platform: " + jdkHome + '\n');
+            }
             outputChannel.append("> " + gradleExe + ' ' + args.join(" ") + '\n');
             let logCallback = (data: string | Buffer): void => {
                 outputChannel.append(data.toString());
