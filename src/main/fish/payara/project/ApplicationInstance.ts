@@ -100,6 +100,9 @@ export class ApplicationInstance extends vscode.TreeItem {
                     }
                 }
             }
+        },
+        (res, message) => {
+            console.log(message);
         });
     }
 

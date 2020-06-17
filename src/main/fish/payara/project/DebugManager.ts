@@ -19,6 +19,7 @@
 
 import * as fs from "fs";
 import { WorkspaceFolder, DebugConfiguration, workspace, WorkspaceConfiguration, Uri } from "vscode";
+import { ServerUtils } from "../server/tooling/utils/ServerUtils";
 
 export class DebugManager {
 
@@ -71,7 +72,7 @@ export class DebugManager {
         return {
             type: "java",
             request: "attach",
-            hostName: "localhost",
+            hostName: ServerUtils.DEFAULT_HOST,
             name: "payara-micro",
             port: 5005
         };
@@ -81,7 +82,7 @@ export class DebugManager {
         return {
             type: "java",
             request: "attach",
-            hostName: "localhost",
+            hostName: ServerUtils.DEFAULT_HOST,
             name: "payara-server",
             port: 9009
         };

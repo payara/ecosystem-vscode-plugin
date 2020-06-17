@@ -29,7 +29,6 @@ export class PayaraMicroTreeDataProvider implements vscode.TreeDataProvider<Tree
     onDidChangeTreeData: vscode.Event<TreeItem> = this.onDidChangeTreeDataListener.event;
 
     constructor(private context: vscode.ExtensionContext, private instanceProvider: PayaraMicroInstanceProvider) {
-        this.onDidChangeTreeDataListener.fire();
     }
 
     public refresh(item: TreeItem): void {

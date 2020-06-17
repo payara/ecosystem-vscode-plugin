@@ -27,6 +27,8 @@
 		"onCommand:payara.server.add",
 		"onCommand:payara.server.refresh",
 		"onCommand:payara.server.refresh.all",
+		"onCommand:payara.server.remote.connect",
+		"onCommand:payara.server.remote.disconnect",
 		"onCommand:payara.server.start",
 		"onCommand:payara.server.start.debug",
 		"onCommand:payara.server.restart",
@@ -73,6 +75,24 @@
 				"icon": {
 					"light": "resources/theme/light/refresh.svg",
 					"dark": "resources/theme/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "payara.server.remote.connect",
+				"title": "Connect",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/connect.svg",
+					"dark": "resources/theme/dark/connect.svg"
+				}
+			},
+			{
+				"command": "payara.server.remote.disconnect",
+				"title": "Disconnect",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/disconnect.svg",
+					"dark": "resources/theme/dark/disconnect.svg"
 				}
 			},
 			{
@@ -316,6 +336,14 @@
 			],
 			"commandPalette": [
 				{
+					"command": "payara.server.remote.connect",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.remote.disconnect",
+					"when": "never"
+				},
+				{
 					"command": "payara.server.start",
 					"when": "never"
 				},
@@ -426,79 +454,89 @@
 			],
 			"view/item/context": [
 				{
+					"command": "payara.server.remote.connect",
+					"when": "viewItem == stoppedPayaraRemote",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.remote.disconnect",
+					"when": "viewItem == runningPayaraRemote",
+					"group": "inline"
+				},
+				{
 					"command": "payara.server.start",
-					"when": "viewItem == stoppedPayara",
+					"when": "viewItem == stoppedPayaraLocal",
 					"group": "inline"
 				},
 				{
 					"command": "payara.server.start.debug",
-					"when": "viewItem == stoppedPayara",
+					"when": "viewItem == stoppedPayaraLocal",
 					"group": "inline"
 				},
 				{
 					"command": "payara.server.restart",
-					"when": "viewItem == runningPayara",
+					"when": "viewItem == runningPayaraLocal || viewItem == runningPayaraRemote",
 					"group": "inline"
 				},
 				{
 					"command": "payara.server.stop",
-					"when": "viewItem == loadingPayara || viewItem == runningPayara",
+					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == loadingPayaraRemote || viewItem == runningPayaraRemote",
 					"group": "inline"
 				},
 				{
 					"command": "payara.server.start",
-					"when": "viewItem == stoppedPayara",
+					"when": "viewItem == stoppedPayaraLocal",
 					"group": "manage@0"
 				},
 				{
 					"command": "payara.server.start.debug",
-					"when": "viewItem == stoppedPayara",
+					"when": "viewItem == stoppedPayaraLocal",
 					"group": "manage@1"
 				},
 				{
 					"command": "payara.server.restart",
-					"when": "viewItem == runningPayara",
+					"when": "viewItem == runningPayaraLocal || viewItem == runningPayaraRemote",
 					"group": "manage@2"
 				},
 				{
 					"command": "payara.server.stop",
-					"when": "viewItem == runningPayara",
+					"when": "viewItem == runningPayaraLocal || viewItem == runningPayaraRemote",
 					"group": "manage@3"
 				},
 				{
 					"command": "payara.server.rename",
-					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
+					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal || viewItem == loadingPayaraRemote || viewItem == runningPayaraRemote || viewItem == stoppedPayaraRemote",
 					"group": "update@4"
 				},
 				{
 					"command": "payara.server.remove",
-					"when": "viewItem == stoppedPayara",
+					"when": "viewItem == stoppedPayaraLocal || viewItem == runningPayaraRemote || viewItem == loadingPayaraRemote || viewItem == stoppedPayaraRemote",
 					"group": "update@5"
 				},
 				{
 					"command": "payara.server.credentials",
-					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
+					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal || viewItem == loadingPayaraRemote || viewItem == runningPayaraRemote || viewItem == stoppedPayaraRemote",
 					"group": "update@6"
 				},
 				{
 					"command": "payara.server.jdk.home",
-					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
-					"group": "update@6"
+					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal",
+					"group": "update@7"
 				},
 				{
 					"command": "payara.server.console.open",
-					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
-					"group": "view@6"
+					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal || viewItem == loadingPayaraRemote || viewItem == runningPayaraRemote || viewItem == stoppedPayaraRemote",
+					"group": "view@8"
 				},
 				{
 					"command": "payara.server.log.open",
-					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
-					"group": "view@7"
+					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal || viewItem == loadingPayaraRemote || viewItem == runningPayaraRemote || viewItem == stoppedPayaraRemote",
+					"group": "view@9"
 				},
 				{
 					"command": "payara.server.config.open",
-					"when": "viewItem == loadingPayara || viewItem == runningPayara || viewItem == stoppedPayara",
-					"group": "view@8"
+					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal",
+					"group": "view@10"
 				},
 				{
 					"command": "payara.server.app.undeploy",
@@ -587,10 +625,12 @@
 		"tslint": "tslint -t verbose src/**/*.ts"
 	},
 	"dependencies": {
+		"@types/cron": "^1.7.2",
 		"@types/tail": "^2.0.0",
 		"@types/tmp": "^0.2.0",
 		"@types/validator": "^13.0.0",
 		"@types/xml2js": "^0.4.5",
+		"cron": "^1.8.2",
 		"fs-extra": "^9.0.0",
 		"gradle-to-js": "^2.0.0",
 		"lodash": "^4.17.15",
@@ -604,7 +644,7 @@
 	"devDependencies": {
 		"@types/fs-extra": "^9.0.1",
 		"@types/glob": "^7.1.1",
-		"@types/lodash": "^4.14.149",
+		"@types/lodash": "^4.14.155",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^14.0.5",
 		"@types/vscode": "^1.22.0",

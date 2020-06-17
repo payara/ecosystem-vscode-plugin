@@ -25,6 +25,7 @@ import { RestEndpoints } from "../server/endpoints/RestEndpoints";
 import { ApplicationInstance } from "./ApplicationInstance";
 import { PayaraServerInstanceController } from "../server/PayaraServerInstanceController";
 import { DebugManager } from "./DebugManager";
+import { PayaraLocalServerInstance } from '../server/PayaraLocalServerInstance';
 
 export class DeploymentSupport {
 
@@ -42,7 +43,11 @@ export class DeploymentSupport {
         let support = this;
         payaraServer.getOutputChannel().show(false);
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
-        let query: string = '?DEFAULT=' + encodeURIComponent(appPath) + '&force=true';
+
+        let query: string = '?force=true';
+        if(payaraServer instanceof PayaraLocalServerInstance) {
+            query = `${query}&DEFAULT=${encodeURIComponent(appPath)}`;
+        }
         endpoints.invoke("deploy" + query, async (response, report) => {
             if (response.statusCode === 200) {
                 let message = report['message-part'][0];
@@ -73,7 +78,12 @@ export class DeploymentSupport {
                     }
                 }
             }
-        });
+        },
+        (res, message) => {
+            vscode.window.showErrorMessage('Application deployment failed: ' + message);
+        },
+        'application/xml',
+        payaraServer instanceof PayaraLocalServerInstance? undefined : appPath);
     }
 
 }
