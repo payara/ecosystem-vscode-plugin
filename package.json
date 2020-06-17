@@ -48,6 +48,7 @@
 		"onCommand:payara.micro.reload",
 		"onCommand:payara.micro.stop",
 		"onCommand:payara.micro.bundle",
+		"onCommand:payara.micro.jdk.home",
 		"onView:payaraServerExplorer",
 		"onView:payaraServer",
 		"onView:payaraMicroExplorer",
@@ -242,6 +243,11 @@
 					"light": "resources/theme/light/bundle.svg",
 					"dark": "resources/theme/dark/bundle.svg"
 				}
+			},
+			{
+				"command": "payara.micro.jdk.home",
+				"title": "JDK Home",
+				"category": "Payara"
 			}
 		],
 		"views": {
@@ -399,6 +405,10 @@
 				},
 				{
 					"command": "payara.micro.bundle",
+					"when": "never"
+				},
+				{
+					"command": "payara.micro.jdk.home",
 					"when": "never"
 				}
 			],
@@ -559,6 +569,11 @@
 					"command": "payara.micro.bundle",
 					"when": "viewItem == stoppedPayaraMicro || viewItem == runningPayaraMicro",
 					"group": "payara-micro@4"
+				},
+				{
+					"command": "payara.micro.jdk.home",
+					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro || viewItem == stoppedPayaraMicro",
+					"group": "payara-micro@5"
 				}
 			]
 		}

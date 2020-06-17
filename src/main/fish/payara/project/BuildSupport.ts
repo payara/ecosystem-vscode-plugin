@@ -25,15 +25,15 @@ import { Gradle } from './Gradle';
 
 export class BuildSupport {
 
-    public static getBuild(uri: Uri): Build {
+    public static getBuild(payaraInstance: PayaraInstance | null, uri: Uri): Build {
         let workspace = vscode.workspace.getWorkspaceFolder(uri);
         if(!workspace) {
             throw new Error("workspace not found for [" + uri.fsPath + "].");
         }
         if(Maven.detect(workspace)){
-            return new Maven(workspace);
+            return new Maven(payaraInstance, workspace);
         } else if(Gradle.detect(workspace)){
-            return new Gradle(workspace);
+            return new Gradle(payaraInstance, workspace);
         } else {
             throw new Error("Project build not supported for [" + uri.fsPath + "].");
         }

@@ -53,7 +53,7 @@ export class PayaraMicroProjectGenerator {
                             name: project.artifactId,
                             index: 0
                         };
-                        new Maven(workspaceFolder)
+                        new Maven(null, workspaceFolder)
                             .generateMicroProject(project, async (projectPath) => {
                                 const CURRENT_WORKSPACE = "Add to current workspace";
                                 const NEW_WORKSPACE = "Open in new window";

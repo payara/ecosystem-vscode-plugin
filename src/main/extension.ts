@@ -19,7 +19,7 @@
 
 import * as vscode from 'vscode';
 import { PayaraInstanceProvider } from "./fish/payara/server/PayaraInstanceProvider";
-import { PayaraInstanceController } from "./fish/payara/server/PayaraInstanceController";
+import { PayaraServerInstanceController } from "./fish/payara/server/PayaraServerInstanceController";
 import { PayaraServerTreeDataProvider } from "./fish/payara/server/PayaraServerTreeDataProvider";
 import { PayaraMicroProjectGenerator } from './fish/payara/micro/PayaraMicroProjectGenerator';
 import { PayaraMicroTreeDataProvider } from './fish/payara/micro/PayaraMicroTreeDataProvider';
@@ -32,7 +32,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	const payaraServerInstanceProvider: PayaraInstanceProvider = new PayaraInstanceProvider(context);
 	const payaraServerTree: PayaraServerTreeDataProvider = new PayaraServerTreeDataProvider(context, payaraServerInstanceProvider);
-	const payaraServerInstanceController: PayaraInstanceController = new PayaraInstanceController(context, payaraServerInstanceProvider, context.extensionPath);
+	const payaraServerInstanceController: PayaraServerInstanceController = new PayaraServerInstanceController(context, payaraServerInstanceProvider, context.extensionPath);
 
 	const payaraMicroInstanceProvider: PayaraMicroInstanceProvider = new PayaraMicroInstanceProvider(context);
 	const payaraMicroTree: PayaraMicroTreeDataProvider = new PayaraMicroTreeDataProvider(context, payaraMicroInstanceProvider);
@@ -241,6 +241,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		vscode.commands.registerCommand(
 			'payara.micro.bundle',
 			payaraMicro => payaraMicroInstanceController.bundleMicro(payaraMicro)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.micro.jdk.home',
+			payaraMicro => payaraMicroInstanceController.updateJDKHome(payaraMicro)
 		)
 	);
 	context.subscriptions.push(

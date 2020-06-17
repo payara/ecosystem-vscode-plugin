@@ -20,17 +20,19 @@
 import * as _ from "lodash";
 import * as open from "open";
 import * as vscode from 'vscode';
-import { DebugConfiguration } from 'vscode';
+import { workspace, DebugConfiguration } from 'vscode';
 import { DebugManager } from '../project/DebugManager';
 import { InstanceState, PayaraMicroInstance } from './PayaraMicroInstance';
 import { PayaraMicroInstanceProvider } from './PayaraMicroInstanceProvider';
+import { PayaraInstanceController } from "../common/PayaraInstanceController";
 
-export class PayaraMicroInstanceController {
+export class PayaraMicroInstanceController extends PayaraInstanceController {
 
     constructor(
-        private context: vscode.ExtensionContext,
+        context: vscode.ExtensionContext,
         private instanceProvider: PayaraMicroInstanceProvider,
         private extensionPath: string) {
+        super(context);
     }
 
     public async startMicro(payaraMicro: PayaraMicroInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {
@@ -47,7 +49,7 @@ export class PayaraMicroInstanceController {
         }
         try {
             payaraMicro.setDebug(debug);
-            await payaraMicro.setState(InstanceState.LODING);
+            await payaraMicro.setState(InstanceState.LOADING);
             let process = payaraMicro.getBuild()
                 .startPayaraMicro(debugConfig,
                     async data => {
@@ -105,7 +107,7 @@ export class PayaraMicroInstanceController {
             return;
         }
         try {
-            await payaraMicro.setState(InstanceState.LODING);
+            await payaraMicro.setState(InstanceState.LOADING);
             let process = payaraMicro
                 .getBuild()
                 .reloadPayaraMicro(
@@ -178,9 +180,7 @@ export class PayaraMicroInstanceController {
         vscode.commands.executeCommand('payara.micro.refresh.all');
     }
 
-    private async shouldResume(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-        });
+    updateConfig(): void {
     }
 
 }

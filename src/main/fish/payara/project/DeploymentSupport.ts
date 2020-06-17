@@ -23,18 +23,18 @@ import { PayaraServerInstance } from "../server/PayaraServerInstance";
 import { BuildSupport } from "./BuildSupport";
 import { RestEndpoints } from "../server/endpoints/RestEndpoints";
 import { ApplicationInstance } from "./ApplicationInstance";
-import { PayaraInstanceController } from "../server/PayaraInstanceController";
+import { PayaraServerInstanceController } from "../server/PayaraServerInstanceController";
 import { DebugManager } from "./DebugManager";
 
 export class DeploymentSupport {
 
     constructor(
-        public controller: PayaraInstanceController) {
+        public controller: PayaraServerInstanceController) {
     }
 
     public buildAndDeployApplication(uri: Uri, payaraServer: PayaraServerInstance, debug: boolean) {
         return BuildSupport
-            .getBuild(uri)
+            .getBuild(payaraServer, uri)
             .buildProject(artifact => this.deployApplication(artifact, payaraServer, debug));
     }
 
