@@ -27,6 +27,7 @@ import { PayaraMicroInstanceProvider } from './fish/payara/micro/PayaraMicroInst
 import { PayaraMicroInstanceController } from './fish/payara/micro/PayaraMicroInstanceController';
 import * as path from 'path';
 import { exec } from 'child_process';
+import { PayaraRemoteServerInstance } from './fish/payara/server/PayaraRemoteServerInstance';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
@@ -70,10 +71,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			'payara.server.refresh.all',
 			() => {
 				for (let payaraServer of payaraServerInstanceProvider.getServers()) {
-					if (payaraServer.isStarted()) {
-						payaraServer.reloadApplications();
+					if (payaraServer instanceof PayaraRemoteServerInstance && !payaraServer.isConnectionAllowed()) {
+						continue;
 					}
-					payaraServerTree.refresh(payaraServer);
+					payaraServer.checkAliveStatusUsingRest(2,
+						async () => {
+							payaraServer.setStarted(true);
+							payaraServer.connectOutput();
+							vscode.commands.executeCommand('payara.server.refresh');
+							payaraServer.reloadApplications();
+						},
+						async (message?: string) => {
+							payaraServer.setStarted(false);
+							vscode.commands.executeCommand('payara.server.refresh');
+						}
+					);
 				}
 			}
 		)
@@ -84,6 +96,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			payaraServer => {
 				payaraServerTree.refresh(payaraServer);
 			}
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.remote.connect',
+			payaraServer => payaraServerInstanceController.connectServer(payaraServer, false)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.server.remote.disconnect',
+			payaraServer => payaraServerInstanceController.disconnectServer(payaraServer, false)
 		)
 	);
 	context.subscriptions.push(
@@ -261,9 +285,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
 
 			let fileName = path.basename(document.uri.fsPath);
-			if(fileName === "pom.xml"
-			|| fileName === "build.gradle"
-			|| fileName === "settings.gradle") {
+			if (fileName === "pom.xml"
+				|| fileName === "build.gradle"
+				|| fileName === "settings.gradle") {
 				payaraMicro.getBuild().readBuildConfig();
 			}
 

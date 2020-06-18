@@ -20,48 +20,60 @@
 import * as vscode from "vscode";
 import * as _ from "lodash";
 import * as path from "path";
-import * as fs from "fs";
-import * as fse from "fs-extra";
-import * as cp from 'child_process';
-import { PortReader } from "./start/PortReader";
 import { JDKVersion } from "./start/JDKVersion";
-import { JavaUtils } from "./tooling/utils/JavaUtils";
 import { ServerUtils } from "./tooling/utils/ServerUtils";
 import { ApplicationInstance } from "../project/ApplicationInstance";
 import { RestEndpoints } from "./endpoints/RestEndpoints";
 import { IncomingMessage } from "http";
-import { ChildProcess } from "child_process";
 import { ProjectOutputWindowProvider } from "../project/ProjectOutputWindowProvider";
 
-export class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem, PayaraInstance {
+export abstract class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem, PayaraInstance {
 
     public label: string;
 
     public description: string | undefined;
 
-    private outputChannel: vscode.OutputChannel;
-
     private state: InstanceState = InstanceState.STOPPED;
 
     private debug: boolean = false;
 
-    private portReader: PortReader | null = null;
-
-    private logStream: ChildProcess | null = null;
-
     private username: string = ServerUtils.DEFAULT_USERNAME;
+
     private password: string = ServerUtils.DEFAULT_PASSWORD;
+
     private securityEnabled: boolean = false;
 
     private jdkHome: string | null = null;
 
+    private outputChannel: vscode.OutputChannel;
+
     private applicationInstances: Array<ApplicationInstance> = new Array<ApplicationInstance>();
 
-    constructor(private name: string, private path: string, private domainName: string) {
+    private versionLabel: string | undefined;
+
+    constructor(private name: string, private domainName: string) {
         super(name);
         this.label = name;
         this.outputChannel = ProjectOutputWindowProvider.getInstance().get(name);
     }
+
+    abstract getConfigData(): any;
+
+    abstract getTooltip(): string;
+
+    abstract async showLog(): Promise<void>;
+
+    abstract connectOutput(): void;
+
+    abstract disconnectOutput(): void;
+
+    abstract getHost(): string;
+
+    abstract getHttpPort(): number;
+
+    abstract getAdminPort(): number;
+
+    abstract isMatchingLocation(baseRoot: string, domainRoot: string): boolean;
 
     public getName(): string {
         return this.name;
@@ -71,8 +83,12 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
         this.name = name;
     }
 
-    public getPath(): string {
-        return this.path;
+    public getVersionLabel(): string | undefined {
+        return this.versionLabel;
+    }
+
+    public setVersionLabel(versionLabel: string) {
+        this.versionLabel = versionLabel;
     }
 
     public getDomainName(): string {
@@ -95,14 +111,6 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
         this.password = password;
     }
 
-    public isSecurityEnabled(): boolean {
-        return this.securityEnabled;
-    }
-
-    public setSecurityEnabled(securityEnabled: boolean) {
-        this.securityEnabled = securityEnabled;
-    }
-
     public getJDKHome(): string | undefined {
         if (this.jdkHome !== null) {
             return this.jdkHome;
@@ -114,32 +122,12 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
         this.jdkHome = jdkHome;
     }
 
-    public getServerRoot(): string {
-        return this.path;
+    public isSecurityEnabled(): boolean {
+        return this.securityEnabled;
     }
 
-    public getServerHome(): string {
-        return path.join(this.getServerRoot(), 'glassfish');
-    }
-
-    public getServerModules(): string {
-        return path.join(this.getServerHome(), 'modules');
-    }
-
-    public getDomainsFolder(): string {
-        return path.join(this.getServerHome(), 'domains');
-    }
-
-    public getDomainPath(): string {
-        return path.join(this.getDomainsFolder(), this.domainName);
-    }
-
-    public getDomainXmlPath(): string {
-        return path.join(this.getDomainPath(), "config", "domain.xml");
-    }
-
-    public getServerLog(): string {
-        return path.join(this.getDomainPath(), "logs", "server.log");
+    public setSecurityEnabled(securityEnabled: boolean) {
+        this.securityEnabled = securityEnabled;
     }
 
     public isLoading(): boolean {
@@ -192,148 +180,117 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
         return icon;
     }
 
-    public getHttpPort(): number {
-        if (!this.portReader) {
-            this.portReader = this.createPortReader();
-        }
-        return this.portReader.getHttpPort();
+    public getOutputChannel(): vscode.OutputChannel {
+        return this.outputChannel;
     }
 
-    public getHttpsPort(): number {
-        if (!this.portReader) {
-            this.portReader = this.createPortReader();
-        }
-        return this.portReader.getHttpsPort();
-    }
-
-    public getAdminPort(): number {
-        if (!this.portReader) {
-            this.portReader = this.createPortReader();
-        }
-        return this.portReader.getAdminPort();
-    }
-
-    private createPortReader(): PortReader {
-        return new PortReader(this.getDomainXmlPath(), ServerUtils.DAS_NAME);
-    }
-
-    public async checkAliveStatusUsingRest(
+    public async checkAliveStatusUsingRest(maxRetryCount: number,
         successCallback: () => any,
-        failureCallback: (message?: string) => any): Promise<void> {
+        failureCallback: (message?: string) => any,
+        log?: boolean): Promise<void> {
 
-        await new Promise(res => setTimeout(res, 3000));
-        let max = 30;
         let trycount = 0;
         let endpoints: RestEndpoints = new RestEndpoints(this);
-        let successHttpCallback: (res: IncomingMessage) => any;
+        let successHttpCallback: (res: IncomingMessage, report?: any) => any;
         let failureHttpCallback: (res: IncomingMessage, message?: string) => any;
         let invoke = () => {
             ++trycount;
-            let req = endpoints.invoke("list-virtual-servers", successHttpCallback, failureHttpCallback);
+            if (log) {
+                this.getOutputChannel().appendLine(`Connecting to ${this.getName()}[${this.getHost()}:${this.getAdminPort()}] ...`);
+            }
+            let req = endpoints.invoke("__locations", successHttpCallback, failureHttpCallback);
             req.on('error', async (err: any) => {
+                if (log) {
+                    let errorMessage = `Connection failure ${this.getName()}[${this.getHost()}:${this.getAdminPort()}]: ${err["code"]} [${err.message}]. Please check your network connectivity or firewall settings.`;
+                    this.getOutputChannel().appendLine(errorMessage);
+                    vscode.window.showErrorMessage(errorMessage);
+                }
                 if (err["code"] === 'ECONNREFUSED' || err["code"] === 'ECONNRESET') {
-                    await new Promise(res => setTimeout(res, 3000));
-                    invoke();
+                    await new Promise(res => setTimeout(res, ServerUtils.DEFAULT_WAIT));
+                    if (trycount < maxRetryCount) {
+                        invoke(); // try again
+                    } else {
+                        failureCallback(err.message);
+                    }
                 } else {
                     failureCallback(err.message);
                 }
             });
         };
-        successHttpCallback = async (res: IncomingMessage) => {
-            successCallback();
+        successHttpCallback = async (res: IncomingMessage, report?: any) => {
+
+            if (report['message-part']
+                && report['message-part'][0]?.property) {
+                let prop = report['message-part'][0].property;
+                let baseRoot;
+                let domainRoot;
+                for (const key in prop) {
+                    if (prop.hasOwnProperty(key)) {
+                        const element = prop[key];
+                        if (element.$.name === 'Base-Root') {
+                            baseRoot = element.$.value;
+                        } else if (element.$.name === 'Domain-Root') {
+                            domainRoot = element.$.value;
+                        }
+                    }
+                }
+                if (log) {
+                    this.getOutputChannel().appendLine(`Reply from ${this.getName()}[${this.getHost()}:${this.getAdminPort()}]`);
+                    this.getOutputChannel().appendLine(`${this.getName()}[${this.getHost()}] Base-Root: ${baseRoot}`);
+                    this.getOutputChannel().appendLine(`${this.getName()}[${this.getHost()}] Domain-Root: ${domainRoot}`);
+                }
+                if (this.isMatchingLocation(baseRoot, domainRoot)) {
+                    if(!this.getVersionLabel() && res.headers['server']) {
+                        this.setVersionLabel(<string>res.headers['server']);
+                    }
+                    if (!this.getVersionLabel()) {
+                        endpoints.invoke("version",
+                            (res, report) => {
+                                if (report['message-part']
+                                    && report['message-part'][0]?.$?.message) {
+                                    this.setVersionLabel(report['message-part'][0].$.message);
+                                    if (log) {
+                                        let message = `Successfully connected to ${this.getName()}[${this.getHost()}:${this.getAdminPort()}] ${this.getVersionLabel()}`;
+                                        this.getOutputChannel().appendLine(message);
+                                        vscode.window.showInformationMessage(message);
+                                    }
+                                }
+                            },
+                            (res, message) => {
+                                console.log(`Unable to fetch the version detail from ${this.getName()}[${this.getHost()}]`);
+                            }
+                        );
+                    } else if (log) {
+                        let message = `Successfully connected to ${this.getName()}[${this.getHost()}:${this.getAdminPort()}] ${this.getVersionLabel()}`;
+                        this.getOutputChannel().appendLine(message);
+                        vscode.window.showInformationMessage(message);
+                    }
+                    successCallback();
+                } else if (log) {
+                    this.getOutputChannel().appendLine(`Connection terminated as domain name [${this.getDomainName()}] not matched with ${this.getName()}[${path.basename(domainRoot)}]`);
+                }
+            }
         };
         failureHttpCallback = async (res: IncomingMessage, message?: string) => {
             if (res.statusCode === 200) { // https://payara.atlassian.net/browse/APPSERV-52
                 successCallback();
             } else {
-                await new Promise(res => setTimeout(res, 3000));
-                if (trycount < max) {
+                await new Promise(res => setTimeout(res, ServerUtils.DEFAULT_WAIT));
+                if (trycount < maxRetryCount) {
                     invoke(); // try again
                 } else {
                     failureCallback(message);
                 }
             }
         };
+        if (maxRetryCount >= ServerUtils.DEFAULT_RETRY_COUNT) {
+            await new Promise(res => setTimeout(res, ServerUtils.DEFAULT_WAIT));
+        }
         invoke();
-    }
-
-    public checkAliveStatusUsingJPS(callback: () => any): void {
-        let javaHome: string | undefined = this.getJDKHome();
-        if (!javaHome) {
-            throw new Error("Java home path not found.");
-        }
-        let javaProcessExe: string = JavaUtils.javaProcessExecutableFullPath(javaHome);
-        // Java Process executable should exist.
-        if (!fse.pathExistsSync(javaProcessExe)) {
-            throw new Error("Java Process " + javaProcessExe + " executable for " + this.getName() + " was not found");
-        }
-
-        let output: string = cp.execFileSync(javaProcessExe, ['-mlv']);
-        let lines: string[] = output.toString().split(/(?:\r\n|\r|\n)/g);
-        for (let line of lines) {
-            let result: string[] = line.split(" ");
-            if (result.length >= 6
-                && result[1] === ServerUtils.PF_MAIN_CLASS
-                && result[3] === this.getDomainName()
-                && result[5] === this.getDomainPath()) {
-                callback();
-                break;
-            }
-        }
-    }
-
-    public getOutputChannel(): vscode.OutputChannel {
-        return this.outputChannel;
-    }
-
-    public async showLog(): Promise<void> {
-        let payaraServer: PayaraServerInstance = this;
-        return new Promise((resolve, reject) => {
-            fs.readFile(this.getServerLog(), 'utf8', function (err, data) {
-                payaraServer.outputChannel.appendLine(data.toString());
-            });
-        });
-    }
-
-    public connectOutput(): void {
-        if (this.logStream === null && fs.existsSync(this.getServerLog())) {
-            let logCallback = (data: string | Buffer): void => {
-                this.outputChannel.appendLine(
-                    this.getName() && !_.isEmpty(data.toString()) ? `[${this.getName()}]: ${data.toString()}` : data.toString()
-                );
-            };
-            if (JavaUtils.IS_WIN) {
-                this.logStream = cp.spawn('powershell.exe', ['Get-Content', '-Tail', '20', '-Wait', '-literalpath', this.getServerLog()]);
-            } else {
-                this.logStream = cp.spawn('tail ', ['-f', '-n', '20', this.getServerLog()]);
-            }
-            if (this.logStream.pid) {
-                this.outputChannel.show(false);
-                let logCallback = (data: string | Buffer): void => this.outputChannel.append(data.toString());
-                if (this.logStream.stdout !== null) {
-                    this.logStream.stdout.on('data', logCallback);
-                }
-                if (this.logStream.stderr !== null) {
-                    this.logStream.stderr.on('data', logCallback);
-                }
-            }
-        }
-    }
-
-    public disconnectOutput(): void {
-        if (this.logStream !== null) {
-            this.logStream.kill();
-        }
-    }
-
-    public dispose() {
-        this.disconnectOutput();
-        this.outputChannel.dispose();
     }
 
     public addApplication(application: ApplicationInstance): void {
         this.applicationInstances.push(application);
-        vscode.commands.executeCommand('payara.server.refresh');
     }
 
     public removeApplication(application: ApplicationInstance): void {
@@ -349,24 +306,28 @@ export class PayaraServerInstance extends vscode.TreeItem implements vscode.Quic
 
     public reloadApplications() {
         let payaraServer = this;
-        payaraServer.applicationInstances = new Array<ApplicationInstance>();
+        let applicationInstances = new Array<ApplicationInstance>();
         let endpoints: RestEndpoints = new RestEndpoints(this);
         endpoints.invoke("list-applications", async (response, report) => {
             if (response.statusCode === 200) {
                 let message = report['message-part'][0];
                 if (message && message.property) {
                     for (let property of message.property) {
-                        payaraServer.addApplication(
+                        applicationInstances.push(
                             new ApplicationInstance(payaraServer, property.$.name, property.$.value)
                         );
                     }
+                    payaraServer.applicationInstances = applicationInstances;
+                    vscode.commands.executeCommand('payara.server.refresh');
                 }
             }
         });
     }
 
-
-
+    public dispose() {
+        this.disconnectOutput();
+        this.getOutputChannel().dispose();
+    }
 }
 
 export enum InstanceState {

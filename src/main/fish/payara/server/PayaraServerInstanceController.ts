@@ -46,6 +46,8 @@ import { BuildSupport } from '../project/BuildSupport';
 import { ProjectOutputWindowProvider } from '../project/ProjectOutputWindowProvider';
 import { RestEndpoint } from '../project/RestEndpoint';
 import { PayaraInstanceController } from '../common/PayaraInstanceController';
+import { PayaraRemoteServerInstance } from './PayaraRemoteServerInstance';
+import { PayaraLocalServerInstance } from './PayaraLocalServerInstance';
 
 export class PayaraServerInstanceController extends PayaraInstanceController {
 
@@ -64,32 +66,61 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
 
     public async addServer(): Promise<void> {
         let controller = this;
+        let step = 0;
+        let totalStep = 4;
         ui.MultiStepInput.run(
-            input => this.selectServer(input,
+            input => this.selectServerType(step, totalStep, input,
                 {},
                 state => {
                     if (!state.name) {
                         vscode.window.showErrorMessage('server name is invalid');
-                    } else if (!state.path) {
+                    } else if (!state.path && state.type === 'local') {
                         vscode.window.showErrorMessage('selected server path is invalid');
                     } else if (!state.domainName) {
                         vscode.window.showErrorMessage('domain name is invalid');
                     } else {
                         let serverName = state.name;
-                        let serverPath = state.path;
+                        let serverPath = state.path ? state.path : '';
                         let domainName = state.domainName;
 
                         let registerServer = () => {
-                            let payaraServer = new PayaraServerInstance(serverName, serverPath, domainName);
+                            let payaraServer: PayaraServerInstance = state.type === 'local' ?
+                                new PayaraLocalServerInstance(
+                                    serverName, domainName, serverPath
+                                ) :
+                                new PayaraRemoteServerInstance(
+                                    serverName, domainName
+                                );
                             payaraServer.setUsername(state.username ? state.username.trim() : ServerUtils.DEFAULT_USERNAME);
                             payaraServer.setPassword(state.password ? state.password.trim() : ServerUtils.DEFAULT_PASSWORD);
-                            this.instanceProvider.addServer(payaraServer);
                             this.refreshServerList();
-                            payaraServer.checkAliveStatusUsingJPS(() => {
-                                payaraServer.connectOutput();
-                                payaraServer.setStarted(true);
-                                this.refreshServerList();
-                            });
+
+                            if (payaraServer instanceof PayaraLocalServerInstance) {
+                                payaraServer.checkAliveStatusUsingJPS(() => {
+                                    payaraServer.connectOutput();
+                                    payaraServer.setStarted(true);
+                                    this.refreshServerList();
+                                });
+                            } else if (payaraServer instanceof PayaraRemoteServerInstance) {
+                                payaraServer.setHost(state.host ? state.host.trim() : ServerUtils.DEFAULT_HOST);
+                                payaraServer.setAdminPort(state.adminPort ? state.adminPort : ServerUtils.DEFAULT_ADMIN_PORT);
+                                payaraServer.setHttpPort(state.httpPort ? state.httpPort : ServerUtils.DEFAULT_HTTP_PORT);
+                                if (payaraServer.isConnectionAllowed()) {
+                                    payaraServer.checkAliveStatusUsingRest(ServerUtils.DEFAULT_RETRY_COUNT,
+                                        async () => {
+                                            payaraServer.setStarted(true);
+                                            payaraServer.connectOutput();
+                                            this.refreshServerList();
+                                            payaraServer.reloadApplications();
+                                        },
+                                        async (message?: string) => {
+                                            payaraServer.setStarted(false);
+                                            this.refreshServerList();
+                                        }
+                                    );
+                                }
+                            }
+                            this.instanceProvider.addServer(payaraServer);
                         };
                         if (state.newDomain) {
                             controller.createDomain(
@@ -115,8 +146,8 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         serverName: string,
         serverPath: string,
         domainName: string,
-        adminPort?: string,
-        instancePort?: string,
+        adminPort?: number,
+        instancePort?: number,
         username?: string,
         password?: string) {
 
@@ -156,9 +187,9 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         args.push("--domaindir");
         args.push(path.join(serverPath, "glassfish", "domains"));
         args.push("--adminport");
-        args.push(adminPort);
+        args.push(String(adminPort));
         args.push("--instanceport");
-        args.push(instancePort);
+        args.push(String(instancePort));
         args.push(domainName);
         let process: ChildProcess = cp.spawn(javaVmExe, args, { cwd: serverPath });
         if (process.pid) {
@@ -200,7 +231,32 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         return tmpFile;
     }
 
-    private async selectServer(input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
+    private async selectServerType(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
+        let local = { label: 'Local Domain' };
+        let remote = { label: 'Remote Domain' };
+        const pick = await input.showQuickPick({
+            title: 'Register Payara Server',
+            step: ++step,
+            totalSteps: totalSteps,
+            placeholder: 'Select server instance type.',
+            items: [local, remote],
+            activeItem: local,
+            shouldResume: this.shouldResume
+        });
+
+        if (pick === local) {
+            state.type = 'local';
+            return (input: ui.MultiStepInput) => this.selectServer(step, totalSteps, input, state, callback);
+        } else {
+            state.type = 'remote';
+            totalSteps = 6;
+            return (input: ui.MultiStepInput) => this.serverName(step, totalSteps, input, state, callback);
+        }
+
+    }
+
+    private async selectServer(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
+        ++step;
         let serverPath: string;
         let dialogOptions: OpenDialogOptions = ({
             defaultUri: vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined,
@@ -230,8 +286,8 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             unlistedServers.push(({ label: browseServerButtonLabel }));
             let pick = await input.showQuickPick({
                 title: 'Register Payara Server',
-                step: 1,
-                totalSteps: 3,
+                step: step,
+                totalSteps: totalSteps,
                 placeholder: 'Select the Payara Server location',
                 items: unlistedServers,
                 buttons: [browseServerButton],
@@ -256,17 +312,17 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         }
 
         state.path = serverPath;
-        return (input: ui.MultiStepInput) => this.serverName(input, state, callback);
+        return (input: ui.MultiStepInput) => this.serverName(step, totalSteps, input, state, callback);
     }
 
-    private async serverName(input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
+    private async serverName(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
         const title = 'Register Payara Server';
         let serverPath: string = state.path ? state.path : '';
         let defaultServerName: string = path.basename(serverPath);
         let serverName = await input.showInputBox({
             title: title,
-            step: 2,
-            totalSteps: 3,
+            step: ++step,
+            totalSteps: totalSteps,
             value: state.name || defaultServerName,
             prompt: 'Enter a unique name for the server',
             placeHolder: 'Payara Server name',
@@ -275,10 +331,14 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         });
 
         state.name = serverName ? serverName : defaultServerName;
-        return (input: ui.MultiStepInput) => this.selectDomain(input, state, callback);
+        if (state.type === 'local') {
+            return (input: ui.MultiStepInput) => this.selectDomain(step, totalSteps, input, state, callback);
+        } else {
+            return (input: ui.MultiStepInput) => this.domainRegistration(step, totalSteps, input, state, [], callback);
+        }
     }
 
-    private async selectDomain(input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
+    private async selectDomain(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
         if (!state.path) {
             return;
         }
@@ -293,8 +353,8 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         }, 'Create new Payara Server Domain');
         const pick = await input.showQuickPick({
             title: 'Register Payara Server',
-            step: 3,
-            totalSteps: 3,
+            step: ++step,
+            totalSteps: totalSteps,
             placeholder: 'Select an existing domain.',
             items: state.domains ? state.domains : [],
             activeItem: typeof state.domainName !== 'string' ? state.domainName : undefined,
@@ -302,7 +362,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             shouldResume: this.shouldResume
         });
         if (pick instanceof ui.MyButton) {
-            return (input: ui.MultiStepInput) => this.domainRegistration(input, state, domainsDir, callback);
+            return (input: ui.MultiStepInput) => this.domainRegistration(step, totalSteps, input, state, domainsDir, callback);
         }
 
         state.domainName = pick.label;
@@ -336,6 +396,13 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         return undefined;
     }
 
+    private async validateHost(host: string): Promise<string | undefined> {
+        if (_.isEmpty(host)) {
+            return 'Please enter a valid host name.';
+        }
+        return undefined;
+    }
+
     private async validatePort(port: string): Promise<string | undefined> {
         if (!isPort.default(port)) {
             return 'Please enter a valid port number.';
@@ -343,24 +410,37 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         return undefined;
     }
 
-    private async domainRegistration(input: ui.MultiStepInput, state: Partial<State>, existingDomainsDir: Array<string>, callback: (n: Partial<State>) => any) {
-        let step: number = 4;
-        let totalSteps: number = 6;
-        let serverPath: string = state.path ? state.path : '';
-        let defaultServerName: string = path.basename(serverPath);
+    private async domainRegistration(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, existingDomainsDir: Array<string>, callback: (n: Partial<State>) => any) {
+        totalSteps = state.type === 'local' ? 7 : totalSteps;
         let domainName = await input.showInputBox({
             title: 'Domain name',
-            step: step,
+            step: ++step,
             totalSteps: totalSteps,
             value: '',
-            prompt: 'Enter the new domain name',
+            prompt: state.type === 'local' ? 'Enter the new domain name' : 'Enter the domain name',
             placeHolder: 'Payara Server domain name',
             validate: value => this.validateDomainName(value, existingDomainsDir),
             shouldResume: this.shouldResume
         });
 
         state.domainName = domainName;
-        state.newDomain = true;
+
+        if (state.type === 'local') {
+            state.newDomain = true;
+        } else {
+            state.newDomain = false;
+            let host = await input.showInputBox({
+                title: 'Host',
+                step: ++step,
+                totalSteps: totalSteps,
+                value: ServerUtils.DEFAULT_HOST,
+                prompt: 'Enter the host name',
+                placeHolder: 'Enter the host name',
+                validate: value => this.validateHost(value),
+                shouldResume: this.shouldResume
+            });
+            state.host = host;
+        }
 
         let decision = await input.showQuickPick({
             title: 'Use Default ports?',
@@ -393,8 +473,8 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 validate: value => this.validatePort(value),
                 shouldResume: this.shouldResume
             });
-            state.adminPort = adminPort;
-            state.httpPort = httpPort;
+            state.adminPort = parseInt(adminPort);
+            state.httpPort = parseInt(httpPort);
         }
         return (input: ui.MultiStepInput) => this.addCredentials(step, totalSteps, true, input, state, callback);
     }
@@ -451,7 +531,33 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         return payaraApiExists && asadminFileExists;
     }
 
-    public async startServer(payaraServer: PayaraServerInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {
+    public async connectServer(payaraServer: PayaraRemoteServerInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {
+        payaraServer.setConnectionAllowed(true);
+        payaraServer.checkAliveStatusUsingRest(0,
+            async () => {
+                payaraServer.setStarted(true);
+                payaraServer.connectOutput();
+                vscode.commands.executeCommand('payara.server.refresh');
+                payaraServer.reloadApplications();
+            },
+            async (message?: string) => {
+                payaraServer.setStarted(false);
+                vscode.commands.executeCommand('payara.server.refresh');
+            },
+            true
+        );
+    }
+
+    public async disconnectServer(payaraServer: PayaraRemoteServerInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {
+        payaraServer.setConnectionAllowed(false);
+        payaraServer.setStarted(false);
+        payaraServer.disconnectOutput();
+        payaraServer.getOutputChannel().appendLine(`Disconnecting from ${payaraServer.getName()}[${payaraServer.getHost()}:${payaraServer.getAdminPort()}]`);
+        vscode.commands.executeCommand('payara.server.refresh');
+    }
+
+
+    public async startServer(payaraServer: PayaraLocalServerInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {
         if (!payaraServer.isStopped()) {
             vscode.window.showErrorMessage('Payara Server instance already running.');
             return;
@@ -479,7 +585,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                     this.refreshServerList();
                 }
             });
-            payaraServer.checkAliveStatusUsingRest(
+            payaraServer.checkAliveStatusUsingRest(ServerUtils.DEFAULT_RETRY_COUNT,
                 async () => {
                     payaraServer.setStarted(true);
                     this.refreshServerList();
@@ -495,7 +601,8 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                         callback(false);
                     }
                     vscode.window.showErrorMessage('Unable to start the Payara Server. ' + message);
-                });
+                }
+            );
         }
     }
 
@@ -512,18 +619,18 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             payaraServer.setState(InstanceState.RESTARTING);
             this.refreshServerList();
             payaraServer.getOutputChannel().show(false);
-            payaraServer.checkAliveStatusUsingRest(
+            payaraServer.checkAliveStatusUsingRest(ServerUtils.DEFAULT_RETRY_COUNT,
                 async () => {
                     payaraServer.setStarted(true);
-                    this.refreshServerList();
                     payaraServer.connectOutput();
+                    this.refreshServerList();
                     if (callback) {
                         callback(true);
                     }
                 },
                 async (message?: string) => {
-                    payaraServer.disconnectOutput();
                     payaraServer.setStarted(false);
+                    payaraServer.disconnectOutput();
                     this.refreshServerList();
                     if (callback) {
                         callback(false);
@@ -531,17 +638,19 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                     vscode.window.showErrorMessage('Unable to restart the Payara Server. ' + message);
                 }
             );
-            payaraServer.checkAliveStatusUsingJPS(
-                async () => {
-                    payaraServer.connectOutput();
-                }
-            );
+            if (payaraServer instanceof PayaraLocalServerInstance) {
+                payaraServer.checkAliveStatusUsingJPS(
+                    async () => {
+                        payaraServer.connectOutput();
+                    }
+                );
+            }
         },
             (res, message) => vscode.window.showErrorMessage('Unable to restart the Payara Server. ' + message)
         );
     }
 
-    public async stopServer(payaraServer: PayaraServerInstance): Promise<void> {
+    public async stopServer(payaraServer: PayaraLocalServerInstance): Promise<void> {
         if (payaraServer.isStopped()) {
             vscode.window.showErrorMessage('Payara Server instance not running.');
             return;
@@ -600,7 +709,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
     }
 
     public async openConsole(payaraServer: PayaraServerInstance): Promise<void> {
-        open(new URL("http://localhost:" + payaraServer.getAdminPort()).toString());
+        open(new URL(`http://${payaraServer.getHost()}:${payaraServer.getAdminPort()}`).toString());
     }
 
     public async openLog(payaraServer: PayaraServerInstance): Promise<void> {
@@ -609,7 +718,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         payaraServer.connectOutput();
     }
 
-    public async openConfig(payaraServer: PayaraServerInstance): Promise<void> {
+    public async openConfig(payaraServer: PayaraLocalServerInstance): Promise<void> {
         let domainXml = Uri.parse("file:" + payaraServer.getDomainXmlPath());
         vscode.workspace.openTextDocument(domainXml)
             .then(doc => vscode.window.showTextDocument(doc));
@@ -628,8 +737,8 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                         support.deployApplication(uri.fsPath, server, debug);
                     } else {
                         try {
-                        support.buildAndDeployApplication(uri, server, debug);
-                        } catch(error) {
+                            support.buildAndDeployApplication(uri, server, debug);
+                        } catch (error) {
                             vscode.window.showErrorMessage(error.message);
                         }
                     }
@@ -637,9 +746,9 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                     vscode.window.showErrorMessage('Unable to deploy the application as Payara Server instance not running.');
                 }
             };
-            if (!server.isStarted()) {
+            if (server instanceof PayaraLocalServerInstance && !server.isStarted()) {
                 this.startServer(server, debug, deploy);
-            } else if (debug && !server.isDebug()) {
+            } else if (server instanceof PayaraLocalServerInstance && debug && !server.isDebug()) {
                 this.restartServer(server, debug, deploy);
             } else {
                 deploy(true);
@@ -711,14 +820,12 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             vscode.window.showInformationMessage('Context path not found for the application: ' + application.name);
         } else if (application.getContextPath() === undefined) {
             application.fetchContextPath(() => open(new URL(
-                "http://localhost:"
-                + application.payaraServer.getHttpPort()
+                `http://${application.payaraServer.getHost()}:${application.payaraServer.getHttpPort()}`
                 + application.getContextPath()).toString()
             ));
         } else {
             open(new URL(
-                "http://localhost:"
-                + application.payaraServer.getHttpPort()
+                `http://${application.payaraServer.getHost()}:${application.payaraServer.getHttpPort()}`
                 + application.getContextPath()).toString()
             );
         }
@@ -726,8 +833,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
 
     public openRestEndpoint(restEndpoint: RestEndpoint) {
         open(new URL(
-            "http://localhost:"
-            + restEndpoint.application.payaraServer.getHttpPort()
+            `http://${restEndpoint.application.payaraServer.getHost()}:${restEndpoint.application.payaraServer.getHttpPort()}`
             + restEndpoint.endpoint).toString()
         );
     }
@@ -739,6 +845,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
 }
 
 interface State {
+    type: string;
     title: string;
     step: number;
     totalSteps: number;
@@ -746,8 +853,9 @@ interface State {
     domains: QuickPickItem[];
     domainName: string;
     newDomain: boolean;
-    adminPort: string;
-    httpPort: string;
+    host: string;
+    adminPort: number;
+    httpPort: number;
     username: string;
     password: string;
     name: string;

@@ -30,11 +30,11 @@ import { JvmOption } from './JvmOption';
 import { JvmConfigReader } from './JvmConfigReader';
 import { JDKVersion } from "./JDKVersion";
 import { ChildProcess } from 'child_process';
+import { PayaraLocalServerInstance } from "../PayaraLocalServerInstance";
 
 export class StartTask {
 
-    public startServer(payaraServer: PayaraServerInstance, debug: boolean): ChildProcess {
-        let serverName: string = payaraServer.getName();
+    public startServer(payaraServer: PayaraLocalServerInstance, debug: boolean): ChildProcess {
         let jvmConfigReader: JvmConfigReader = new JvmConfigReader(payaraServer.getDomainXmlPath(), ServerUtils.DAS_NAME);
 
         let javaHome: string | undefined = payaraServer.getJDKHome();
@@ -95,7 +95,7 @@ export class StartTask {
         return cp.spawn(javaVmExe, args, { cwd: payaraServer.getPath() });
     }
 
-    private addJavaAgent(payaraServer: PayaraServerInstance, jvmConfigReader: JvmConfigReader): void {
+    private addJavaAgent(payaraServer: PayaraLocalServerInstance, jvmConfigReader: JvmConfigReader): void {
         let optList: Array<JvmOption> = jvmConfigReader.getJvmOptions();
         let serverHome: string = payaraServer.getServerHome();
         const monitor = path.join(serverHome, 'lib', 'monitor');
@@ -116,7 +116,7 @@ export class StartTask {
      * @param server   Payara server entity
      * @param javaHome Java SE JDK home used to run Payara.
      */
-    private varMap(payaraServer: PayaraServerInstance, javaHome: string): Map<string, string> {
+    private varMap(payaraServer: PayaraLocalServerInstance, javaHome: string): Map<string, string> {
         let varMap = new Map<string, string>();
         varMap.set(ServerUtils.PF_HOME_PROPERTY, payaraServer.getServerHome());
         varMap.set(ServerUtils.PF_DOMAIN_ROOT_PROPERTY, payaraServer.getDomainPath());
@@ -204,7 +204,7 @@ export class StartTask {
         return javaOpts;
     }
 
-    private getPayaraArgs(payaraServer: PayaraServerInstance): Array<string> {
+    private getPayaraArgs(payaraServer: PayaraLocalServerInstance): Array<string> {
         let payaraArgs: Array<string> = new Array<string>();
 
         payaraArgs.push(ServerUtils.cmdLineArgument(

@@ -68,11 +68,18 @@ export class ServerUtils {
     public static DEFAULT_USERNAME: string = 'admin';
     public static DEFAULT_PASSWORD: string = '';
     public static MASTER_PASSWORD: string = 'changeit';
-    public static DEFAULT_ADMIN_PORT: string = '4848';
-    public static DEFAULT_HTTP_PORT: string = '8080';
+    public static DEFAULT_ADMIN_PORT: number = 4848;
+    public static DEFAULT_HTTP_PORT: number = 8080;
+    public static DEFAULT_HOST: string = 'localhost';
 
     /** Default name of the DAS server. */
     public static DAS_NAME: string = "server";
+
+    /** Default retry count to check alive status of server. */
+    public static DEFAULT_RETRY_COUNT: number = 30;
+
+    /** Default sleep time in millisecond before retry to check alive status of server. */
+    public static DEFAULT_WAIT: number = 3000;
 
     /**
      * Builds command line argument containing argument identifier, space

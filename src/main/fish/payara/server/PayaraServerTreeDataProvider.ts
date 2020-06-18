@@ -24,6 +24,7 @@ import { PayaraInstanceProvider } from './PayaraInstanceProvider';
 import { PayaraServerInstance } from "./PayaraServerInstance";
 import { ApplicationInstance } from '../project/ApplicationInstance';
 import { RestEndpoint } from "../project/RestEndpoint";
+import { PayaraLocalServerInstance } from './PayaraLocalServerInstance';
 
 export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
@@ -32,7 +33,6 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Tre
     onDidChangeTreeData: vscode.Event<TreeItem> = this.onDidChangeTreeDataListener.event;
 
     constructor(private context: vscode.ExtensionContext, private instanceProvider: PayaraInstanceProvider) {
-        this.onDidChangeTreeDataListener.fire();
     }
 
     public refresh(item: TreeItem): void {
@@ -47,10 +47,10 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Tre
         if (!item) {
             return this.instanceProvider.getServers().map((server: PayaraServerInstance) => {
                 server.iconPath = this.context.asAbsolutePath(path.join('resources', server.getIcon()));
-                server.contextValue = server.getState();
+                server.contextValue = server.getState() + (server instanceof PayaraLocalServerInstance ? "Local" : "Remote");
                 server.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
                 server.label = server.getName();
-                server.tooltip = server.getPath() + '[' + server.getDomainName() + ']';
+                server.tooltip = server.getTooltip();
                 return server;
             });
         } else if (item instanceof PayaraServerInstance && item.isStarted()) {
