@@ -3,7 +3,7 @@
 ## Features
 
 ### Payara Server
-* Add Payara Server
+* Register Payara Server (Local / Remote)
 * Start Payara Server
 * Start Payara Server in debug mode
 * Stop Payara Server
@@ -20,6 +20,8 @@
 * Debug exploded war
 * Open deployed application homepage in browser
 * Enable/Disable/Undeploy application
+* View REST Endpoints of the application
+* Shell command customization support via tasks.json
 
 #### Usage
 
@@ -30,12 +32,14 @@
 * Start Payara Micro instance
 * Start Payara Micro instance in debug mode
 * Stop Payara Micro instance
+* Customize JDK path
 * Create an UberJAR of the application and Payara Micro
 * Run/Debug war package
 * Run/Debug uberjar package
 * Run/Debug exploded war package
 * Reload exploded war package on save
 * Open deployed application homepage in browser
+* Shell command customization support via tasks.json
 
 #### Usage
 
