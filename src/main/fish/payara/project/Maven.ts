@@ -49,9 +49,9 @@ export class Maven implements Build {
         return fs.existsSync(pom);
     }
 
-    public buildProject(callback: (artifact: string) => any): ChildProcess {
+    public buildProject(remote: boolean, callback: (artifact: string) => any): ChildProcess {
         let taskManager: TaskManager = new TaskManager();
-        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerBuildConfig());
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerBuildConfig(remote));
         let commands = taskDefinition.command.split(/\s+/);
         return this.fireCommand(commands,
             () => { },
@@ -62,10 +62,19 @@ export class Maven implements Build {
                     let artifact: string | null = null;
                     for (var i = 0; i < artifacts.length; i++) {
                         var filename = path.join(targetDir, artifacts[i]);
-                        if (artifacts[i].endsWith('.war')
-                            || artifacts[i].endsWith('.jar')
-                            || artifacts[i] === this.getBuildReader().getFinalName()) {
-                            artifact = filename;
+                        if (remote) {
+                            if (artifacts[i].endsWith('.war')
+                                || artifacts[i].endsWith('.jar')) {
+                                artifact = filename;
+                                break;
+                            }
+                        } else {
+                            if (artifacts[i].endsWith('.war')
+                                || artifacts[i].endsWith('.jar')
+                                || artifacts[i] === this.getBuildReader().getFinalName()) {
+                                artifact = filename;
+                                break;
+                            }
                         }
                     }
                     if (artifact !== null) {
@@ -353,11 +362,11 @@ export class Maven implements Build {
         return this.fireCommand(commands, () => { }, onExit, onError);
     }
 
-    private getDefaultServerBuildConfig(): TaskDefinition {
+    private getDefaultServerBuildConfig(remote: boolean): TaskDefinition {
         return {
             label: "payara-server-build",
             type: "shell",
-            command: "mvn resources:resources compiler:compile war:exploded",
+            command: "mvn resources:resources compiler:compile " + (remote ? "war:war" : "war:exploded"),
             group: "build"
         };
     }
