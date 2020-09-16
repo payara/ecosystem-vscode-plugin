@@ -18,6 +18,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { Uri, DebugConfiguration } from "vscode";
 import { PayaraServerInstance } from "../server/PayaraServerInstance";
 import { BuildSupport } from "./BuildSupport";
@@ -26,6 +27,7 @@ import { ApplicationInstance } from "./ApplicationInstance";
 import { PayaraServerInstanceController } from "../server/PayaraServerInstanceController";
 import { DebugManager } from "./DebugManager";
 import { PayaraLocalServerInstance } from '../server/PayaraLocalServerInstance';
+import { PayaraRemoteServerInstance } from '../server/PayaraRemoteServerInstance';
 
 export class DeploymentSupport {
 
@@ -34,9 +36,18 @@ export class DeploymentSupport {
     }
 
     public buildAndDeployApplication(uri: Uri, payaraServer: PayaraServerInstance, debug: boolean) {
+
+        if (payaraServer instanceof PayaraRemoteServerInstance
+            && !payaraServer.isConnectionAllowed()) {
+            vscode.window.showWarningMessage(`Payara remote server instance ${payaraServer.getName()} not connected`);
+            return;
+        }
         return BuildSupport
             .getBuild(payaraServer, uri)
-            .buildProject(artifact => this.deployApplication(artifact, payaraServer, debug));
+            .buildProject(
+                payaraServer instanceof PayaraRemoteServerInstance,
+                artifact => this.deployApplication(artifact, payaraServer, debug)
+            );
     }
 
     public deployApplication(appPath: string, payaraServer: PayaraServerInstance, debug: boolean) {
@@ -45,8 +56,10 @@ export class DeploymentSupport {
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
 
         let query: string = '?force=true';
-        if(payaraServer instanceof PayaraLocalServerInstance) {
+        if (payaraServer instanceof PayaraLocalServerInstance) {
             query = `${query}&DEFAULT=${encodeURIComponent(appPath)}`;
+        } else {
+            query = `${query}&upload=true&name=${path.parse(appPath).name}`;
         }
         endpoints.invoke("deploy" + query, async (response, report) => {
             if (response.statusCode === 200) {
@@ -79,11 +92,11 @@ export class DeploymentSupport {
                 }
             }
         },
-        (res, message) => {
-            vscode.window.showErrorMessage('Application deployment failed: ' + message);
-        },
-        'application/xml',
-        payaraServer instanceof PayaraLocalServerInstance? undefined : appPath);
+            (res, message) => {
+                vscode.window.showErrorMessage('Application deployment failed: ' + message);
+            },
+            'application/xml',
+            payaraServer instanceof PayaraLocalServerInstance ? undefined : appPath);
     }
 
 }

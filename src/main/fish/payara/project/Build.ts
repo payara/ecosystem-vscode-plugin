@@ -26,7 +26,7 @@ import { BuildReader } from "./BuildReader";
 
 export interface Build {
 
-    buildProject(callback: (artifact: string) => any): void;
+    buildProject(remote: boolean, callback: (artifact: string) => any): void;
 
     getDefaultHome(): string | undefined;
 

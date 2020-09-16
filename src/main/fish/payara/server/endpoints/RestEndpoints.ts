@@ -36,9 +36,8 @@ export class RestEndpoints {
         success?: (res: IncomingMessage, report?: any) => void,
         failure?: (res: IncomingMessage, message?: string) => void,
         accept?: string,
-        application?: string): ClientRequest {
+        uploadFile?: string): ClientRequest {
 
-        let payaraServer = this.payaraServer;
         let callback = (response: IncomingMessage) => {
             if (response.statusCode === 200) {
                 response.on('data', data => {
@@ -75,14 +74,14 @@ export class RestEndpoints {
         } else {
             headers['Accept'] = 'application/xml';
         }
-        if (application) {
+        if (uploadFile) {
             headers['Content-Type'] = 'application/zip';
         }
         if (!_.isEmpty(this.payaraServer.getPassword())) {
             headers['Authorization'] = 'Basic ' + Buffer.from(this.payaraServer.getUsername() + ':' + this.payaraServer.getPassword()).toString('base64');
         }
         if (this.payaraServer.isSecurityEnabled() || !_.isEmpty(this.payaraServer.getPassword())) {
-            if (!application) {
+            if (!uploadFile) {
                 return https.get({
                     hostname: this.payaraServer.getHost(),
                     port: this.payaraServer.getAdminPort(),
@@ -99,12 +98,12 @@ export class RestEndpoints {
                     headers: headers,
                     rejectUnauthorized: false // permits self signed cert
                 }, callback);
-                request.write(fs.readFileSync(application));
+                request.write(fs.readFileSync(uploadFile));
                 request.end();
                 return request;
             }
         } else {
-            if (!application) {
+            if (!uploadFile) {
                 return http.get({
                     hostname: this.payaraServer.getHost(),
                     port: this.payaraServer.getAdminPort(),
@@ -119,7 +118,7 @@ export class RestEndpoints {
                     path: command.startsWith('/') ? command : '/__asadmin/' + command,
                     headers: headers
                 }, callback);
-                request.write(fs.readFileSync(application));
+                request.write(fs.readFileSync(uploadFile));
                 request.end();
                 return request;
             }

@@ -49,10 +49,10 @@ export class Gradle implements Build {
         return fs.existsSync(build);
     }
 
-    public buildProject(callback: (artifact: string) => any): ChildProcess {
+    public buildProject(remote: boolean, callback: (artifact: string) => any): ChildProcess {
         let taskManager: TaskManager = new TaskManager();
         let taskDefinition: TaskDefinition | undefined;
-        taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerBuildConfig());
+        taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerBuildConfig(remote));
         let commands = taskDefinition.command.split(/\s+/);
         return this.fireCommand(commands,
             () => { },
@@ -63,11 +63,19 @@ export class Gradle implements Build {
                     let artifact: string | null = null;
                     for (var i = 0; i < artifacts.length; i++) {
                         var filename = path.join(buildDir, artifacts[i]);
-                        if (artifacts[i].endsWith('.war')
-                            || artifacts[i].endsWith('.jar')
-                            || artifacts[i] === this.getBuildReader().getFinalName()) {
-                            artifact = filename;
-                            break;
+                        if (remote) {
+                            if (artifacts[i].endsWith('.war')
+                                || artifacts[i].endsWith('.jar')) {
+                                artifact = filename;
+                                break;
+                            }
+                        } else {
+                            if (artifacts[i].endsWith('.war')
+                                || artifacts[i].endsWith('.jar')
+                                || artifacts[i] === this.getBuildReader().getFinalName()) {
+                                artifact = filename;
+                                break;
+                            }
                         }
                     }
                     if (artifact !== null) {
@@ -113,12 +121,12 @@ export class Gradle implements Build {
             env['JAVA_HOME'] = jdkHome;
         }
 
-        let process: ChildProcess = cp.spawn(gradleExe, args, { cwd: this.workspaceFolder.uri.fsPath, env:  env });
+        let process: ChildProcess = cp.spawn(gradleExe, args, { cwd: this.workspaceFolder.uri.fsPath, env: env });
 
         if (process.pid) {
             let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
             outputChannel.show(false);
-            if(jdkHome) {
+            if (jdkHome) {
                 outputChannel.append("Java Platform: " + jdkHome + '\n');
             }
             outputChannel.append("> " + gradleExe + ' ' + args.join(" ") + '\n');
@@ -308,11 +316,11 @@ export class Gradle implements Build {
         return this.fireCommand(commands, () => { }, onExit, onError);
     }
 
-    public getDefaultServerBuildConfig(): TaskDefinition {
+    public getDefaultServerBuildConfig(remote: boolean): TaskDefinition {
         return {
             label: "payara-server-build",
             type: "shell",
-            command: "gradle clean build",
+            command: "gradle clean build " + (remote ? "war" : "warExplode"),
             group: "build"
         };
     }
