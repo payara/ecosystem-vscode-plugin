@@ -119,7 +119,7 @@ export class PayaraLocalServerInstance extends PayaraServerInstance {
             throw new Error("Java Process " + javaProcessExe + " executable for " + this.getName() + " was not found");
         }
 
-        let output: string = cp.execFileSync(javaProcessExe, ['-mlv']);
+        let output: string = cp.execFileSync(javaProcessExe, ['-m', '-l', '-v']);
         let lines: string[] = output.toString().split(/(?:\r\n|\r|\n)/g);
         for (let line of lines) {
             let result: string[] = line.split(" ");
