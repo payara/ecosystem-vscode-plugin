@@ -61,7 +61,7 @@ export abstract class PayaraServerInstance extends vscode.TreeItem implements vs
 
     abstract getTooltip(): string;
 
-    abstract async showLog(): Promise<void>;
+    abstract showLog(): Promise<void>;
 
     abstract connectOutput(): void;
 
@@ -240,7 +240,7 @@ export abstract class PayaraServerInstance extends vscode.TreeItem implements vs
                     this.getOutputChannel().appendLine(`${this.getName()}[${this.getHost()}] Domain-Root: ${domainRoot}`);
                 }
                 if (this.isMatchingLocation(baseRoot, domainRoot)) {
-                    if(!this.getVersionLabel() && res.headers['server']) {
+                    if (!this.getVersionLabel() && res.headers['server']) {
                         this.setVersionLabel(<string>res.headers['server']);
                     }
                     if (!this.getVersionLabel()) {
@@ -311,14 +311,18 @@ export abstract class PayaraServerInstance extends vscode.TreeItem implements vs
         endpoints.invoke("list-applications", async (response, report) => {
             if (response.statusCode === 200) {
                 let message = report['message-part'][0];
-                if (message && message.property) {
+                if (message && message.property && Symbol.iterator in Object(message.property)) {
                     for (let property of message.property) {
-                        applicationInstances.push(
-                            new ApplicationInstance(payaraServer, property.$.name, property.$.value)
-                        );
+                        if (property.$.name) {
+                            applicationInstances.push(
+                                new ApplicationInstance(payaraServer, property.$.name, property.$.value)
+                            );
+                        }
                     }
                     payaraServer.applicationInstances = applicationInstances;
                     vscode.commands.executeCommand('payara.server.refresh');
+                } else {
+                    console.log('exiting applications not found ' + message.property);
                 }
             }
         });
