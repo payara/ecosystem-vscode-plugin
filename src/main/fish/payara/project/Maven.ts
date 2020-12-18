@@ -33,7 +33,6 @@ import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
 import { MavenMicroPluginReader } from './MavenMicroPluginReader';
 import { BuildReader } from './BuildReader';
 import { TaskManager } from './TaskManager';
-import { DeploymentSupport } from './DeploymentSupport';
 
 export class Maven implements Build {
 
