@@ -64,13 +64,15 @@ export class Maven implements Build {
                         var filename = path.join(targetDir, artifacts[i]);
                         if (remote) {
                             if (artifacts[i].endsWith('.war')
-                                || artifacts[i].endsWith('.jar')) {
+                                || artifacts[i].endsWith('.jar')
+                                || artifacts[i].endsWith('.rar')) {
                                 artifact = filename;
                                 break;
                             }
                         } else {
                             if (artifacts[i].endsWith('.war')
                                 || artifacts[i].endsWith('.jar')
+                                || artifacts[i].endsWith('.rar')
                                 || artifacts[i] === this.getBuildReader().getFinalName()) {
                                 artifact = filename;
                                 break;
@@ -80,7 +82,13 @@ export class Maven implements Build {
                     if (artifact !== null) {
                         callback(artifact);
                     } else {
-                        vscode.window.showErrorMessage(artifact + ' not found.');
+                        let errorMessage = 'Deployment artifact not found in the target.';
+                        if(remote) {
+                            vscode.window.showErrorMessage(errorMessage 
+                                + ' Make sure the deployment file ends with .jar, .rar, or .war to deploy an application to the remote instance.');
+                        } else {
+                            vscode.window.showErrorMessage(errorMessage);
+                        }
                     }
                 }
                 if (code !== 0) {
