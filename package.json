@@ -612,6 +612,16 @@
 					"command": "payara.micro.jdk.home",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro || viewItem == stoppedPayaraMicro",
 					"group": "payara-micro@5"
+				},
+				{
+					"command": "payara.server.app.deploy",
+					"when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+maven|gradle\\b)(?=.*?\\b\\+uri\\b)/",
+          			"group": "java-project@0"
+				},
+				{
+					"command": "payara.server.app.debug",
+					"when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+maven|gradle\\b)(?=.*?\\b\\+uri\\b)/",
+         			"group": "java-project@1"
 				}
 			]
 		}
