@@ -1,8 +1,6 @@
 
 'use strict';
 
-import { DeployOption } from "./DeployOption";
-
 /*
  * Copyright (c) 2020 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
@@ -20,14 +18,12 @@ import { DeployOption } from "./DeployOption";
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
 
- export interface PayaraInstance {
+export enum DeployOption {
 
-    getJDKHome(): string | undefined;
+    DEFAULT = "Only manual deployment",
 
-    setJDKHome(jdkHome: string): void;
+    AUTO_DEPLOY = "Auto deploy complete application",
 
-    getDeployOption(): DeployOption;
-
-    setDeployOption(deployOption: DeployOption): void;
+    HOT_RELOAD = "Incremental deploy modified source files"
 
 }

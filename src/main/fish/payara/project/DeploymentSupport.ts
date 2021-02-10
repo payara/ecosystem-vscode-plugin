@@ -28,6 +28,8 @@ import { PayaraServerInstanceController } from "../server/PayaraServerInstanceCo
 import { DebugManager } from "./DebugManager";
 import { PayaraLocalServerInstance } from '../server/PayaraLocalServerInstance';
 import { PayaraRemoteServerInstance } from '../server/PayaraRemoteServerInstance';
+import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
+import { ServerUtils } from '../server/tooling/utils/ServerUtils';
 
 export class DeploymentSupport {
 
@@ -35,7 +37,7 @@ export class DeploymentSupport {
         public controller: PayaraServerInstanceController) {
     }
 
-    public buildAndDeployApplication(uri: Uri, payaraServer: PayaraServerInstance, debug: boolean) {
+    public buildAndDeployApplication(uri: Uri, payaraServer: PayaraServerInstance, debug: boolean, autoDeploy?: boolean) {
 
         if (payaraServer instanceof PayaraRemoteServerInstance
             && !payaraServer.isConnectionAllowed()) {
@@ -46,13 +48,16 @@ export class DeploymentSupport {
             .getBuild(payaraServer, uri)
             .buildProject(
                 payaraServer instanceof PayaraRemoteServerInstance,
-                artifact => this.deployApplication(artifact, payaraServer, debug)
+                artifact => this.deployApplication(artifact, payaraServer, debug, autoDeploy),
+                autoDeploy
             );
     }
 
-    public deployApplication(appPath: string, payaraServer: PayaraServerInstance, debug: boolean) {
+    public deployApplication(appPath: string, payaraServer: PayaraServerInstance, debug: boolean, autoDeploy?: boolean) {
         let support = this;
-        payaraServer.getOutputChannel().show(false);
+        if (autoDeploy !== true) {
+            payaraServer.getOutputChannel().show(false);
+        }
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
 
         let query: string = '?force=true';
@@ -84,10 +89,14 @@ export class DeploymentSupport {
                                 vscode.debug.startDebugging(workspaceFolder, debugConfig);
                             }
                         }
-
-                        support.controller.openApp(new ApplicationInstance(payaraServer, appName));
-                        payaraServer.reloadApplications();
-                        support.controller.refreshServerList();
+                        if (autoDeploy !== true) {
+                            support.controller.openApp(new ApplicationInstance(payaraServer, appName));
+                            payaraServer.reloadApplications();
+                            support.controller.refreshServerList();
+                        }
+                        ProjectOutputWindowProvider.getInstance().updateStatusBar(`${workspaceFolder?.name} successfully deployed`);
+                        await new Promise(res => setTimeout(res, ServerUtils.DEFAULT_WAIT));
+                        ProjectOutputWindowProvider.getInstance().hideStatusBar();
                     }
                 }
             }

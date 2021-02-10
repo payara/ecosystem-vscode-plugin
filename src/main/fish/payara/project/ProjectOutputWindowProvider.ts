@@ -3,10 +3,10 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { WorkspaceFolder, OutputChannel } from 'vscode';
+import { WorkspaceFolder, OutputChannel, StatusBarItem } from 'vscode';
 
 /*
- * Copyright (c) 2020 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2021 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -28,7 +28,19 @@ export class ProjectOutputWindowProvider {
 
     private outputWindows = new Map<string, OutputChannel>();
 
+    private statusBar: StatusBarItem;
+
     private constructor() {
+        this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
+    }
+
+    public updateStatusBar(text: string) {
+        this.statusBar.text = text;
+        this.statusBar.show();
+    }
+
+    public hideStatusBar() {
+        this.statusBar.hide();
     }
 
     public static getInstance() {
@@ -42,7 +54,7 @@ export class ProjectOutputWindowProvider {
         let windowName = typeof key === 'string' ? key : path.basename(key.uri.fsPath);
         let instance = this.outputWindows.get(windowName);
         if (!instance) {
-            instance =  vscode.window.createOutputChannel(windowName);
+            instance = vscode.window.createOutputChannel(windowName);
             this.outputWindows.set(windowName, instance);
         }
         return instance;

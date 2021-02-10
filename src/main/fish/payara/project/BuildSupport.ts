@@ -22,6 +22,7 @@ import { Uri } from "vscode";
 import { Build } from './Build';
 import { Maven } from './Maven';
 import { Gradle } from './Gradle';
+import { PayaraInstance } from '../common/PayaraInstance';
 
 export class BuildSupport {
 

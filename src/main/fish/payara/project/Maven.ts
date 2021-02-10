@@ -33,6 +33,7 @@ import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
 import { MavenMicroPluginReader } from './MavenMicroPluginReader';
 import { BuildReader } from './BuildReader';
 import { TaskManager } from './TaskManager';
+import { PayaraInstance } from '../common/PayaraInstance';
 
 export class Maven implements Build {
 
@@ -49,11 +50,14 @@ export class Maven implements Build {
         return fs.existsSync(pom);
     }
 
-    public buildProject(remote: boolean, callback: (artifact: string) => any): ChildProcess {
+    public buildProject(remote: boolean, 
+        callback: (artifact: string) => any,
+        silent?: boolean): ChildProcess {
         let taskManager: TaskManager = new TaskManager();
         let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerBuildConfig(remote));
         let commands = taskDefinition.command.split(/\s+/);
-        return this.fireCommand(commands,
+        return this.fireCommand(
+            commands,
             () => { },
             (code) => {
                 if (code === 0 && this.workspaceFolder) {
@@ -97,14 +101,16 @@ export class Maven implements Build {
             },
             (error) => {
                 vscode.window.showErrorMessage(`Error building project ${this.workspaceFolder.name}: ${error.message}`);
-            }
+            },
+            silent
         );
     }
 
     public fireCommand(commands: string[],
         dataCallback: (data: string) => any,
         exitCallback: (code: number) => any,
-        errorCallback: (err: Error) => any): ChildProcess {
+        errorCallback: (err: Error) => any,
+        silent?: boolean): ChildProcess {
 
         if (commands.length <= 1) {
             throw new Error(`Invalid command definition ${commands.join(" ")}`);
@@ -133,7 +139,9 @@ export class Maven implements Build {
 
         if (process.pid) {
             let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
-            outputChannel.show(false);
+            if (silent !== true) {
+                outputChannel.show(false);
+            }
             if(jdkHome) {
                 outputChannel.append("Java Platform: " + jdkHome + '\n');
             }

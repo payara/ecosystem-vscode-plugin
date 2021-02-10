@@ -39,6 +39,10 @@ export class PayaraRemoteServerInstance extends PayaraServerInstance {
         super(name, domainName);
     }
 
+    public getId(): string {
+        return this.host + ':' + this.adminPort;
+    }
+
     public getTooltip(): string {
         return this.host + ':' + this.adminPort;
     }

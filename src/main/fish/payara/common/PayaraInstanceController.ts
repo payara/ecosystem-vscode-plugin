@@ -23,6 +23,8 @@ import { workspace } from 'vscode';
 import { JDKVersion } from "../server/start/JDKVersion";
 import { MyButton } from "../../../UI";
 import * as ui from "../../../UI";
+import { DeployOption } from "./DeployOption";
+import { PayaraInstance } from "./PayaraInstance";
 
 export abstract class PayaraInstanceController {
 
@@ -133,6 +135,65 @@ export abstract class PayaraInstanceController {
                     payaraInstance.setJDKHome(value);
                     this.updateConfig();
                     vscode.window.showInformationMessage('JDK Home [' + value + '] updated successfully.');
+                }
+            });
+    }
+
+    public async deploySettings(payaraInstance: PayaraInstance): Promise<void> {
+        let validateInput: (value: string) => any = path => {
+            let errorMessage = 'Invalid JDK Home path.';
+            try {
+                let version = JDKVersion.getJDKVersion(path.trim());
+                if (!version) {
+                    return errorMessage;
+                }
+            } catch (error) {
+                console.error(error.toString());
+                return errorMessage;
+            }
+            return true;
+        };
+        let items: vscode.QuickPickItem[] = [];
+        let activeItem: vscode.QuickPickItem | undefined = undefined;
+        let deployOption: DeployOption | undefined = payaraInstance.getDeployOption();
+
+        for (var key in DeployOption) {
+            let value: DeployOption = DeployOption[key as keyof typeof DeployOption];
+            let item;
+            if (deployOption === value) {
+                item = {
+                    label: key,
+                    detail: value + ' (currently selected)'
+                };
+            } else {
+                item = {
+                    label: key,
+                    detail: value
+                };
+            }
+            items.push(item);
+            if (!activeItem) {
+                activeItem = item;
+            }
+        }
+
+        ui.MultiStepInput.run(
+            async (input: ui.MultiStepInput) => {
+                let pick = await input.showQuickPick({
+                    title: 'Deploy settings',
+                    step: 1,
+                    totalSteps: 1,
+                    items: items,
+                    activeItem: activeItem,
+                    placeholder: 'Select the deployment option',
+                    validate: validateInput,
+                    shouldResume: this.shouldResume
+                });
+                let value = pick.label;
+                if (value && (value = value.trim()) !== deployOption) {
+                    payaraInstance.setDeployOption(DeployOption[value as keyof typeof DeployOption]);
+                    this.updateConfig();
+                    vscode.window.showInformationMessage('Deployment setting [' + value + '] updated successfully.');
                 }
             });
     }

@@ -26,6 +26,8 @@ import { ApplicationInstance } from "../project/ApplicationInstance";
 import { RestEndpoints } from "./endpoints/RestEndpoints";
 import { IncomingMessage } from "http";
 import { ProjectOutputWindowProvider } from "../project/ProjectOutputWindowProvider";
+import { DeployOption } from "../common/DeployOption";
+import { PayaraInstance } from "../common/PayaraInstance";
 
 export abstract class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem, PayaraInstance {
 
@@ -45,6 +47,8 @@ export abstract class PayaraServerInstance extends vscode.TreeItem implements vs
 
     private jdkHome: string | null = null;
 
+    private deployOption: DeployOption | null = null;
+
     private outputChannel: vscode.OutputChannel;
 
     private applicationInstances: Array<ApplicationInstance> = new Array<ApplicationInstance>();
@@ -56,6 +60,8 @@ export abstract class PayaraServerInstance extends vscode.TreeItem implements vs
         this.label = name;
         this.outputChannel = ProjectOutputWindowProvider.getInstance().get(name);
     }
+
+    abstract getId(): string;
 
     abstract getConfigData(): any;
 
@@ -120,6 +126,17 @@ export abstract class PayaraServerInstance extends vscode.TreeItem implements vs
 
     public setJDKHome(jdkHome: string) {
         this.jdkHome = jdkHome;
+    }
+
+    public getDeployOption(): DeployOption {
+        if (this.deployOption !== null) {
+            return this.deployOption;
+        }
+        return DeployOption.DEFAULT;
+    }
+
+    public setDeployOption(deployOption: DeployOption) {
+        this.deployOption = deployOption;
     }
 
     public isSecurityEnabled(): boolean {

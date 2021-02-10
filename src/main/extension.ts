@@ -26,8 +26,8 @@ import { PayaraMicroTreeDataProvider } from './fish/payara/micro/PayaraMicroTree
 import { PayaraMicroInstanceProvider } from './fish/payara/micro/PayaraMicroInstanceProvider';
 import { PayaraMicroInstanceController } from './fish/payara/micro/PayaraMicroInstanceController';
 import * as path from 'path';
-import { exec } from 'child_process';
 import { PayaraRemoteServerInstance } from './fish/payara/server/PayaraRemoteServerInstance';
+import { DeployOption } from './fish/payara/common/DeployOption';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
@@ -160,6 +160,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
+			'payara.server.deploy.settings',
+			payaraServer => payaraServerInstanceController.deploySettings(payaraServer)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
 			'payara.server.console.open',
 			payaraServer => payaraServerInstanceController.openConsole(payaraServer)
 		)
@@ -281,9 +287,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 
 	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		if (workspaceFolder) {
+			let instance = payaraServerInstanceController.getPayaraServerInstance(workspaceFolder);
+			if(instance && instance.isStarted() && instance.getDeployOption() !== DeployOption.DEFAULT) {
+				payaraServerInstanceController.deployApp(workspaceFolder.uri, false, true, instance);
+				return;
+			}
+		}
+
 		for (let payaraMicro of payaraMicroInstanceProvider.getMicroInstances()) {
 			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-
+			workspaceFolder
 			let fileName = path.basename(document.uri.fsPath);
 			if (fileName === "pom.xml"
 				|| fileName === "build.gradle"
@@ -296,8 +311,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 				&& workspaceFolder.uri === payaraMicro.getPath()
 				&& path.relative(payaraMicro.getPath().fsPath, document.uri.fsPath).startsWith("src")) {
 				payaraMicroInstanceController.reloadMicro(payaraMicro);
+				break;
 			}
 		}
+
 	});
 
 }

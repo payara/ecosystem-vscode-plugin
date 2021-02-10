@@ -33,6 +33,7 @@ import { GradleMicroPluginReader } from './GradleMicroPluginReader';
 import { PayaraMicroGradlePlugin } from '../micro/PayaraMicroGradlePlugin';
 import { BuildReader } from './BuildReader';
 import { TaskManager } from './TaskManager';
+import { PayaraInstance } from '../common/PayaraInstance';
 
 export class Gradle implements Build {
 
@@ -49,12 +50,16 @@ export class Gradle implements Build {
         return fs.existsSync(build);
     }
 
-    public buildProject(remote: boolean, callback: (artifact: string) => any): ChildProcess {
+    public buildProject(remote: boolean,
+        callback: (artifact: string) => any,
+        silent?: boolean): ChildProcess {
+
         let taskManager: TaskManager = new TaskManager();
         let taskDefinition: TaskDefinition | undefined;
         taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerBuildConfig(remote));
         let commands = taskDefinition.command.split(/\s+/);
-        return this.fireCommand(commands,
+        return this.fireCommand(
+            commands,
             () => { },
             (code) => {
                 if (code === 0 && this.workspaceFolder) {
@@ -84,8 +89,8 @@ export class Gradle implements Build {
                         callback(artifact);
                     } else {
                         let errorMessage = 'Deployment artifact not found in the target.';
-                        if(remote) {
-                            vscode.window.showErrorMessage(errorMessage 
+                        if (remote) {
+                            vscode.window.showErrorMessage(errorMessage
                                 + ' Make sure the deployment file ends with .jar, .rar, or .war to deploy an application to the remote instance.');
                         } else {
                             vscode.window.showErrorMessage(errorMessage);
@@ -98,13 +103,16 @@ export class Gradle implements Build {
             },
             (error) => {
                 vscode.window.showErrorMessage(`Error building project ${this.workspaceFolder.name}: ${error.message}`);
-            });
+            },
+            silent
+        );
     }
 
     public fireCommand(commands: string[],
         dataCallback: (data: string) => any,
         exitCallback: (code: number) => any,
-        errorCallback: (err: Error) => any): ChildProcess {
+        errorCallback: (err: Error) => any,
+        silent?: boolean): ChildProcess {
 
         if (commands.length <= 1) {
             throw new Error(`Invalid command definition ${commands.join(" ")}`);
@@ -132,8 +140,13 @@ export class Gradle implements Build {
         let process: ChildProcess = cp.spawn(gradleExe, args, { cwd: this.workspaceFolder.uri.fsPath, env: env });
 
         if (process.pid) {
-            let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
-            outputChannel.show(false);
+            let projectOutputWindowProvider = ProjectOutputWindowProvider.getInstance();
+            let outputChannel = projectOutputWindowProvider.get(this.workspaceFolder);
+            if (silent !== true) {
+                outputChannel.show(false);
+            } else {
+                projectOutputWindowProvider.updateStatusBar(`Running ${commands.join(" ")}`);
+            }
             if (jdkHome) {
                 outputChannel.append("Java Platform: " + jdkHome + '\n');
             }

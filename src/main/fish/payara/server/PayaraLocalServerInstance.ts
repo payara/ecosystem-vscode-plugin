@@ -27,6 +27,7 @@ import { JavaUtils } from "./tooling/utils/JavaUtils";
 import { ServerUtils } from "./tooling/utils/ServerUtils";
 import { ChildProcess } from "child_process";
 import { PayaraServerInstance } from "./PayaraServerInstance";
+import { domain } from "process";
 
 export class PayaraLocalServerInstance extends PayaraServerInstance {
 
@@ -36,6 +37,10 @@ export class PayaraLocalServerInstance extends PayaraServerInstance {
 
     constructor(name: string, domainName: string, private path: string) {
         super(name, domainName);
+    }
+
+    public getId(): string {
+        return this.getDomainPath();
     }
 
     public getTooltip(): string {
