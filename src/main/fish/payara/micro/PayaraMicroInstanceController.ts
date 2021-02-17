@@ -21,10 +21,10 @@ import * as _ from "lodash";
 import * as open from "open";
 import * as vscode from 'vscode';
 import { workspace, DebugConfiguration } from 'vscode';
-import { DebugManager } from '../project/DebugManager';
-import { InstanceState, PayaraMicroInstance } from './PayaraMicroInstance';
-import { PayaraMicroInstanceProvider } from './PayaraMicroInstanceProvider';
 import { PayaraInstanceController } from "../common/PayaraInstanceController";
+import { DebugManager } from '../project/DebugManager';
+import { InstanceState, PayaraMicroInstance } from "./PayaraMicroInstance";
+import { PayaraMicroInstanceProvider } from './PayaraMicroInstanceProvider';
 
 export class PayaraMicroInstanceController extends PayaraInstanceController {
 

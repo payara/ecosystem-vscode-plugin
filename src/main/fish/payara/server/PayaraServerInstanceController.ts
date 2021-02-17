@@ -732,7 +732,10 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         vscode.commands.executeCommand('payara.server.refresh');
     }
 
-    public deployApp(uri: Uri, debug: boolean, autoDeploy?: boolean, selectedServer?: PayaraServerInstance | undefined) {
+    public deployApp(uri: Uri, debug: boolean,
+        autoDeploy?: boolean, selectedServer?: PayaraServerInstance | undefined,
+        metadataChanged?: boolean, sourcesChanged?: Uri[]) {
+
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
         ProjectOutputWindowProvider.getInstance().updateStatusBar(`Deploying ${workspaceFolder?.name}`);
         let support = new DeploymentSupport(this);
@@ -740,10 +743,10 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             let deploy = async (status: boolean) => {
                 if (status) {
                     if (uri.fsPath.endsWith('.war') || uri.fsPath.endsWith('.jar')) {
-                        support.deployApplication(uri.fsPath, server, debug, autoDeploy);
+                        support.deployApplication(uri.fsPath, server, debug, autoDeploy, metadataChanged, sourcesChanged);
                     } else {
                         try {
-                            support.buildAndDeployApplication(uri, server, debug, autoDeploy);
+                            support.buildAndDeployApplication(uri, server, debug, autoDeploy, metadataChanged, sourcesChanged);
                         } catch (error) {
                             vscode.window.showErrorMessage(error.message);
                         }

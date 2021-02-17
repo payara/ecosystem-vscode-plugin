@@ -26,8 +26,8 @@ import { ApplicationInstance } from "../project/ApplicationInstance";
 import { RestEndpoints } from "./endpoints/RestEndpoints";
 import { IncomingMessage } from "http";
 import { ProjectOutputWindowProvider } from "../project/ProjectOutputWindowProvider";
-import { DeployOption } from "../common/DeployOption";
 import { PayaraInstance } from "../common/PayaraInstance";
+import { DeployOption } from "../common/DeployOption";
 
 export abstract class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem, PayaraInstance {
 
@@ -47,7 +47,7 @@ export abstract class PayaraServerInstance extends vscode.TreeItem implements vs
 
     private jdkHome: string | null = null;
 
-    private deployOption: DeployOption | null = null;
+    private deployOption: string = DeployOption.DEFAULT;
 
     private outputChannel: vscode.OutputChannel;
 
@@ -128,14 +128,11 @@ export abstract class PayaraServerInstance extends vscode.TreeItem implements vs
         this.jdkHome = jdkHome;
     }
 
-    public getDeployOption(): DeployOption {
-        if (this.deployOption !== null) {
-            return this.deployOption;
-        }
-        return DeployOption.DEFAULT;
+    public getDeployOption(): string {
+        return this.deployOption;
     }
 
-    public setDeployOption(deployOption: DeployOption) {
+    public setDeployOption(deployOption: string) {
         this.deployOption = deployOption;
     }
 

@@ -52,6 +52,9 @@ export class PayaraInstanceProvider {
                         new PayaraRemoteServerInstance(
                             instance.name, instance.domainName
                         );
+                        if (instance.deployOption) {
+                            payaraServer.setDeployOption(instance.deployOption);
+                        }
                 if (instance.username) {
                     payaraServer.setUsername(instance.username);
                 }
