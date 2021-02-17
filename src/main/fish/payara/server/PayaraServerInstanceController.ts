@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2021 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -41,8 +41,6 @@ import { JDKVersion } from './start/JDKVersion';
 import { StartTask } from './start/StartTask';
 import { JavaUtils } from './tooling/utils/JavaUtils';
 import { ServerUtils } from './tooling/utils/ServerUtils';
-import { DebugManager } from '../project/DebugManager';
-import { BuildSupport } from '../project/BuildSupport';
 import { ProjectOutputWindowProvider } from '../project/ProjectOutputWindowProvider';
 import { RestEndpoint } from '../project/RestEndpoint';
 import { PayaraInstanceController } from '../common/PayaraInstanceController';
@@ -51,12 +49,18 @@ import { PayaraLocalServerInstance } from './PayaraLocalServerInstance';
 
 export class PayaraServerInstanceController extends PayaraInstanceController {
 
+    private deployments: Map<vscode.WorkspaceFolder, PayaraServerInstance> = new Map<vscode.WorkspaceFolder, PayaraServerInstance>();
+
     constructor(
         context: vscode.ExtensionContext,
         private instanceProvider: PayaraInstanceProvider,
         private extensionPath: string) {
         super(context);
         this.init();
+    }
+
+    public getPayaraServerInstance(workspace: vscode.WorkspaceFolder): PayaraServerInstance | undefined {
+        return this.deployments.get(workspace);
     }
 
     private async init(): Promise<void> {
@@ -728,32 +732,46 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         vscode.commands.executeCommand('payara.server.refresh');
     }
 
-    public deployApp(uri: Uri, debug: boolean) {
+    public deployApp(uri: Uri, debug: boolean, autoDeploy?: boolean, selectedServer?: PayaraServerInstance | undefined) {
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+        ProjectOutputWindowProvider.getInstance().updateStatusBar(`Deploying ${workspaceFolder?.name}`);
         let support = new DeploymentSupport(this);
-        this.selectListedServer(server => {
-            let deploy = (status: boolean) => {
+        let callback = (server: PayaraServerInstance) => {
+            let deploy = async (status: boolean) => {
                 if (status) {
                     if (uri.fsPath.endsWith('.war') || uri.fsPath.endsWith('.jar')) {
-                        support.deployApplication(uri.fsPath, server, debug);
+                        support.deployApplication(uri.fsPath, server, debug, autoDeploy);
                     } else {
                         try {
-                            support.buildAndDeployApplication(uri, server, debug);
+                            support.buildAndDeployApplication(uri, server, debug, autoDeploy);
                         } catch (error) {
                             vscode.window.showErrorMessage(error.message);
                         }
+                    }
+                    if (workspaceFolder) {
+                        this.deployments.set(workspaceFolder, server);
                     }
                 } else {
                     vscode.window.showErrorMessage('Unable to deploy the application as Payara Server instance not running.');
                 }
             };
-            if (server instanceof PayaraLocalServerInstance && !server.isStarted()) {
-                this.startServer(server, debug, deploy);
-            } else if (server instanceof PayaraLocalServerInstance && debug && !server.isDebug()) {
-                this.restartServer(server, debug, deploy);
-            } else {
+            if (autoDeploy && server.isStarted()) {
                 deploy(true);
+            } else {
+                if (server instanceof PayaraLocalServerInstance && !server.isStarted()) {
+                    this.startServer(server, debug, deploy);
+                } else if (server instanceof PayaraLocalServerInstance && debug && !server.isDebug()) {
+                    this.restartServer(server, debug, deploy);
+                } else {
+                    deploy(true);
+                }
             }
-        });
+        };
+        if (selectedServer) {
+            callback(selectedServer);
+        } else {
+            this.selectListedServer(callback);
+        }
     }
 
     private selectListedServer(callback: (server: PayaraServerInstance) => any) {

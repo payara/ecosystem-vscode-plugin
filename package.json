@@ -37,6 +37,7 @@
 		"onCommand:payara.server.remove",
 		"onCommand:payara.server.credentials",
 		"onCommand:payara.server.jdk.home",
+		"onCommand:payara.server.deploy.settings",
 		"onCommand:payara.server.console.open",
 		"onCommand:payara.server.log.open",
 		"onCommand:payara.server.config.open",
@@ -149,6 +150,11 @@
 			{
 				"command": "payara.server.jdk.home",
 				"title": "JDK Home",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.deploy.settings",
+				"title": "Deployment settings",
 				"category": "Payara"
 			},
 			{
@@ -384,6 +390,10 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.server.deploy.settings",
+					"when": "never"
+				},
+				{
 					"command": "payara.server.config.open",
 					"when": "never"
 				},
@@ -524,19 +534,24 @@
 					"group": "update@7"
 				},
 				{
-					"command": "payara.server.console.open",
+					"command": "payara.server.deploy.settings",
 					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal || viewItem == loadingPayaraRemote || viewItem == runningPayaraRemote || viewItem == stoppedPayaraRemote",
-					"group": "view@8"
+					"group": "update@8"
 				},
 				{
-					"command": "payara.server.log.open",
+					"command": "payara.server.console.open",
 					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal || viewItem == loadingPayaraRemote || viewItem == runningPayaraRemote || viewItem == stoppedPayaraRemote",
 					"group": "view@9"
 				},
 				{
+					"command": "payara.server.log.open",
+					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal || viewItem == loadingPayaraRemote || viewItem == runningPayaraRemote || viewItem == stoppedPayaraRemote",
+					"group": "view@10"
+				},
+				{
 					"command": "payara.server.config.open",
 					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal",
-					"group": "view@10"
+					"group": "view@11"
 				},
 				{
 					"command": "payara.server.app.undeploy",
