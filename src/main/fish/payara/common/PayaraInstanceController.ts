@@ -23,8 +23,8 @@ import { workspace } from 'vscode';
 import { JDKVersion } from "../server/start/JDKVersion";
 import { MyButton } from "../../../UI";
 import * as ui from "../../../UI";
-import { DeployOption } from "./DeployOption";
 import { PayaraInstance } from "./PayaraInstance";
+import { DeployOption } from "./DeployOption";
 
 export abstract class PayaraInstanceController {
 
@@ -155,19 +155,18 @@ export abstract class PayaraInstanceController {
         };
         let items: vscode.QuickPickItem[] = [];
         let activeItem: vscode.QuickPickItem | undefined = undefined;
-        let deployOption: DeployOption | undefined = payaraInstance.getDeployOption();
+        let deployOption: string = payaraInstance.getDeployOption();
 
-        for (var key in DeployOption) {
-            let value: DeployOption = DeployOption[key as keyof typeof DeployOption];
+        for (var [key, value] of DeployOption.ALL_OPTIONS) {
             let item;
-            if (deployOption === value) {
+            if (deployOption === key.toString()) {
                 item = {
-                    label: key,
-                    detail: value + ' (currently selected)'
+                    label: this.humanize(key),
+                    detail: value + ' (currently selected)',
                 };
             } else {
                 item = {
-                    label: key,
+                    label: this.humanize(key),
                     detail: value
                 };
             }
@@ -189,9 +188,9 @@ export abstract class PayaraInstanceController {
                     validate: validateInput,
                     shouldResume: this.shouldResume
                 });
-                let value = pick.label;
-                if (value && (value = value.trim()) !== deployOption) {
-                    payaraInstance.setDeployOption(DeployOption[value as keyof typeof DeployOption]);
+                let value = this.toEnum(pick.label);
+                if (value && value !== deployOption?.toString()) {
+                    payaraInstance.setDeployOption(value);
                     this.updateConfig();
                     vscode.window.showInformationMessage('Deployment setting [' + value + '] updated successfully.');
                 }
@@ -201,6 +200,18 @@ export abstract class PayaraInstanceController {
     public async shouldResume(): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
         });
+    }
+
+    public humanize(text: string) {
+        let i, ags = text.split('_');
+        for (i = 0; i < ags.length; i++) {
+            ags[i] = ags[i].charAt(0).toUpperCase() + ags[i].slice(1).toLowerCase();
+        }
+        return ags.join(' ');
+    }
+
+    public toEnum(text: string) {
+        return text.toUpperCase().replace(' ', '_');
     }
 
     abstract updateConfig(): void;

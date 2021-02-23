@@ -1,8 +1,6 @@
 
 'use strict';
 
-import { DeployOption } from "./DeployOption";
-
 /*
  * Copyright (c) 2020-2021 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
@@ -26,8 +24,8 @@ import { DeployOption } from "./DeployOption";
 
     setJDKHome(jdkHome: string): void;
 
-    getDeployOption(): DeployOption;
+    getDeployOption(): string;
 
-    setDeployOption(deployOption: DeployOption): void;
+    setDeployOption(deployOption: string): void;
 
 }

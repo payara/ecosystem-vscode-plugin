@@ -30,6 +30,7 @@ import { PayaraLocalServerInstance } from '../server/PayaraLocalServerInstance';
 import { PayaraRemoteServerInstance } from '../server/PayaraRemoteServerInstance';
 import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
 import { ServerUtils } from '../server/tooling/utils/ServerUtils';
+import { DeployOption } from '../common/DeployOption';
 
 export class DeploymentSupport {
 
@@ -37,7 +38,10 @@ export class DeploymentSupport {
         public controller: PayaraServerInstanceController) {
     }
 
-    public buildAndDeployApplication(uri: Uri, payaraServer: PayaraServerInstance, debug: boolean, autoDeploy?: boolean) {
+    public buildAndDeployApplication(
+	uri: Uri, payaraServer: PayaraServerInstance,
+	debug: boolean, autoDeploy?: boolean,
+        metadataChanged?: boolean, sourceChanged?: Uri[]) {
 
         if (payaraServer instanceof PayaraRemoteServerInstance
             && !payaraServer.isConnectionAllowed()) {
@@ -48,12 +52,15 @@ export class DeploymentSupport {
             .getBuild(payaraServer, uri)
             .buildProject(
                 payaraServer instanceof PayaraRemoteServerInstance,
-                artifact => this.deployApplication(artifact, payaraServer, debug, autoDeploy),
+                artifact => this.deployApplication(artifact, payaraServer, debug, autoDeploy, metadataChanged, sourceChanged),
                 autoDeploy
             );
     }
 
-    public deployApplication(appPath: string, payaraServer: PayaraServerInstance, debug: boolean, autoDeploy?: boolean) {
+    public deployApplication(
+        appPath: string, payaraServer: PayaraServerInstance,
+        debug: boolean, autoDeploy?: boolean,
+        metadataChanged?: boolean, sourcesChanged?: Uri[]) {
         let support = this;
         if (autoDeploy !== true) {
             payaraServer.getOutputChannel().show(false);
@@ -61,10 +68,24 @@ export class DeploymentSupport {
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
 
         let query: string = '?force=true';
+        let parsedPath = path.parse(appPath);
+        let name = parsedPath.base;
+        if(parsedPath.ext === '.war' || parsedPath.ext === '.jar') {
+            name = parsedPath.name;
+        }
         if (payaraServer instanceof PayaraLocalServerInstance) {
-            query = `${query}&DEFAULT=${encodeURIComponent(appPath)}`;
+            query = `${query}&DEFAULT=${encodeURIComponent(appPath)}&name=${name}`;
         } else {
-            query = `${query}&upload=true&name=${path.parse(appPath).name}`;
+            query = `${query}&upload=true&name=${name}`;
+        }
+        if(payaraServer.getDeployOption() == DeployOption.HOT_RELOAD) {
+            query = `${query}&hotDeploy=true`;
+            if (metadataChanged) {
+                query = `${query}&metadataChanged=true`;
+            }
+            if (Array.isArray(sourcesChanged) && sourcesChanged.length > 0) {
+                query = `${query}&sourcesChanged=${sourcesChanged.join(',')}`;
+            }
         }
         endpoints.invoke("deploy" + query, async (response, report) => {
             if (response.statusCode === 200) {

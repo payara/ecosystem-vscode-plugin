@@ -26,8 +26,8 @@ import { JDKVersion } from "../server/start/JDKVersion";
 import { ProjectOutputWindowProvider } from "../project/ProjectOutputWindowProvider";
 import { BuildSupport } from "../project/BuildSupport";
 import { Build } from "../project/Build";
-import { DeployOption } from "../common/DeployOption";
 import { PayaraInstance } from "../common/PayaraInstance";
+import { DeployOption } from "../common/DeployOption";
 
 export class PayaraMicroInstance extends vscode.TreeItem implements vscode.QuickPickItem, PayaraInstance {
 
@@ -81,11 +81,11 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
         workspace.getConfiguration("java").update("home", jdkHome);
     }
 
-    public getDeployOption(): DeployOption {
+    public getDeployOption(): string {
         return DeployOption.DEFAULT;
     }
 
-    public setDeployOption(deployOption: DeployOption) {
+    public setDeployOption(deployOption: string) {
         // not supported yet
     }
 

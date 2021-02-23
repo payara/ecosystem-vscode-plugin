@@ -28,6 +28,7 @@ import { PayaraMicroInstanceController } from './fish/payara/micro/PayaraMicroIn
 import * as path from 'path';
 import { PayaraRemoteServerInstance } from './fish/payara/server/PayaraRemoteServerInstance';
 import { DeployOption } from './fish/payara/common/DeployOption';
+import { Uri, WorkspaceFolder } from 'vscode';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
@@ -288,18 +289,48 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		let metadataChanged = true;
+		let extName = path.extname(document.uri.fsPath);
+		if (extName === ".java"
+			|| extName === ".html"
+			|| extName === ".js") {
+			metadataChanged = false;
+		}
 		if (workspaceFolder) {
-			let instance = payaraServerInstanceController.getPayaraServerInstance(workspaceFolder);
-			if(instance && instance.isStarted() && instance.getDeployOption() !== DeployOption.DEFAULT) {
-				payaraServerInstanceController.deployApp(workspaceFolder.uri, false, true, instance);
-				return;
+			if (!reloadServerInstance(workspaceFolder, document.uri, metadataChanged)) {
+				reloadMicroInstance(workspaceFolder, document.uri, metadataChanged);
 			}
 		}
+	});
+
+	function reloadServerInstance(
+		workspaceFolder: WorkspaceFolder,
+		sourceChanged: Uri, metadataChanged?: boolean): boolean {
+
+		let instance = payaraServerInstanceController.getPayaraServerInstance(workspaceFolder);
+		// if(!instance) {
+		// 	let instances:PayaraServerInstance[] = payaraServerInstanceProvider.getServers();
+		// 	if(instances.length == 1) {
+		// 		instance = instances[0];
+		// 	}
+		// }
+		if (instance && instance.isStarted() && instance.getDeployOption() !== DeployOption.DEFAULT) {
+			payaraServerInstanceController.deployApp(
+				workspaceFolder.uri, false, true,
+				instance, metadataChanged, [sourceChanged]
+			);
+			return true;
+		}
+		return false;
+
+	}
+
+	function reloadMicroInstance(
+		workspaceFolder: WorkspaceFolder,
+		sourceChanged: Uri, metadataChanged?: boolean) {
 
 		for (let payaraMicro of payaraMicroInstanceProvider.getMicroInstances()) {
-			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-			workspaceFolder
-			let fileName = path.basename(document.uri.fsPath);
+			let fileName = path.basename(sourceChanged.fsPath);
 			if (fileName === "pom.xml"
 				|| fileName === "build.gradle"
 				|| fileName === "settings.gradle") {
@@ -309,13 +340,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			if (payaraMicro.isStarted()
 				&& workspaceFolder
 				&& workspaceFolder.uri === payaraMicro.getPath()
-				&& path.relative(payaraMicro.getPath().fsPath, document.uri.fsPath).startsWith("src")) {
+				&& path.relative(payaraMicro.getPath().fsPath, sourceChanged.fsPath).startsWith("src")) {
 				payaraMicroInstanceController.reloadMicro(payaraMicro);
-				break;
 			}
 		}
 
-	});
+	}
 
 }
 
