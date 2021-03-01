@@ -53,7 +53,9 @@ export interface Build {
 
     reloadPayaraMicro(
         onExit: (code: number) => any,
-        onError: (err: Error) => any
+        onError: (err: Error) => any,
+        metadataChanged?: boolean, 
+        sourcesChanged?: Uri[]
     ): ChildProcess | undefined;
 
     stopPayaraMicro(

@@ -52,6 +52,7 @@
 		"onCommand:payara.micro.stop",
 		"onCommand:payara.micro.bundle",
 		"onCommand:payara.micro.jdk.home",
+		"onCommand:payara.micro.deploy.settings",
 		"onView:payaraServerExplorer",
 		"onView:payaraServer",
 		"onView:payaraMicroExplorer",
@@ -274,6 +275,11 @@
 				"command": "payara.micro.jdk.home",
 				"title": "JDK Home",
 				"category": "Payara"
+			},
+			{
+				"command": "payara.micro.deploy.settings",
+				"title": "Deployment settings",
+				"category": "Payara"
 			}
 		],
 		"views": {
@@ -447,6 +453,10 @@
 				},
 				{
 					"command": "payara.micro.jdk.home",
+					"when": "never"
+				},
+				{
+					"command": "payara.micro.deploy.settings",
 					"when": "never"
 				}
 			],
@@ -627,6 +637,11 @@
 					"command": "payara.micro.jdk.home",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro || viewItem == stoppedPayaraMicro",
 					"group": "payara-micro@5"
+				},
+				{
+					"command": "payara.micro.deploy.settings",
+					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro || viewItem == stoppedPayaraMicro",
+					"group": "payara-micro@6"
 				},
 				{
 					"command": "payara.server.app.deploy",
