@@ -34,6 +34,7 @@ import { MavenMicroPluginReader } from './MavenMicroPluginReader';
 import { BuildReader } from './BuildReader';
 import { TaskManager } from './TaskManager';
 import { PayaraInstance } from '../common/PayaraInstance';
+import { DeployOption } from '../common/DeployOption';
 
 export class Maven implements Build {
 
@@ -337,6 +338,9 @@ export class Maven implements Build {
                 this.getDefaultMicroStartExplodedWarConfig());
         }
         let commands = taskDefinition.command.split(/\s+/);
+        if(this.payaraInstance?.getDeployOption() == DeployOption.HOT_RELOAD) {
+            commands.push('-DhotDeploy=true');
+        }
         if (debugConfig) {
             commands.push(`-Ddebug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugConfig.port}`);
         }
@@ -346,7 +350,9 @@ export class Maven implements Build {
 
     public reloadPayaraMicro(
         onExit: (code: number) => any,
-        onError: (err: Error) => any
+        onError: (err: Error) => any,
+        metadataChanged?: boolean, 
+        sourcesChanged?: Uri[]
     ): ChildProcess | undefined {
         if (this.getMicroPluginReader().isUberJarEnabled()) {
             vscode.window.showWarningMessage('The reload action not supported for UberJar artifact.');
@@ -355,6 +361,15 @@ export class Maven implements Build {
         let taskManager: TaskManager = new TaskManager();
         let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultMicroReloadConfig());
         let commands = taskDefinition.command.split(/\s+/);
+        if(this.payaraInstance?.getDeployOption() == DeployOption.HOT_RELOAD) {
+            commands.push('-DhotDeploy=true');
+            if (metadataChanged) {
+                commands.push('-DmetadataChanged=true');
+            }
+            if (Array.isArray(sourcesChanged) && sourcesChanged.length > 0) {
+                commands.push(`-DsourcesChanged=${sourcesChanged.join(',')}`);
+            }
+        }
         return this.fireCommand(commands, () => { }, onExit, onError);
     }
 

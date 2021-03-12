@@ -20,7 +20,7 @@
 import * as _ from "lodash";
 import * as open from "open";
 import * as vscode from 'vscode';
-import { workspace, DebugConfiguration } from 'vscode';
+import { workspace, DebugConfiguration, Uri } from 'vscode';
 import { PayaraInstanceController } from "../common/PayaraInstanceController";
 import { DebugManager } from '../project/DebugManager';
 import { InstanceState, PayaraMicroInstance } from "./PayaraMicroInstance";
@@ -101,7 +101,9 @@ export class PayaraMicroInstanceController extends PayaraInstanceController {
         return false;
     }
 
-    public async reloadMicro(payaraMicro: PayaraMicroInstance): Promise<void> {
+    public async reloadMicro(payaraMicro: PayaraMicroInstance,
+        metadataChanged?: boolean, 
+        sourcesChanged?: Uri[]): Promise<void> {
         if (payaraMicro.isStopped()) {
             vscode.window.showErrorMessage('Payara Micro instance not running.');
             return;
@@ -120,7 +122,9 @@ export class PayaraMicroInstanceController extends PayaraInstanceController {
                     async (error: { message: any; }) => {
                         vscode.window.showErrorMessage(`Error on executing reloadMicro task: ${error.message}`);
                         await payaraMicro.setState(InstanceState.RUNNING);
-                    }
+                    },
+                    metadataChanged, 
+                    sourcesChanged
                 );
             if (!process) {
                 await payaraMicro.setState(InstanceState.RUNNING);

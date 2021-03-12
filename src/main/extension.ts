@@ -282,6 +282,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
+			'payara.micro.deploy.settings',
+			payaraMicro => payaraMicroInstanceController.deploySettings(payaraMicro)
+		)
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
 			'payara.micro.create.project',
 			() => payaraMicroProjectGenerator.createProject()
 		)
@@ -314,7 +320,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		// 		instance = instances[0];
 		// 	}
 		// }
-		if (instance && instance.isStarted() && instance.getDeployOption() !== DeployOption.DEFAULT) {
+		if (instance 
+			&& instance.isStarted() 
+			&& instance.getDeployOption() !== DeployOption.DEFAULT) {
 			payaraServerInstanceController.deployApp(
 				workspaceFolder.uri, false, true,
 				instance, metadataChanged, [sourceChanged]
@@ -338,10 +346,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			}
 
 			if (payaraMicro.isStarted()
+				&& payaraMicro.getDeployOption() !== DeployOption.DEFAULT
 				&& workspaceFolder
 				&& workspaceFolder.uri === payaraMicro.getPath()
 				&& path.relative(payaraMicro.getPath().fsPath, sourceChanged.fsPath).startsWith("src")) {
-				payaraMicroInstanceController.reloadMicro(payaraMicro);
+				payaraMicroInstanceController.reloadMicro(payaraMicro, metadataChanged, [sourceChanged]);
 			}
 		}
 

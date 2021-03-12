@@ -47,6 +47,8 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
 
     private debug: boolean = false;
 
+    private deployOption: string = DeployOption.DEFAULT;
+
     private build: Build;
 
     constructor(private context: vscode.ExtensionContext, private name: string, private path: Uri) {
@@ -82,11 +84,11 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
     }
 
     public getDeployOption(): string {
-        return DeployOption.DEFAULT;
+        return this.deployOption;
     }
 
     public setDeployOption(deployOption: string) {
-        // not supported yet
+        this.deployOption = deployOption;
     }
 
     public setDebug(debug: boolean): void {

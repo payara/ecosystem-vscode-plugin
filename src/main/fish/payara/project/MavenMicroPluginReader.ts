@@ -47,7 +47,8 @@ export class MavenMicroPluginReader implements MicroPluginReader {
                 {
                     trim: true,
                     explicitArray: true
-                });
+                }
+            );
             parser.parseString(data,
                 function (err: any, result: any) {
                     if(err) {
@@ -66,6 +67,7 @@ export class MavenMicroPluginReader implements MicroPluginReader {
                             }
                         }
                         if (plugin
+                            && Array.isArray(plugin.configuration)
                             && plugin.configuration[0]) {
                             let config = plugin.configuration[0];
                             reader.deployWar = config.deployWar ? JSON.parse(config.deployWar[0]) : undefined;
