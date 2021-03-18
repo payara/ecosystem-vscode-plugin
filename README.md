@@ -1,5 +1,7 @@
 # Payara Tools for VS Code
 
+ATTENTION: Support for this repository is handled in the [Ecosystem Support repository](https://github.com/payara/ecosystem-support)
+
 ## Features
 
 ### Payara Server
