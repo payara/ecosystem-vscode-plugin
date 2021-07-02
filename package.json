@@ -2,7 +2,7 @@
 	"name": "payara-vscode",
 	"displayName": "Payara Tools",
 	"description": "Payara Tools for Visual Studio Code",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"publisher": "Payara",
 	"icon": "resources/payara.png",
 	"repository": {
@@ -646,12 +646,12 @@
 				{
 					"command": "payara.server.app.deploy",
 					"when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+maven|gradle\\b)(?=.*?\\b\\+uri\\b)/",
-          			"group": "java-project@0"
+					"group": "java-project@0"
 				},
 				{
 					"command": "payara.server.app.debug",
 					"when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+maven|gradle\\b)(?=.*?\\b\\+uri\\b)/",
-         			"group": "java-project@1"
+					"group": "java-project@1"
 				}
 			]
 		}
@@ -673,7 +673,7 @@
 		"cron": "^1.8.2",
 		"fs-extra": "^10.0.0",
 		"gradle-to-js": "^2.0.0",
-		"lodash": "^4.17.15",
+		"lodash": "^4.17.21",
 		"open": "^8.0.2 ",
 		"request": "^2.88.0",
 		"tail": "^2.0.3",
