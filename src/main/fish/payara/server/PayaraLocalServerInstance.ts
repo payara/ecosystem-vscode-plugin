@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2021 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -27,7 +27,6 @@ import { JavaUtils } from "./tooling/utils/JavaUtils";
 import { ServerUtils } from "./tooling/utils/ServerUtils";
 import { ChildProcess } from "child_process";
 import { PayaraServerInstance } from "./PayaraServerInstance";
-import { domain } from "process";
 
 export class PayaraLocalServerInstance extends PayaraServerInstance {
 
@@ -124,7 +123,7 @@ export class PayaraLocalServerInstance extends PayaraServerInstance {
             throw new Error("Java Process " + javaProcessExe + " executable for " + this.getName() + " was not found");
         }
 
-        let output: string = cp.execFileSync(javaProcessExe, ['-m', '-l', '-v']);
+        let output: string = cp.execFileSync(javaProcessExe, ['-m', '-l', '-v']).toString();
         let lines: string[] = output.toString().split(/(?:\r\n|\r|\n)/g);
         for (let line of lines) {
             let result: string[] = line.split(" ");

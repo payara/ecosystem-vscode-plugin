@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2021 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -41,7 +41,7 @@ export abstract class PayaraInstanceController {
                     return errorMessage;
                 }
             } catch (error) {
-                console.error(error.toString());
+                console.error(error);
                 return errorMessage;
             }
             return true;
@@ -148,7 +148,7 @@ export abstract class PayaraInstanceController {
                     return errorMessage;
                 }
             } catch (error) {
-                console.error(error.toString());
+                console.error(error);
                 return errorMessage;
             }
             return true;

@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2021 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -748,7 +748,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                         try {
                             support.buildAndDeployApplication(uri, server, debug, autoDeploy, metadataChanged, sourcesChanged);
                         } catch (error) {
-                            vscode.window.showErrorMessage(error.message);
+                            vscode.window.showErrorMessage((error instanceof Error)? error.message : String(error));
                         }
                     }
                     if (workspaceFolder) {

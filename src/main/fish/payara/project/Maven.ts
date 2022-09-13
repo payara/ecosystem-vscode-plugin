@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2021 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -338,7 +338,7 @@ export class Maven implements Build {
                 this.getDefaultMicroStartExplodedWarConfig());
         }
         let commands = taskDefinition.command.split(/\s+/);
-        if(this.payaraInstance?.getDeployOption() == DeployOption.HOT_RELOAD) {
+        if(this.payaraInstance?.getDeployOption() === DeployOption.HOT_RELOAD) {
             commands.push('-DhotDeploy=true');
         }
         if (debugConfig) {
@@ -361,7 +361,7 @@ export class Maven implements Build {
         let taskManager: TaskManager = new TaskManager();
         let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultMicroReloadConfig());
         let commands = taskDefinition.command.split(/\s+/);
-        if(this.payaraInstance?.getDeployOption() == DeployOption.HOT_RELOAD) {
+        if(this.payaraInstance?.getDeployOption() === DeployOption.HOT_RELOAD) {
             commands.push('-DhotDeploy=true');
             if (metadataChanged) {
                 commands.push('-DmetadataChanged=true');

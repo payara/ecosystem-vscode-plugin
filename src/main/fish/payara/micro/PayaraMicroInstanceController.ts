@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -80,7 +80,7 @@ export class PayaraMicroInstanceController extends PayaraInstanceController {
                 await payaraMicro.setState(InstanceState.STOPPED);
             }
         } catch (error) {
-            vscode.window.showErrorMessage(`Error on executing startMicro task: ${error.message}`);
+            vscode.window.showErrorMessage("Error on executing startMicro task:" + ((error instanceof Error)? error.message : error));
             await payaraMicro.setState(InstanceState.STOPPED);
         }
     }
@@ -130,7 +130,7 @@ export class PayaraMicroInstanceController extends PayaraInstanceController {
                 await payaraMicro.setState(InstanceState.RUNNING);
             }
         } catch (error) {
-            vscode.window.showErrorMessage(`Error on executing reloadMicro task: ${error.message}`);
+            vscode.window.showErrorMessage("Error on executing reloadMicro task:" + ((error instanceof Error)? error.message : error));
             await payaraMicro.setState(InstanceState.RUNNING);
         }
     }
@@ -158,7 +158,7 @@ export class PayaraMicroInstanceController extends PayaraInstanceController {
                     }
                 );
         } catch (error) {
-            vscode.window.showErrorMessage(`Error on executing stopMicro task: ${error.message}`);
+            vscode.window.showErrorMessage("Error on executing stopMicro task:" + ((error instanceof Error)? error.message : error));
         }
     }
 
@@ -176,7 +176,7 @@ export class PayaraMicroInstanceController extends PayaraInstanceController {
                     }
                 );
         } catch (error) {
-            vscode.window.showErrorMessage(`Error on executing bundleMicro task: ${error.message}`);
+            vscode.window.showErrorMessage("Error on executing bundleMicro task:" + ((error instanceof Error)? error.message : error));
         }
     }
 

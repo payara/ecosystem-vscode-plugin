@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -210,7 +210,7 @@ export class PayaraInstanceProvider {
                 this.servers.map(instance => instance.getConfigData())
             );
         } catch (error) {
-            console.error(error.toString());
+            console.error(error);
         }
     }
 
@@ -227,7 +227,7 @@ export class PayaraInstanceProvider {
                 })
             );
         } catch (error) {
-            console.error(error.toString());
+            console.error(error);
         }
     }
 
