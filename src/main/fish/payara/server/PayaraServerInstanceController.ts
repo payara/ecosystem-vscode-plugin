@@ -748,7 +748,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                         try {
                             support.buildAndDeployApplication(uri, server, debug, autoDeploy, metadataChanged, sourcesChanged);
                         } catch (error) {
-                            vscode.window.showErrorMessage(error.message);
+                            vscode.window.showErrorMessage((error instanceof Error)? error.message : String(error));
                         }
                     }
                     if (workspaceFolder) {

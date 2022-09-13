@@ -41,7 +41,7 @@ export abstract class PayaraInstanceController {
                     return errorMessage;
                 }
             } catch (error) {
-                console.error(error.toString());
+                console.error(error);
                 return errorMessage;
             }
             return true;
@@ -148,7 +148,7 @@ export abstract class PayaraInstanceController {
                     return errorMessage;
                 }
             } catch (error) {
-                console.error(error.toString());
+                console.error(error);
                 return errorMessage;
             }
             return true;

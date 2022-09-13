@@ -78,7 +78,7 @@ export class DeploymentSupport {
         } else {
             query = `${query}&upload=true&name=${name}`;
         }
-        if(payaraServer.getDeployOption() == DeployOption.HOT_RELOAD) {
+        if(payaraServer.getDeployOption() === DeployOption.HOT_RELOAD) {
             query = `${query}&hotDeploy=true`;
             if (metadataChanged) {
                 query = `${query}&metadataChanged=true`;

@@ -210,7 +210,7 @@ export class PayaraInstanceProvider {
                 this.servers.map(instance => instance.getConfigData())
             );
         } catch (error) {
-            console.error(error.toString());
+            console.error(error);
         }
     }
 
@@ -227,7 +227,7 @@ export class PayaraInstanceProvider {
                 })
             );
         } catch (error) {
-            console.error(error.toString());
+            console.error(error);
         }
     }
 
