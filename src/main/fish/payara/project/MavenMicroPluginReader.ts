@@ -82,8 +82,8 @@ export class MavenMicroPluginReader implements MicroPluginReader {
 
     private parseBuild(build: any) {
         if (build
-            && build[0]
-            && build[0].plugins[0]
+            && build[0] 
+            && build[0].hasOwnProperty('plugins')
             && build[0].plugins[0].plugin) {
             for (let plugin of build[0].plugins[0].plugin) {
                 let groupId = plugin.groupId[0];

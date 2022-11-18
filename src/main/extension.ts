@@ -186,13 +186,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.app.deploy',
-			uri => payaraServerInstanceController.deployApp(vscode.Uri.parse(uri.uri), false)
+			uri => payaraServerInstanceController.deployApp(vscode.Uri.parse(uri), false)
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.app.debug',
-			uri => payaraServerInstanceController.deployApp(vscode.Uri.parse(uri.uri), true)
+			uri => payaraServerInstanceController.deployApp(vscode.Uri.parse(uri), true)
 		)
 	);
 	context.subscriptions.push(
