@@ -78,7 +78,7 @@ export class Maven implements Build {
                             if (artifacts[i].endsWith('.war')
                                 || artifacts[i].endsWith('.jar')
                                 || artifacts[i].endsWith('.rar')
-                                || artifacts[i] === this.getBuildReader().getFinalName()) {
+                                || artifacts[i] === this.getBuildReader().getFinalName().toString()) {
                                 artifact = filename;
                                 break;
                             }
