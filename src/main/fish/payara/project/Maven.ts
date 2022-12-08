@@ -29,6 +29,7 @@ import { PayaraMicroProject } from '../micro/PayaraMicroProject';
 import { MicroPluginReader } from './MicroPluginReader';
 import { MavenPomReader } from './MavenPomReader';
 import { PayaraMicroMavenPlugin } from '../micro/PayaraMicroMavenPlugin';
+import { PayaraServerTransformPlugin } from '../server/PayaraServerTransformPlugin';
 import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
 import { MavenMicroPluginReader } from './MavenMicroPluginReader';
 import { BuildReader } from './BuildReader';
@@ -393,6 +394,20 @@ export class Maven implements Build {
         return this.fireCommand(commands, () => { }, onExit, onError);
     }
 
+    public migrateToJakarta10(
+		onExit: (code: number) => any,
+        onError: (err: Error) => any, source: String, target: String
+	): ChildProcess | undefined {
+		let taskManager: TaskManager = new TaskManager();
+		let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getTranformExecutionConfig());
+		let commands = taskDefinition.command.split(/\s+/);
+        if(source && target) {
+            commands.push('-DselectedSource='+source);
+            commands.push('-DselectedTarget='+target);
+        }
+        return this.fireCommand(commands, () => { }, onExit, onError);
+	}
+
     private getDefaultServerBuildConfig(remote: boolean): TaskDefinition {
         return {
             label: "payara-server-build",
@@ -444,6 +459,15 @@ export class Maven implements Build {
             label: "payara-micro-stop",
             type: "shell",
             command: `mvn ${PayaraMicroMavenPlugin.GROUP_ID}:${PayaraMicroMavenPlugin.ARTIFACT_ID}:${PayaraMicroMavenPlugin.STOP_GOAL}`,
+            group: "build"
+        };
+    }
+
+    private getTranformExecutionConfig(): TaskDefinition {
+        return {
+            label: "payara-tranform",
+            type: "shell",
+            command: `mvn package ${PayaraServerTransformPlugin.GROUP_ID}:${PayaraServerTransformPlugin.ARTIFACT_ID}:${PayaraServerTransformPlugin.VERSION}:${PayaraServerTransformPlugin.RUN_GOAL}`,
             group: "build"
         };
     }
