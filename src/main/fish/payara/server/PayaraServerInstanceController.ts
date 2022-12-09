@@ -967,6 +967,8 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 name: "name",
                 index: 0
             };
+            
+            let finalNameFile = path.join(directorySelected[0].fsPath, path.parse(vscodeUri.URI.parse(uri).fsPath).base);
             let mvn = new Maven(null, workspaceFolder);
             mvn.migrateToJakarta10( async (code: number) => {
                                             console.log("Code:"+code);
@@ -977,17 +979,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                                     async (error: { message: any; }) => {
                                         console.log("error");
                                         vscode.window.showErrorMessage(error.message+':'+' please check output'); 
-                                    }, source, directorySelected[0].fsPath);
-        
-            let options: vscode.MessageOptions = {
-                modal: true,
-                detail: 'After migrating application you should need to apply pom configuration files by hand. This is a restriction for the transformer maven plugin'
-            };
-            
-            vscode.window.showWarningMessage("Information", options, ...["Ok"]).then((item)=>{
-                console.log(item);
-            });
-
+                                    }, source, finalNameFile);
         
         } else {
             vscode.window.showErrorMessage('Please select a file or folder');

@@ -483,7 +483,7 @@
 				},
 				{
 					"command": "payara.server.app.migrate",
-					"when": "explorerResourceIsFolder == true || resourceLangId == java || resourceFilename == pom.xml || resourceFilename == build.gradle || resourceExtname == .war || resourceExtname == .jar",
+					"when": "explorerResourceIsFolder == true || resourceExtname == .properties || resourceExtname == .mf || resourceExtname == .tag || resourceLangId == tld || resourceExtname == .jsp || resourceLangId == xml || resourceLangId == java || resourceExtname == .war || resourceExtname == .jar || resourceExtname == .ear || resourceExtname == .rar",
 					"group": "run@2"
 				}
 			],
