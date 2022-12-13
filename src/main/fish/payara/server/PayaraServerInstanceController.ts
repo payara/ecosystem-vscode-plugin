@@ -936,6 +936,9 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 title: 'Selecting folder to migrate file'
             });
 
+            let sameDirectory = false;
+            let selectedCancelorNo = false;
+
             console.log('Folder selected:'+ directorySelected);
 
             if (!directorySelected || directorySelected.length < 1) {
@@ -946,18 +949,24 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 vscode.window.showWarningMessage("Missed folder", options, ...["Ok"]).then((item)=>{
                     console.log(item);
                 });
-                return;
             } 
 
             if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(path.parse(uri.toString()).dir).fsPath) {
                 let options: vscode.MessageOptions = {
-                    modal: true,
-                    detail: 'Please select a different folder to make the migration to Jakarta 10'
+                    modal: true
                 };
                 
-                vscode.window.showWarningMessage("Invalid folder", options, ...["Ok"]).then((item)=>{
+                await vscode.window.showWarningMessage("Do you want to override file on the same folder?", options, ...["No", "Yes"]).then((item)=>{
                     console.log(item);
+                    if(item.toString() == 'Yes') {
+                        sameDirectory = true;
+                    } else {
+                        selectedCancelorNo = true;
+                    }
                 });
+            }
+
+            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(path.parse(uri.toString()).dir).fsPath && selectedCancelorNo) {
                 return;
             }
 
@@ -968,18 +977,36 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 index: 0
             };
             
-            let finalNameFile = path.join(directorySelected[0].fsPath, path.parse(vscodeUri.URI.parse(uri).fsPath).base);
+            let finalNameFile = "";
+
+            if(sameDirectory) {
+                finalNameFile = directorySelected[0].fsPath;
+            } else {
+                finalNameFile = path.join(directorySelected[0].fsPath, path.parse(vscodeUri.URI.parse(uri).fsPath).base);
+            }
             let mvn = new Maven(null, workspaceFolder);
-            mvn.migrateToJakarta10( async (code: number) => {
+            let result = await mvn.migrateToJakarta10( async (code: number) => {
                                             console.log("Code:"+code);
                                             if(code > 0) {
                                                 vscode.window.showErrorMessage('Error ocurred during execution please check output'); 
                                             }
+
+                                            if(sameDirectory) {
+                                                fs.unlinkSync(vscodeUri.URI.parse(uri).fsPath);
+                                                let transformedFileNamewithPrefix = path.join(finalNameFile, "output_"+path.parse(vscodeUri.URI.parse(uri).fsPath).base);
+                                                let replaceName = path.join(finalNameFile, path.parse(vscodeUri.URI.parse(uri).fsPath).base);
+                                                fs.rename(transformedFileNamewithPrefix, replaceName, (error) => {
+                                                    console.log(error);
+                                                    vscode.window.showErrorMessage('Error ocurred during execution please check output'); 
+                                                });
+                                            }
+
                                         },
                                     async (error: { message: any; }) => {
                                         console.log("error");
                                         vscode.window.showErrorMessage(error.message+':'+' please check output'); 
                                     }, source, finalNameFile);
+            console.log(result);
         
         } else {
             vscode.window.showErrorMessage('Please select a file or folder');
