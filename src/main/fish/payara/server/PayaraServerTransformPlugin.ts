@@ -23,5 +23,21 @@ export namespace  PayaraServerTransformPlugin {
     export const GROUP_ID = 'fish.payara.transformer';
     export const VERSION = '0.2.10';
     export const RUN_GOAL = 'run';
+    export const JAKARTA_10_DEPENDENCY_EE_API = ` \
+    \n <dependency> \
+    \n \t \t <groupId>jakarta.platform</groupId> \
+    \n \t \t <artifactId>jakarta.jakartaee-api</artifactId> \
+    \n \t \t <version>10.0.0</version> \
+    \n \t \t <scope>provided</scope> \
+    \n</dependency> \
+    \n `;
+    export const JAKARTA_10_DEPENDENCY_WEB_API = ` \
+    \n <dependency> \
+    \n \t \t <groupId>jakarta.platform</groupId> \
+    \n \t \t <artifactId>jakarta.jakartaee-web-api</artifactId> \
+    \n \t \t <version>10.0.0</version> \
+    \n \t \t <scope>provided</scope> \
+    \n </dependency> \ 
+    `;
 
 }

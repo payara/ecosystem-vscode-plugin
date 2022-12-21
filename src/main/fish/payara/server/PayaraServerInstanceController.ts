@@ -47,6 +47,7 @@ import { RestEndpoint } from '../project/RestEndpoint';
 import { PayaraInstanceController } from '../common/PayaraInstanceController';
 import { PayaraRemoteServerInstance } from './PayaraRemoteServerInstance';
 import { PayaraLocalServerInstance } from './PayaraLocalServerInstance';
+import { PayaraServerTransformPlugin } from '../server/PayaraServerTransformPlugin';
 import { Maven } from '../project/Maven';
 
 export class PayaraServerInstanceController extends PayaraInstanceController {
@@ -868,16 +869,22 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
     public async migrateToJakarta10(uri: string) {
         console.log("selected resource:" + vscodeUri.URI.parse(uri).fsPath);
         
+        //verify if the source is a directory
         if(uri && fs.existsSync(vscodeUri.URI.parse(uri).fsPath) && fs.lstatSync(vscodeUri.URI.parse(uri).fsPath).isDirectory()) {
-            let directorySelected = await vscode.window.showSaveDialog({
-                saveLabel: 'Select folder',
-                title: 'Selecting folder to migrate',
-                defaultUri: (vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined)
+            //request to select the folder
+            let directorySelected = await vscode.window.showOpenDialog({
+                canSelectFolders: true,
+                canSelectFiles: false,
+                canSelectMany: false,
+                openLabel: 'Select folder',
+                title: 'Selecting folder to migrate file or files'
             });
+
+            let selectedCancelorNo = false;
         
             console.log('Folder selected'+ directorySelected);
-
-            if (!directorySelected) {
+            //if no selection showing message informing that it is needed to select a valid folder
+            if (!directorySelected || directorySelected.length < 1) {
                 let options: vscode.MessageOptions = {
                     modal: true,
                     detail: 'Please add a valid folder to make the migration to Jakarta 10'
@@ -888,18 +895,26 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 return;
             } 
 
-            if(path.parse(directorySelected.path).ext.length > 0) {
+            //if it is the same folder show dialog for override selection
+            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(uri.toString()).fsPath) {
                 let options: vscode.MessageOptions = {
-                    modal: true,
-                    detail: 'Please select a valid folder to make the migration to Jakarta 10'
+                    modal: true
                 };
                 
-                vscode.window.showWarningMessage("Invalid folder", options, ...["Ok"]).then((item)=>{
+                await vscode.window.showWarningMessage("Do you want to override folder?", options, ...["No", "Yes"]).then((item)=>{
                     console.log(item);
+                    if(item.toString() != 'Yes') {
+                        selectedCancelorNo = true;
+                    }
                 });
+            }
+
+            //if selection was cancel or no just return
+            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(uri.toString()).fsPath && selectedCancelorNo) {
                 return;
             }
-            
+
+            //processing the options selected for the transform process
             let source = vscodeUri.URI.parse(uri).fsPath;
             let workspaceFolder: vscode.WorkspaceFolder = {
                 uri: (vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined),
@@ -907,6 +922,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 index: 0
             };
             let mvn = new Maven(null, workspaceFolder);
+
             mvn.migrateToJakarta10( async (code: number) => {
                                             console.log("Code:"+code);
                                             if(code > 0) {
@@ -916,11 +932,13 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                                     async (error: { message: any; }) => {
                                         console.log("error");
                                         vscode.window.showErrorMessage(error.message+':'+' please check output'); 
-                                    }, source, vscodeUri.URI.parse(directorySelected.path).fsPath);
+                                    }, source, directorySelected[0].fsPath);
 
+            //showing dialog with message regarding to make manual changes for the pom configuration files
             let options: vscode.MessageOptions = {
                 modal: true,
-                detail: 'After migrating application you should need to apply pom configuration files by hand. This is a restriction for the transformer maven plugin'
+                detail: 'After migrating application you should need to apply pom configuration files by hand. The suggested dependencies for Jakarta 10 are: \n' 
+                + PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_EE_API + ' \n or \n'+PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_WEB_API
             };
             
             vscode.window.showWarningMessage("Information", options, ...["Ok"]).then((item)=>{
@@ -928,6 +946,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             });
             
         } else if (uri && fs.existsSync(vscodeUri.URI.parse(uri).fsPath) && fs.lstatSync(vscodeUri.URI.parse(uri).fsPath).isFile()) {
+            //request to select the folder
             let directorySelected = await vscode.window.showOpenDialog({
                 canSelectFolders: true,
                 canSelectFiles: false,
@@ -936,11 +955,11 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 title: 'Selecting folder to migrate file'
             });
 
-            let sameDirectory = false;
             let selectedCancelorNo = false;
 
             console.log('Folder selected:'+ directorySelected);
-
+            
+            //if no selection showing message informing that it is needed to select a valid folder
             if (!directorySelected || directorySelected.length < 1) {
                 let options: vscode.MessageOptions = {
                     modal: true,
@@ -951,6 +970,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 });
             } 
 
+            //if it is the same file on the same folder show dialog for override selection
             if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(path.parse(uri.toString()).dir).fsPath) {
                 let options: vscode.MessageOptions = {
                     modal: true
@@ -958,18 +978,18 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 
                 await vscode.window.showWarningMessage("Do you want to override file on the same folder?", options, ...["No", "Yes"]).then((item)=>{
                     console.log(item);
-                    if(item.toString() == 'Yes') {
-                        sameDirectory = true;
-                    } else {
+                    if(item.toString() != 'Yes') {
                         selectedCancelorNo = true;
                     }
                 });
             }
 
+             //if selection was cancel or no just return
             if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(path.parse(uri.toString()).dir).fsPath && selectedCancelorNo) {
                 return;
             }
 
+            //processing the options selected for the transform process
             let source = vscodeUri.URI.parse(uri).fsPath;
             let workspaceFolder: vscode.WorkspaceFolder = {
                 uri: (vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined),
@@ -978,29 +998,14 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             };
             
             let finalNameFile = "";
-
-            if(sameDirectory) {
-                finalNameFile = directorySelected[0].fsPath;
-            } else {
-                finalNameFile = path.join(directorySelected[0].fsPath, path.parse(vscodeUri.URI.parse(uri).fsPath).base);
-            }
+            finalNameFile = path.join(directorySelected[0].fsPath, path.parse(vscodeUri.URI.parse(uri).fsPath).base);
+            
             let mvn = new Maven(null, workspaceFolder);
             let result = await mvn.migrateToJakarta10( async (code: number) => {
                                             console.log("Code:"+code);
                                             if(code > 0) {
                                                 vscode.window.showErrorMessage('Error ocurred during execution please check output'); 
                                             }
-
-                                            if(sameDirectory) {
-                                                fs.unlinkSync(vscodeUri.URI.parse(uri).fsPath);
-                                                let transformedFileNamewithPrefix = path.join(finalNameFile, "output_"+path.parse(vscodeUri.URI.parse(uri).fsPath).base);
-                                                let replaceName = path.join(finalNameFile, path.parse(vscodeUri.URI.parse(uri).fsPath).base);
-                                                fs.rename(transformedFileNamewithPrefix, replaceName, (error) => {
-                                                    console.log(error);
-                                                    vscode.window.showErrorMessage('Error ocurred during execution please check output'); 
-                                                });
-                                            }
-
                                         },
                                     async (error: { message: any; }) => {
                                         console.log("error");
