@@ -21,7 +21,7 @@ export namespace  PayaraServerTransformPlugin {
 
     export const ARTIFACT_ID = 'fish.payara.transformer.maven';
     export const GROUP_ID = 'fish.payara.transformer';
-    export const VERSION = '0.2.10';
+    export const VERSION = '0.2.11';
     export const RUN_GOAL = 'run';
     export const JAKARTA_10_DEPENDENCY_EE_API = ` \
     \n <dependency> \
