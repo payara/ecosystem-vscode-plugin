@@ -976,7 +976,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                     modal: true
                 };
                 
-                await vscode.window.showWarningMessage("Do you want to override file on the same folder?", options, ...["No", "Yes"]).then((item)=>{
+                await vscode.window.showWarningMessage("Do you want to override file?", options, ...["No", "Yes"]).then((item)=>{
                     console.log(item);
                     if(item.toString() != 'Yes') {
                         selectedCancelorNo = true;
