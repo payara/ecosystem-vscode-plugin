@@ -887,7 +887,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             if (!directorySelected || directorySelected.length < 1) {
                 let options: vscode.MessageOptions = {
                     modal: true,
-                    detail: 'Please add a valid folder to make the migration to Jakarta 10'
+                    detail: 'Please add a valid folder to make the migration to Jakarta EE 10'
                 };
                 vscode.window.showWarningMessage("Missed folder", options, ...["Ok"]).then((item)=>{
                     console.log(item);
@@ -901,7 +901,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                     modal: true
                 };
                 
-                await vscode.window.showWarningMessage("Do you want to override folder?", options, ...["No", "Yes"]).then((item)=>{
+                await vscode.window.showWarningMessage("Do you want to override folder?", options, ...["Yes"]).then((item)=>{
                     console.log(item);
                     if(item.toString() != 'Yes') {
                         selectedCancelorNo = true;
@@ -937,7 +937,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             //showing dialog with message regarding to make manual changes for the pom configuration files
             let options: vscode.MessageOptions = {
                 modal: true,
-                detail: 'After migrating application you should need to apply pom configuration files by hand. The suggested dependencies for Jakarta 10 are: \n' 
+                detail: 'After migrating application you should need to apply pom configuration files manually. The suggested dependencies for Jakarta EE 10 are: \n' 
                 + PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_EE_API + ' \n or \n'+PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_WEB_API
             };
             
@@ -963,7 +963,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             if (!directorySelected || directorySelected.length < 1) {
                 let options: vscode.MessageOptions = {
                     modal: true,
-                    detail: 'Please add a valid folder to make the migration to Jakarta 10'
+                    detail: 'Please add a valid folder to make the migration to Jakarta EE 10'
                 };
                 vscode.window.showWarningMessage("Missed folder", options, ...["Ok"]).then((item)=>{
                     console.log(item);
@@ -976,7 +976,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                     modal: true
                 };
                 
-                await vscode.window.showWarningMessage("Do you want to override file?", options, ...["No", "Yes"]).then((item)=>{
+                await vscode.window.showWarningMessage("Do you want to override file?", options, ...["Yes"]).then((item)=>{
                     console.log(item);
                     if(item.toString() != 'Yes') {
                         selectedCancelorNo = true;
