@@ -901,7 +901,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                     modal: true
                 };
                 
-                await vscode.window.showWarningMessage("Do you want to override folder?", options, ...["Yes"]).then((item)=>{
+                await vscode.window.showWarningMessage("Are you sure that you want to override all files in this folder?", options, ...["Yes"]).then((item)=>{
                     console.log(item);
                     if(item.toString() != 'Yes') {
                         selectedCancelorNo = true;
@@ -976,7 +976,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                     modal: true
                 };
                 
-                await vscode.window.showWarningMessage("Do you want to override file?", options, ...["Yes"]).then((item)=>{
+                await vscode.window.showWarningMessage("Are you sure that you want to override this file?", options, ...["Yes"]).then((item)=>{
                     console.log(item);
                     if(item.toString() != 'Yes') {
                         selectedCancelorNo = true;
