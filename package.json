@@ -43,6 +43,7 @@
 		"onCommand:payara.server.config.open",
 		"onCommand:payara.server.app.deploy",
 		"onCommand:payara.server.app.debug",
+		"onCommand:payara.server.app.migrate",
 		"onCommand:payara.micro.create.project",
 		"onCommand:payara.micro.refresh",
 		"onCommand:payara.micro.refresh.all",
@@ -211,6 +212,11 @@
 					"light": "resources/theme/light/endpoint.svg",
 					"dark": "resources/theme/dark/endpoint.svg"
 				}
+			},
+			{
+				"command": "payara.server.app.migrate",
+				"title" : "Migrate to Jakarta EE 10",
+				"category": "Payara"
 			},
 			{
 				"command": "payara.micro.create.project",
@@ -432,6 +438,10 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.server.app.migrate",
+					"when": "never"
+				},
+				{
 					"command": "payara.micro.start",
 					"when": "never"
 				},
@@ -470,6 +480,11 @@
 					"command": "payara.server.app.debug",
 					"when": "explorerResourceIsFolder == true || resourceLangId == java || resourceFilename == pom.xml || resourceFilename == build.gradle || resourceExtname == .war || resourceExtname == .jar",
 					"group": "run@1"
+				},
+				{
+					"command": "payara.server.app.migrate",
+					"when": "explorerResourceIsFolder == true || resourceExtname == .properties || resourceExtname == .mf || resourceExtname == .tag || resourceLangId == tld || resourceExtname == .jsp || resourceLangId == xml || resourceLangId == java || resourceExtname == .war || resourceExtname == .jar || resourceExtname == .ear || resourceExtname == .rar",
+					"group": "run@2"
 				}
 			],
 			"view/item/context": [
@@ -652,6 +667,11 @@
 					"command": "payara.server.app.debug",
 					"when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+maven|gradle\\b)(?=.*?\\b\\+uri\\b)/",
 					"group": "java-project@1"
+				},
+				{
+					"command": "payara.server.app.migrate",
+					"when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+maven|gradle\\b)(?=.*?\\b\\+uri\\b)/",
+					"group": "java-project@1"
 				}
 			]
 		}
@@ -693,6 +713,7 @@
 		"os": "^0.1.1",
 		"tslint": "^6.1.0",
 		"typescript": "^4.0.3",
-		"vscode-test": "^1.2.2"
+		"vscode-test": "^1.2.2",
+		"vscode-uri": "3.0.6"
 	}
 }

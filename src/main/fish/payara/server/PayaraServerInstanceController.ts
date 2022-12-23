@@ -29,7 +29,8 @@ import { FileResult } from 'tmp';
 import { URL } from 'url';
 import * as isPort from 'validator/lib/isPort';
 import * as vscode from 'vscode';
-import { OpenDialogOptions, OutputChannel, QuickPickItem, Uri, DebugConfiguration } from 'vscode';
+import * as vscodeUri from 'vscode-uri';
+import { OpenDialogOptions, MessageOptions, OutputChannel, QuickPickItem, MessageItem, Uri, DebugConfiguration, WorkspaceFolder} from 'vscode';
 import { ApplicationInstance } from '../project/ApplicationInstance';
 import { DeploymentSupport } from '../project/DeploymentSupport';
 import * as ui from "../../../UI";
@@ -46,6 +47,8 @@ import { RestEndpoint } from '../project/RestEndpoint';
 import { PayaraInstanceController } from '../common/PayaraInstanceController';
 import { PayaraRemoteServerInstance } from './PayaraRemoteServerInstance';
 import { PayaraLocalServerInstance } from './PayaraLocalServerInstance';
+import { PayaraServerTransformPlugin } from '../server/PayaraServerTransformPlugin';
+import { Maven } from '../project/Maven';
 
 export class PayaraServerInstanceController extends PayaraInstanceController {
 
@@ -861,6 +864,158 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
 
     updateConfig(): void {
         this.instanceProvider.updateServerConfig();
+    }
+
+    public async migrateToJakarta10(uri: string) {
+        console.log("selected resource:" + vscodeUri.URI.parse(uri).fsPath);
+        
+        //verify if the source is a directory
+        if(uri && fs.existsSync(vscodeUri.URI.parse(uri).fsPath) && fs.lstatSync(vscodeUri.URI.parse(uri).fsPath).isDirectory()) {
+            //request to select the folder
+            let directorySelected = await vscode.window.showOpenDialog({
+                canSelectFolders: true,
+                canSelectFiles: false,
+                canSelectMany: false,
+                openLabel: 'Select folder',
+                title: 'Selecting folder to migrate file or files'
+            });
+
+            let selectedCancelorNo = false;
+        
+            console.log('Folder selected'+ directorySelected);
+            //if no selection showing message informing that it is needed to select a valid folder
+            if (!directorySelected || directorySelected.length < 1) {
+                let options: vscode.MessageOptions = {
+                    modal: true,
+                    detail: 'Please add a valid folder to make the migration to Jakarta EE 10'
+                };
+                vscode.window.showWarningMessage("Missed folder", options, ...["Ok"]).then((item)=>{
+                    console.log(item);
+                });
+                return;
+            } 
+
+            //if it is the same folder show dialog for override selection
+            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(uri.toString()).fsPath) {
+                let options: vscode.MessageOptions = {
+                    modal: true
+                };
+                
+                await vscode.window.showWarningMessage("Are you sure that you want to override all files in this folder?", options, ...["Yes"]).then((item)=>{
+                    console.log(item);
+                    if(item.toString() != 'Yes') {
+                        selectedCancelorNo = true;
+                    }
+                });
+            }
+
+            //if selection was cancel or no just return
+            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(uri.toString()).fsPath && selectedCancelorNo) {
+                return;
+            }
+
+            //processing the options selected for the transform process
+            let source = vscodeUri.URI.parse(uri).fsPath;
+            let workspaceFolder: vscode.WorkspaceFolder = {
+                uri: (vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined),
+                name: "name",
+                index: 0
+            };
+            let mvn = new Maven(null, workspaceFolder);
+
+            mvn.migrateToJakarta10( async (code: number) => {
+                                            console.log("Code:"+code);
+                                            if(code > 0) {
+                                                vscode.window.showErrorMessage('Error ocurred during execution please check output'); 
+                                            }
+                                        },
+                                    async (error: { message: any; }) => {
+                                        console.log("error");
+                                        vscode.window.showErrorMessage(error.message+':'+' please check output'); 
+                                    }, source, directorySelected[0].fsPath);
+
+            //showing dialog with message regarding to make manual changes for the pom configuration files
+            let options: vscode.MessageOptions = {
+                modal: true,
+                detail: 'After migrating application you should need to apply pom configuration files manually. The suggested dependencies for Jakarta EE 10 are: \n' 
+                + PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_EE_API + ' \n or \n'+PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_WEB_API
+            };
+            
+            vscode.window.showWarningMessage("Information", options, ...["Ok"]).then((item)=>{
+                console.log(item);
+            });
+            
+        } else if (uri && fs.existsSync(vscodeUri.URI.parse(uri).fsPath) && fs.lstatSync(vscodeUri.URI.parse(uri).fsPath).isFile()) {
+            //request to select the folder
+            let directorySelected = await vscode.window.showOpenDialog({
+                canSelectFolders: true,
+                canSelectFiles: false,
+                canSelectMany: false,
+                openLabel: 'Select folder',
+                title: 'Selecting folder to migrate file'
+            });
+
+            let selectedCancelorNo = false;
+
+            console.log('Folder selected:'+ directorySelected);
+            
+            //if no selection showing message informing that it is needed to select a valid folder
+            if (!directorySelected || directorySelected.length < 1) {
+                let options: vscode.MessageOptions = {
+                    modal: true,
+                    detail: 'Please add a valid folder to make the migration to Jakarta EE 10'
+                };
+                vscode.window.showWarningMessage("Missed folder", options, ...["Ok"]).then((item)=>{
+                    console.log(item);
+                });
+            } 
+
+            //if it is the same file on the same folder show dialog for override selection
+            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(path.parse(uri.toString()).dir).fsPath) {
+                let options: vscode.MessageOptions = {
+                    modal: true
+                };
+                
+                await vscode.window.showWarningMessage("Are you sure that you want to override this file?", options, ...["Yes"]).then((item)=>{
+                    console.log(item);
+                    if(item.toString() != 'Yes') {
+                        selectedCancelorNo = true;
+                    }
+                });
+            }
+
+             //if selection was cancel or no just return
+            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(path.parse(uri.toString()).dir).fsPath && selectedCancelorNo) {
+                return;
+            }
+
+            //processing the options selected for the transform process
+            let source = vscodeUri.URI.parse(uri).fsPath;
+            let workspaceFolder: vscode.WorkspaceFolder = {
+                uri: (vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined),
+                name: "name",
+                index: 0
+            };
+            
+            let finalNameFile = "";
+            finalNameFile = path.join(directorySelected[0].fsPath, path.parse(vscodeUri.URI.parse(uri).fsPath).base);
+            
+            let mvn = new Maven(null, workspaceFolder);
+            let result = await mvn.migrateToJakarta10( async (code: number) => {
+                                            console.log("Code:"+code);
+                                            if(code > 0) {
+                                                vscode.window.showErrorMessage('Error ocurred during execution please check output'); 
+                                            }
+                                        },
+                                    async (error: { message: any; }) => {
+                                        console.log("error");
+                                        vscode.window.showErrorMessage(error.message+':'+' please check output'); 
+                                    }, source, finalNameFile);
+            console.log(result);
+        
+        } else {
+            vscode.window.showErrorMessage('Please select a file or folder');
+        }
     }
 
 }
