@@ -29,7 +29,6 @@ import { FileResult } from 'tmp';
 import { URL } from 'url';
 import * as isPort from 'validator/lib/isPort';
 import * as vscode from 'vscode';
-import * as vscodeUri from 'vscode-uri';
 import { OpenDialogOptions, MessageOptions, OutputChannel, QuickPickItem, MessageItem, Uri, DebugConfiguration, WorkspaceFolder} from 'vscode';
 import { ApplicationInstance } from '../project/ApplicationInstance';
 import { DeploymentSupport } from '../project/DeploymentSupport';
@@ -866,11 +865,11 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         this.instanceProvider.updateServerConfig();
     }
 
-    public async migrateToJakarta10(uri: string) {
-        console.log("selected resource:" + vscodeUri.URI.parse(uri).fsPath);
+    public async migrateToJakarta10(uri:  vscode.Uri) {
+        console.log("selected resource:" + uri.fsPath);
         
         //verify if the source is a directory
-        if(uri && fs.existsSync(vscodeUri.URI.parse(uri).fsPath) && fs.lstatSync(vscodeUri.URI.parse(uri).fsPath).isDirectory()) {
+        if(uri && fs.existsSync(uri.fsPath) && fs.lstatSync(uri.fsPath).isDirectory()) {
             //request to select the folder
             let directorySelected = await vscode.window.showOpenDialog({
                 canSelectFolders: true,
@@ -896,7 +895,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             } 
 
             //if it is the same folder show dialog for override selection
-            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(uri.toString()).fsPath) {
+            if(directorySelected && directorySelected[0].fsPath == uri.fsPath) {
                 let options: vscode.MessageOptions = {
                     modal: true
                 };
@@ -910,12 +909,12 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             }
 
             //if selection was cancel or no just return
-            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(uri.toString()).fsPath && selectedCancelorNo) {
+            if(directorySelected && directorySelected[0].fsPath == uri.fsPath && selectedCancelorNo) {
                 return;
             }
 
             //processing the options selected for the transform process
-            let source = vscodeUri.URI.parse(uri).fsPath;
+            let source = uri.fsPath;
             let workspaceFolder: vscode.WorkspaceFolder = {
                 uri: (vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined),
                 name: "name",
@@ -945,7 +944,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 console.log(item);
             });
             
-        } else if (uri && fs.existsSync(vscodeUri.URI.parse(uri).fsPath) && fs.lstatSync(vscodeUri.URI.parse(uri).fsPath).isFile()) {
+        } else if (uri && fs.existsSync(uri.fsPath) && fs.lstatSync(uri.fsPath).isFile()) {
             //request to select the folder
             let directorySelected = await vscode.window.showOpenDialog({
                 canSelectFolders: true,
@@ -971,7 +970,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             } 
 
             //if it is the same file on the same folder show dialog for override selection
-            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(path.parse(uri.toString()).dir).fsPath) {
+            if(directorySelected && directorySelected[0].fsPath == vscode.Uri.file(path.parse(uri.toString()).dir).fsPath) {
                 let options: vscode.MessageOptions = {
                     modal: true
                 };
@@ -985,12 +984,12 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             }
 
              //if selection was cancel or no just return
-            if(directorySelected && directorySelected[0].fsPath == vscodeUri.URI.parse(path.parse(uri.toString()).dir).fsPath && selectedCancelorNo) {
+            if(directorySelected && directorySelected[0].fsPath == vscode.Uri.file(path.parse(uri.toString()).dir).fsPath && selectedCancelorNo) {
                 return;
             }
 
             //processing the options selected for the transform process
-            let source = vscodeUri.URI.parse(uri).fsPath;
+            let source = uri.fsPath;
             let workspaceFolder: vscode.WorkspaceFolder = {
                 uri: (vscode.workspace.rootPath ? vscode.Uri.file(vscode.workspace.rootPath) : undefined),
                 name: "name",
@@ -998,7 +997,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             };
             
             let finalNameFile = "";
-            finalNameFile = path.join(directorySelected[0].fsPath, path.parse(vscodeUri.URI.parse(uri).fsPath).base);
+            finalNameFile = path.join(directorySelected[0].fsPath, path.parse(uri.fsPath).base);
             
             let mvn = new Maven(null, workspaceFolder);
             let result = await mvn.migrateToJakarta10( async (code: number) => {
