@@ -879,7 +879,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 title: 'Selecting folder to migrate file or files'
             });
 
-            let selectedCancelorNo = false;
+            let selectedYes = false;
         
             console.log('Folder selected'+ directorySelected);
             //if no selection showing message informing that it is needed to select a valid folder
@@ -902,14 +902,14 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 
                 await vscode.window.showWarningMessage("Are you sure that you want to override all files in this folder?", options, ...["Yes"]).then((item)=>{
                     console.log(item);
-                    if(item.toString() != 'Yes') {
-                        selectedCancelorNo = true;
+                    if(item && item.toString() == 'Yes') {
+                        selectedYes = true;
                     }
                 });
             }
 
             //if selection was cancel or no just return
-            if(directorySelected && directorySelected[0].fsPath == uri.fsPath && selectedCancelorNo) {
+            if(directorySelected && directorySelected[0].fsPath == uri.fsPath && !selectedYes) {
                 return;
             }
 
@@ -936,7 +936,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             //showing dialog with message regarding to make manual changes for the pom configuration files
             let options: vscode.MessageOptions = {
                 modal: true,
-                detail: 'After migrating application you should need to apply pom configuration files manually. The suggested dependencies for Jakarta EE 10 are: \n' 
+                detail: 'After transforming application you should need to apply pom configuration files manually. The suggested dependencies for Jakarta EE 10 are: \n' 
                 + PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_EE_API + ' \n or \n'+PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_WEB_API
             };
             
@@ -954,7 +954,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 title: 'Selecting folder to migrate file'
             });
 
-            let selectedCancelorNo = false;
+            let selectedYes = false;
 
             console.log('Folder selected:'+ directorySelected);
             
@@ -970,21 +970,21 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             } 
 
             //if it is the same file on the same folder show dialog for override selection
-            if(directorySelected && directorySelected[0].fsPath == vscode.Uri.file(path.parse(uri.toString()).dir).fsPath) {
+            if(directorySelected && directorySelected[0].fsPath == vscode.Uri.parse(path.parse(uri.toString()).dir).fsPath) {
                 let options: vscode.MessageOptions = {
                     modal: true
                 };
                 
                 await vscode.window.showWarningMessage("Are you sure that you want to override this file?", options, ...["Yes"]).then((item)=>{
                     console.log(item);
-                    if(item.toString() != 'Yes') {
-                        selectedCancelorNo = true;
+                    if(item && item.toString() == 'Yes') {
+                        selectedYes = true;
                     }
                 });
             }
 
              //if selection was cancel or no just return
-            if(directorySelected && directorySelected[0].fsPath == vscode.Uri.file(path.parse(uri.toString()).dir).fsPath && selectedCancelorNo) {
+            if(directorySelected && directorySelected[0].fsPath == vscode.Uri.parse(path.parse(uri.toString()).dir).fsPath && !selectedYes) {
                 return;
             }
 

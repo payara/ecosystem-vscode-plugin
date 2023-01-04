@@ -215,7 +215,7 @@
 			},
 			{
 				"command": "payara.server.app.migrate",
-				"title" : "Migrate to Jakarta EE 10",
+				"title" : "Transform to Jakarta EE 10",
 				"category": "Payara"
 			},
 			{
