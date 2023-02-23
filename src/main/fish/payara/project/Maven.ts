@@ -281,7 +281,7 @@ export class Maven implements Build {
             "archetype:generate",
             `-DarchetypeArtifactId=payara-micro-maven-archetype`,
             `-DarchetypeGroupId=fish.payara.maven.archetypes`,
-            `-DarchetypeVersion=1.0.5`,
+            `-DarchetypeVersion=` + (project.payaraMicroVersion.split('.')[0] === '5' ? '1.0.5' : '2.0'),
             `-DgroupId=${project.groupId}`,
             `-DartifactId=${project.artifactId}`,
             `-Dversion=${project.version}`,
