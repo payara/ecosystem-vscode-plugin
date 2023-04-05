@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2023 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -34,6 +34,9 @@ export class PayaraRemoteServerInstance extends PayaraServerInstance {
     private target: string = 'server';
     private job = new CronJob('*/3 * * * * *', () => this.showLog());
     private connectionAllowed: boolean = false;
+    private instanceType: string;
+    private hostPath: string;
+    private containerPath: string;
 
     constructor(name: string, domainName: string) {
         super(name, domainName);
@@ -69,6 +72,30 @@ export class PayaraRemoteServerInstance extends PayaraServerInstance {
 
     public setHost(host: string) {
         this.host = host;
+    }
+
+    public getHostPath(): string {
+        return this.hostPath;
+    }
+
+    public setHostPath(hostPath: string) {
+        this.hostPath = hostPath;
+    }
+
+    public getContainerPath(): string {
+        return this.containerPath;
+    }
+
+    public setContainerPath(containerPath: string) {
+        this.containerPath = containerPath;
+    }
+
+    public getInstanceType(): string {
+        return this.instanceType;
+    }
+
+    public setInstanceType(instanceType: string) {
+        this.instanceType = instanceType;
     }
 
     public getAdminPort(): number {
@@ -127,7 +154,10 @@ export class PayaraRemoteServerInstance extends PayaraServerInstance {
             adminPort: this.getAdminPort(),
             domainName: this.getDomainName(),
             username: this.getUsername(),
-            password: this.getPassword()
+            password: this.getPassword(),
+            hostPath: this.getHostPath(),
+            containerPath: this.getContainerPath(),
+            instanceType: this.getInstanceType()
         };
     }
 
