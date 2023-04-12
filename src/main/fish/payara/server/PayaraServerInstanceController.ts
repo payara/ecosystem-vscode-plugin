@@ -29,7 +29,7 @@ import { FileResult } from 'tmp';
 import { URL } from 'url';
 import * as isPort from 'validator/lib/isPort';
 import * as vscode from 'vscode';
-import { OpenDialogOptions, MessageOptions, OutputChannel, QuickPickItem, MessageItem, Uri, DebugConfiguration, WorkspaceFolder} from 'vscode';
+import { OpenDialogOptions, MessageOptions, OutputChannel, QuickPickItem, MessageItem, Uri, DebugConfiguration, WorkspaceFolder } from 'vscode';
 import { ApplicationInstance } from '../project/ApplicationInstance';
 import { DeploymentSupport } from '../project/DeploymentSupport';
 import * as ui from "../../../UI";
@@ -563,13 +563,13 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
     }
 
 
-    public async startServer(payaraServer: PayaraLocalServerInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {
+    public async startServer(payaraServer: PayaraLocalServerInstance, debug: boolean, debugPort: string, callback?: (status: boolean) => any): Promise<void> {
         if (!payaraServer.isStopped()) {
             vscode.window.showErrorMessage('Payara Server instance already running.');
             return;
         }
 
-        let process: ChildProcess = new StartTask().startServer(payaraServer, debug);
+        let process: ChildProcess = new StartTask().startServer(payaraServer, debug, debugPort);
         if (process.pid) {
             payaraServer.setDebug(debug);
             payaraServer.setState(InstanceState.LOADING);
@@ -750,7 +750,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                         try {
                             support.buildAndDeployApplication(uri, server, debug, autoDeploy, metadataChanged, sourcesChanged);
                         } catch (error) {
-                            vscode.window.showErrorMessage((error instanceof Error)? error.message : String(error));
+                            vscode.window.showErrorMessage((error instanceof Error) ? error.message : String(error));
                         }
                     }
                     if (workspaceFolder) {
@@ -763,8 +763,9 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             if (autoDeploy && server.isStarted()) {
                 deploy(true);
             } else {
+                const debugPort = this.readDebugPortFromWorkspace(uri);
                 if (server instanceof PayaraLocalServerInstance && !server.isStarted()) {
-                    this.startServer(server, debug, deploy);
+                    this.startServer(server, debug, debugPort, deploy);
                 } else if (server instanceof PayaraLocalServerInstance && debug && !server.isDebug()) {
                     this.restartServer(server, debug, deploy);
                 } else {
@@ -777,6 +778,14 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         } else {
             this.selectListedServer(callback);
         }
+    }
+
+    public readDebugPortFromWorkspace(uri: Uri) {
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+        const launchConfig = vscode.workspace.getConfiguration('launch', workspaceFolder.uri);
+        const debugConfigurations = launchConfig.get('configurations') as any[];
+        const debugConfig = debugConfigurations.find(config => config.type === 'java' && config.request === 'attach');
+        return debugConfig && debugConfig.port;
     }
 
     private selectListedServer(callback: (server: PayaraServerInstance) => any) {
@@ -865,11 +874,11 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         this.instanceProvider.updateServerConfig();
     }
 
-    public async migrateToJakarta10(uri:  vscode.Uri) {
+    public async migrateToJakarta10(uri: vscode.Uri) {
         console.log("selected resource:" + uri.fsPath);
-        
+
         //verify if the source is a directory
-        if(uri && fs.existsSync(uri.fsPath) && fs.lstatSync(uri.fsPath).isDirectory()) {
+        if (uri && fs.existsSync(uri.fsPath) && fs.lstatSync(uri.fsPath).isDirectory()) {
             //request to select the folder
             let directorySelected = await vscode.window.showOpenDialog({
                 canSelectFolders: true,
@@ -880,36 +889,36 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             });
 
             let selectedYes = false;
-        
-            console.log('Folder selected'+ directorySelected);
+
+            console.log('Folder selected' + directorySelected);
             //if no selection showing message informing that it is needed to select a valid folder
             if (!directorySelected || directorySelected.length < 1) {
                 let options: vscode.MessageOptions = {
                     modal: true,
                     detail: 'Please add a valid folder to make the migration to Jakarta EE 10'
                 };
-                vscode.window.showWarningMessage("Missed folder", options, ...["Ok"]).then((item)=>{
+                vscode.window.showWarningMessage("Missed folder", options, ...["Ok"]).then((item) => {
                     console.log(item);
                 });
                 return;
-            } 
+            }
 
             //if it is the same folder show dialog for override selection
-            if(directorySelected && directorySelected[0].fsPath == uri.fsPath) {
+            if (directorySelected && directorySelected[0].fsPath == uri.fsPath) {
                 let options: vscode.MessageOptions = {
                     modal: true
                 };
-                
-                await vscode.window.showWarningMessage("Are you sure that you want to override all files in this folder?", options, ...["Yes"]).then((item)=>{
+
+                await vscode.window.showWarningMessage("Are you sure that you want to override all files in this folder?", options, ...["Yes"]).then((item) => {
                     console.log(item);
-                    if(item && item.toString() == 'Yes') {
+                    if (item && item.toString() == 'Yes') {
                         selectedYes = true;
                     }
                 });
             }
 
             //if selection was cancel or no just return
-            if(directorySelected && directorySelected[0].fsPath == uri.fsPath && !selectedYes) {
+            if (directorySelected && directorySelected[0].fsPath == uri.fsPath && !selectedYes) {
                 return;
             }
 
@@ -922,28 +931,28 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             };
             let mvn = new Maven(null, workspaceFolder);
 
-            mvn.migrateToJakarta10( async (code: number) => {
-                                            console.log("Code:"+code);
-                                            if(code > 0) {
-                                                vscode.window.showErrorMessage('Error ocurred during execution please check output'); 
-                                            }
-                                        },
-                                    async (error: { message: any; }) => {
-                                        console.log("error");
-                                        vscode.window.showErrorMessage(error.message+':'+' please check output'); 
-                                    }, source, directorySelected[0].fsPath);
+            mvn.migrateToJakarta10(async (code: number) => {
+                console.log("Code:" + code);
+                if (code > 0) {
+                    vscode.window.showErrorMessage('Error ocurred during execution please check output');
+                }
+            },
+                async (error: { message: any; }) => {
+                    console.log("error");
+                    vscode.window.showErrorMessage(error.message + ':' + ' please check output');
+                }, source, directorySelected[0].fsPath);
 
             //showing dialog with message regarding to make manual changes for the pom configuration files
             let options: vscode.MessageOptions = {
                 modal: true,
-                detail: 'After transforming application you should need to apply pom configuration files manually. The suggested dependencies for Jakarta EE 10 are: \n' 
-                + PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_EE_API + ' \n or \n'+PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_WEB_API
+                detail: 'After transforming application you should need to apply pom configuration files manually. The suggested dependencies for Jakarta EE 10 are: \n'
+                    + PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_EE_API + ' \n or \n' + PayaraServerTransformPlugin.JAKARTA_10_DEPENDENCY_WEB_API
             };
-            
-            vscode.window.showWarningMessage("Information", options, ...["Ok"]).then((item)=>{
+
+            vscode.window.showWarningMessage("Information", options, ...["Ok"]).then((item) => {
                 console.log(item);
             });
-            
+
         } else if (uri && fs.existsSync(uri.fsPath) && fs.lstatSync(uri.fsPath).isFile()) {
             //request to select the folder
             let directorySelected = await vscode.window.showOpenDialog({
@@ -956,35 +965,35 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
 
             let selectedYes = false;
 
-            console.log('Folder selected:'+ directorySelected);
-            
+            console.log('Folder selected:' + directorySelected);
+
             //if no selection showing message informing that it is needed to select a valid folder
             if (!directorySelected || directorySelected.length < 1) {
                 let options: vscode.MessageOptions = {
                     modal: true,
                     detail: 'Please add a valid folder to make the migration to Jakarta EE 10'
                 };
-                vscode.window.showWarningMessage("Missed folder", options, ...["Ok"]).then((item)=>{
+                vscode.window.showWarningMessage("Missed folder", options, ...["Ok"]).then((item) => {
                     console.log(item);
                 });
-            } 
+            }
 
             //if it is the same file on the same folder show dialog for override selection
-            if(directorySelected && directorySelected[0].fsPath == vscode.Uri.parse(path.parse(uri.toString()).dir).fsPath) {
+            if (directorySelected && directorySelected[0].fsPath == vscode.Uri.parse(path.parse(uri.toString()).dir).fsPath) {
                 let options: vscode.MessageOptions = {
                     modal: true
                 };
-                
-                await vscode.window.showWarningMessage("Are you sure that you want to override this file?", options, ...["Yes"]).then((item)=>{
+
+                await vscode.window.showWarningMessage("Are you sure that you want to override this file?", options, ...["Yes"]).then((item) => {
                     console.log(item);
-                    if(item && item.toString() == 'Yes') {
+                    if (item && item.toString() == 'Yes') {
                         selectedYes = true;
                     }
                 });
             }
 
-             //if selection was cancel or no just return
-            if(directorySelected && directorySelected[0].fsPath == vscode.Uri.parse(path.parse(uri.toString()).dir).fsPath && !selectedYes) {
+            //if selection was cancel or no just return
+            if (directorySelected && directorySelected[0].fsPath == vscode.Uri.parse(path.parse(uri.toString()).dir).fsPath && !selectedYes) {
                 return;
             }
 
@@ -995,23 +1004,23 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                 name: "name",
                 index: 0
             };
-            
+
             let finalNameFile = "";
             finalNameFile = path.join(directorySelected[0].fsPath, path.parse(uri.fsPath).base);
-            
+
             let mvn = new Maven(null, workspaceFolder);
-            let result = await mvn.migrateToJakarta10( async (code: number) => {
-                                            console.log("Code:"+code);
-                                            if(code > 0) {
-                                                vscode.window.showErrorMessage('Error ocurred during execution please check output'); 
-                                            }
-                                        },
-                                    async (error: { message: any; }) => {
-                                        console.log("error");
-                                        vscode.window.showErrorMessage(error.message+':'+' please check output'); 
-                                    }, source, finalNameFile);
+            let result = await mvn.migrateToJakarta10(async (code: number) => {
+                console.log("Code:" + code);
+                if (code > 0) {
+                    vscode.window.showErrorMessage('Error ocurred during execution please check output');
+                }
+            },
+                async (error: { message: any; }) => {
+                    console.log("error");
+                    vscode.window.showErrorMessage(error.message + ':' + ' please check output');
+                }, source, finalNameFile);
             console.log(result);
-        
+
         } else {
             vscode.window.showErrorMessage('Please select a file or folder');
         }
