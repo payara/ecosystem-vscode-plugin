@@ -70,6 +70,11 @@ export class PayaraInstanceProvider {
                         payaraServer.setStarted(true);
                     });
                 } else if (payaraServer instanceof PayaraRemoteServerInstance) {
+                    if(instance.instanceType == "docker") {
+                        payaraServer.setHostPath(instance.hostPath.trim());
+                        payaraServer.setContainerPath(instance.containerPath.trim());
+                    }
+                    payaraServer.setInstanceType(instance.instanceType);
                     payaraServer.setHost(instance.host ? instance.host.trim() : ServerUtils.DEFAULT_HOST);
                     payaraServer.setAdminPort(instance.adminPort ? instance.adminPort : ServerUtils.DEFAULT_ADMIN_PORT);
                     payaraServer.setHttpPort(instance.httpPort ? instance.httpPort : ServerUtils.DEFAULT_HTTP_PORT);

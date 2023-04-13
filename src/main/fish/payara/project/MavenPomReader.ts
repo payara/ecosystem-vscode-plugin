@@ -77,7 +77,7 @@ export class MavenPomReader implements BuildReader {
         if (build
             && build[0]
             && build[0].finalName) {
-            return build[0].finalName;
+            return build[0].finalName.toString();
         }
         return '';
     }

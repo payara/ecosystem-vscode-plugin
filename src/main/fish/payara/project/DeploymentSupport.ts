@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2023 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -39,8 +39,8 @@ export class DeploymentSupport {
     }
 
     public buildAndDeployApplication(
-	uri: Uri, payaraServer: PayaraServerInstance,
-	debug: boolean, autoDeploy?: boolean,
+        uri: Uri, payaraServer: PayaraServerInstance,
+        debug: boolean, autoDeploy?: boolean,
         metadataChanged?: boolean, sourceChanged?: Uri[]) {
 
         if (payaraServer instanceof PayaraRemoteServerInstance
@@ -70,15 +70,25 @@ export class DeploymentSupport {
         let query: string = '?force=true';
         let parsedPath = path.parse(appPath);
         let name = parsedPath.base;
-        if(parsedPath.ext === '.war' || parsedPath.ext === '.jar') {
+        if (parsedPath.ext === '.war' || parsedPath.ext === '.jar') {
             name = parsedPath.name;
         }
+        var uploadFile;
         if (payaraServer instanceof PayaraLocalServerInstance) {
             query = `${query}&DEFAULT=${encodeURIComponent(appPath)}&name=${name}`;
         } else {
-            query = `${query}&upload=true&name=${name}`;
+            let remote = payaraServer as PayaraRemoteServerInstance;
+            if (remote.getInstanceType() == "docker"
+                && remote.getHostPath()
+                && remote.getContainerPath()) {
+                appPath = path.join(remote.getContainerPath(), path.relative(remote.getHostPath(), appPath)).replace(/\\/g, "/");
+                query = `${query}&DEFAULT=${encodeURIComponent(appPath)}&name=${name}`;
+            } else {
+                query = `${query}&upload=true&name=${name}`;
+                uploadFile = appPath;
+            }
         }
-        if(payaraServer.getDeployOption() === DeployOption.HOT_RELOAD) {
+        if (payaraServer.getDeployOption() === DeployOption.HOT_RELOAD) {
             query = `${query}&hotDeploy=true`;
             if (metadataChanged) {
                 query = `${query}&metadataChanged=true`;
@@ -126,7 +136,7 @@ export class DeploymentSupport {
                 vscode.window.showErrorMessage('Application deployment failed: ' + message);
             },
             'application/xml',
-            payaraServer instanceof PayaraLocalServerInstance ? undefined : appPath);
+            uploadFile);
     }
 
 }

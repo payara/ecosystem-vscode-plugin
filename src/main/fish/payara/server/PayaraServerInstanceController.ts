@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2023 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -108,6 +108,11 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                                     this.refreshServerList();
                                 });
                             } else if (payaraServer instanceof PayaraRemoteServerInstance) {
+                                if(state.instanceType == "docker") {
+                                    payaraServer.setHostPath(state.hostPath.trim());
+                                    payaraServer.setContainerPath(state.containerPath.trim());
+                                }
+                                payaraServer.setInstanceType(state.instanceType);
                                 payaraServer.setHost(state.host ? state.host.trim() : ServerUtils.DEFAULT_HOST);
                                 payaraServer.setAdminPort(state.adminPort ? state.adminPort : ServerUtils.DEFAULT_ADMIN_PORT);
                                 payaraServer.setHttpPort(state.httpPort ? state.httpPort : ServerUtils.DEFAULT_HTTP_PORT);
@@ -255,10 +260,64 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             return (input: ui.MultiStepInput) => this.selectServer(step, totalSteps, input, state, callback);
         } else {
             state.type = 'remote';
-            totalSteps = 6;
-            return (input: ui.MultiStepInput) => this.serverName(step, totalSteps, input, state, callback);
+            totalSteps = 7;
+            return (input: ui.MultiStepInput) => this.selectServerSubType(step, totalSteps, input, state, callback);
         }
 
+    }
+
+    private async selectServerSubType(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
+        let _default = { label: 'Default' };
+        let docker = { label: 'Docker' };
+        const pick = await input.showQuickPick({
+            title: 'Select server type',
+            step: ++step,
+            totalSteps: totalSteps,
+            placeholder: 'Select server remote instance type.',
+            items: [_default, docker],
+            activeItem: _default,
+            shouldResume: this.shouldResume
+        });
+
+        if (pick === _default) {
+            state.instanceType = 'default';
+            return (input: ui.MultiStepInput) => this.serverName(step, totalSteps, input, state, callback);
+        } else {
+            state.instanceType = 'docker';
+            totalSteps = 9;
+            return (input: ui.MultiStepInput) => this.hostPath(step, totalSteps, input, state, callback);
+        }
+
+    }
+
+    private async hostPath(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
+        const title = 'Register Payara Server';
+        state.hostPath = await input.showInputBox({
+            title: title,
+            step: ++step,
+            totalSteps: totalSteps,
+            value: state.name,
+            prompt: 'Enter a host path',
+            placeHolder: 'Host path',
+            validate: path => this.validatePath(path),
+            shouldResume: this.shouldResume
+        });
+        return (input: ui.MultiStepInput) => this.containerPath(step, totalSteps, input, state, callback);
+    }
+
+    private async containerPath(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
+        const title = 'Register Payara Server';
+        state.containerPath = await input.showInputBox({
+            title: title,
+            step: ++step,
+            totalSteps: totalSteps,
+            value: state.name,
+            prompt: 'Enter a container path',
+            placeHolder: 'Container path',
+            validate: path => this.validatePath(path),
+            shouldResume: this.shouldResume
+        });
+        return (input: ui.MultiStepInput) => this.serverName(step, totalSteps, input, state, callback);
     }
 
     private async selectServer(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
@@ -415,6 +474,14 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         }
         return undefined;
     }
+
+    private async validatePath(path: string): Promise<string | undefined> {
+        if (_.isEmpty(path)) {
+            return 'Please enter a valid path.';
+        }
+        return undefined;
+    }
+
 
     private async domainRegistration(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, existingDomainsDir: Array<string>, callback: (n: Partial<State>) => any) {
         totalSteps = state.type === 'local' ? 7 : totalSteps;
@@ -1030,10 +1097,13 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
 
 interface State {
     type: string;
+    instanceType: string;
     title: string;
     step: number;
     totalSteps: number;
     path: string;
+    hostPath: string;
+    containerPath: string;
     domains: QuickPickItem[];
     domainName: string;
     newDomain: boolean;
