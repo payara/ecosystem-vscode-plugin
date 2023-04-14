@@ -52,7 +52,7 @@ export class Maven implements Build {
         return fs.existsSync(pom);
     }
 
-    public buildProject(remote: boolean, 
+    public buildProject(remote: boolean, type: string,
         callback: (artifact: string) => any,
         silent?: boolean): ChildProcess {
         let taskManager: TaskManager = new TaskManager();
@@ -68,7 +68,7 @@ export class Maven implements Build {
                     let artifact: string | null = null;
                     for (var i = 0; i < artifacts.length; i++) {
                         var filename = path.join(targetDir, artifacts[i]);
-                        if (remote) {
+                        if (remote && type !== "docker" && type !== "wsl") {
                             if (artifacts[i].endsWith('.war')
                                 || artifacts[i].endsWith('.jar')
                                 || artifacts[i].endsWith('.rar')) {
@@ -89,8 +89,8 @@ export class Maven implements Build {
                         callback(artifact);
                     } else {
                         let errorMessage = 'Deployment artifact not found in the target.';
-                        if(remote) {
-                            vscode.window.showErrorMessage(errorMessage 
+                        if (remote) {
+                            vscode.window.showErrorMessage(errorMessage
                                 + ' Make sure the deployment file ends with .jar, .rar, or .war to deploy an application to the remote instance.');
                         } else {
                             vscode.window.showErrorMessage(errorMessage);
@@ -137,14 +137,14 @@ export class Maven implements Build {
             env['JAVA_HOME'] = jdkHome;
         }
 
-        let process: ChildProcess = cp.spawn(mavenExe, args, { cwd: this.workspaceFolder.uri.fsPath, env:  env  });
+        let process: ChildProcess = cp.spawn(mavenExe, args, { cwd: this.workspaceFolder.uri.fsPath, env: env });
 
         if (process.pid) {
             let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
             if (silent !== true) {
                 outputChannel.show(false);
             }
-            if(jdkHome) {
+            if (jdkHome) {
                 outputChannel.append("Java Platform: " + jdkHome + '\n');
             }
             outputChannel.append("> " + mavenExe + ' ' + args.join(" ") + '\n');
@@ -339,7 +339,7 @@ export class Maven implements Build {
                 this.getDefaultMicroStartExplodedWarConfig());
         }
         let commands = taskDefinition.command.split(/\s+/);
-        if(this.payaraInstance?.getDeployOption() === DeployOption.HOT_RELOAD) {
+        if (this.payaraInstance?.getDeployOption() === DeployOption.HOT_RELOAD) {
             commands.push('-DhotDeploy=true');
         }
         if (debugConfig) {
@@ -352,7 +352,7 @@ export class Maven implements Build {
     public reloadPayaraMicro(
         onExit: (code: number) => any,
         onError: (err: Error) => any,
-        metadataChanged?: boolean, 
+        metadataChanged?: boolean,
         sourcesChanged?: Uri[]
     ): ChildProcess | undefined {
         if (this.getMicroPluginReader().isUberJarEnabled()) {
@@ -362,7 +362,7 @@ export class Maven implements Build {
         let taskManager: TaskManager = new TaskManager();
         let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultMicroReloadConfig());
         let commands = taskDefinition.command.split(/\s+/);
-        if(this.payaraInstance?.getDeployOption() === DeployOption.HOT_RELOAD) {
+        if (this.payaraInstance?.getDeployOption() === DeployOption.HOT_RELOAD) {
             commands.push('-DhotDeploy=true');
             if (metadataChanged) {
                 commands.push('-DmetadataChanged=true');
@@ -395,18 +395,18 @@ export class Maven implements Build {
     }
 
     public migrateToJakarta10(
-		onExit: (code: number) => any,
+        onExit: (code: number) => any,
         onError: (err: Error) => any, source: String, target: String
-	): ChildProcess | undefined {
-		let taskManager: TaskManager = new TaskManager();
-		let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getTranformExecutionConfig());
-		let commands = taskDefinition.command.split(/\s+/);
-        if(source && target) {
-            commands.push('-DselectedSource='+source);
-            commands.push('-DselectedTarget='+target);
+    ): ChildProcess | undefined {
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getTranformExecutionConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        if (source && target) {
+            commands.push('-DselectedSource=' + source);
+            commands.push('-DselectedTarget=' + target);
         }
         return this.fireCommand(commands, () => { }, onExit, onError);
-	}
+    }
 
     private getDefaultServerBuildConfig(remote: boolean): TaskDefinition {
         return {

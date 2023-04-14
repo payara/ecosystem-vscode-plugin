@@ -78,6 +78,7 @@ export class MavenMicroPluginReader implements MicroPluginReader {
                 }
             );
         }
+
     }
 
     private parseBuild(build: any) {
@@ -87,10 +88,10 @@ export class MavenMicroPluginReader implements MicroPluginReader {
             && build[0].plugins[0]
             && build[0].plugins[0].plugin) {
             for (let plugin of build[0].plugins[0].plugin) {
-                let groupId = plugin.groupId[0];
-                let artifactId = plugin.artifactId[0];
-                if (groupId === PayaraMicroMavenPlugin.GROUP_ID
-                    && artifactId === PayaraMicroMavenPlugin.ARTIFACT_ID) {
+                if (plugin.groupId
+                    && plugin.artifactId
+                    && plugin.groupId[0] === PayaraMicroMavenPlugin.GROUP_ID
+                    && plugin.artifactId[0] === PayaraMicroMavenPlugin.ARTIFACT_ID) {
                     return plugin;
                 }
             }
