@@ -269,12 +269,13 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
     private async selectServerSubType(step: number, totalSteps: number, input: ui.MultiStepInput, state: Partial<State>, callback: (n: Partial<State>) => any) {
         let _default = { label: 'Default' };
         let docker = { label: 'Docker' };
+        let wsl = { label: 'WSL' };
         const pick = await input.showQuickPick({
             title: 'Select server type',
             step: ++step,
             totalSteps: totalSteps,
             placeholder: 'Select server remote instance type.',
-            items: [_default, docker],
+            items: [_default, docker, wsl],
             activeItem: _default,
             shouldResume: this.shouldResume
         });
@@ -282,10 +283,13 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         if (pick === _default) {
             state.instanceType = 'default';
             return (input: ui.MultiStepInput) => this.serverName(step, totalSteps, input, state, callback);
-        } else {
+        } else if (pick === docker) {
             state.instanceType = 'docker';
             totalSteps = 9;
             return (input: ui.MultiStepInput) => this.hostPath(step, totalSteps, input, state, callback);
+        } else {
+            state.instanceType = 'wsl';
+            return (input: ui.MultiStepInput) => this.serverName(step, totalSteps, input, state, callback);
         }
 
     }

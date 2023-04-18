@@ -48,10 +48,18 @@ export class DeploymentSupport {
             vscode.window.showWarningMessage(`Payara remote server instance ${payaraServer.getName()} not connected`);
             return;
         }
+
+        let remote = false,type;
+        if (payaraServer instanceof PayaraRemoteServerInstance) {
+            remote = true;
+            let payaraServerRemote = payaraServer as PayaraRemoteServerInstance;
+            type = payaraServerRemote.getInstanceType();
+        }
         return BuildSupport
             .getBuild(payaraServer, uri)
             .buildProject(
-                payaraServer instanceof PayaraRemoteServerInstance,
+                remote,
+                type,
                 artifact => this.deployApplication(artifact, payaraServer, debug, autoDeploy, metadataChanged, sourceChanged),
                 autoDeploy
             );
@@ -82,6 +90,12 @@ export class DeploymentSupport {
                 && remote.getHostPath()
                 && remote.getContainerPath()) {
                 appPath = path.join(remote.getContainerPath(), path.relative(remote.getHostPath(), appPath)).replace(/\\/g, "/");
+                query = `${query}&DEFAULT=${encodeURIComponent(appPath)}&name=${name}`;
+            } else if (remote.getInstanceType() == "wsl") {
+                // Replace backslashes with forward slashes
+                appPath = appPath.replace(/\\/g, "/");
+                // Add "mnt" prefix and drive letter
+                appPath = "/mnt/" + appPath.charAt(0).toLowerCase() + appPath.slice(2);
                 query = `${query}&DEFAULT=${encodeURIComponent(appPath)}&name=${name}`;
             } else {
                 query = `${query}&upload=true&name=${name}`;

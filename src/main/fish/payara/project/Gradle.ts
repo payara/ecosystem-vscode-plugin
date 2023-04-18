@@ -51,7 +51,7 @@ export class Gradle implements Build {
         return fs.existsSync(build);
     }
 
-    public buildProject(remote: boolean,
+    public buildProject(remote: boolean, type: string,
         callback: (artifact: string) => any,
         silent?: boolean): ChildProcess {
 
@@ -69,7 +69,7 @@ export class Gradle implements Build {
                     let artifact: string | null = null;
                     for (var i = 0; i < artifacts.length; i++) {
                         var filename = path.join(buildDir, artifacts[i]);
-                        if (remote) {
+                        if (remote && type !== "docker" && type !== "wsl") {
                             if (artifacts[i].endsWith('.war')
                                 || artifacts[i].endsWith('.jar')
                                 || artifacts[i].endsWith('.rar')) {
