@@ -114,13 +114,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.start',
-			payaraServer => payaraServerInstanceController.startServer(payaraServer, false)
+			payaraServer => payaraServerInstanceController.startServer(payaraServer, false, '')
 		)
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'payara.server.start.debug',
-			payaraServer => payaraServerInstanceController.startServer(payaraServer, true)
+			payaraServer => {
+				const activeEditor = vscode.window.activeTextEditor;
+				var debugPort = activeEditor ? payaraServerInstanceController.readDebugPortFromWorkspace(activeEditor.document.uri) : undefined;
+				payaraServerInstanceController.startServer(payaraServer, true, debugPort);
+		}
 		)
 	);
 	context.subscriptions.push(

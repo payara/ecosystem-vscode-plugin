@@ -34,7 +34,7 @@ import { PayaraLocalServerInstance } from "../PayaraLocalServerInstance";
 
 export class StartTask {
 
-    public startServer(payaraServer: PayaraLocalServerInstance, debug: boolean): ChildProcess {
+    public startServer(payaraServer: PayaraLocalServerInstance, debug: boolean, debugPort: string): ChildProcess {
         let jvmConfigReader: JvmConfigReader = new JvmConfigReader(payaraServer.getDomainXmlPath(), ServerUtils.DAS_NAME);
 
         let javaHome: string | undefined = payaraServer.getJDKHome();
@@ -73,6 +73,9 @@ export class StartTask {
         // in case user specified it by himslef.
         let debugOpt: string | undefined = propMap.get("debug-options");
         if (debug && debugOpt) {
+            if (this.isValidPort(debugPort)) {
+                debugOpt = debugOpt.replace(/address=\d+/, `address=${debugPort}`);
+            }
             optList.push(debugOpt);
         }
 
@@ -93,6 +96,14 @@ export class StartTask {
         }
         let args: string[] = JavaUtils.parseParameters(allArgs);
         return cp.spawn(javaVmExe, args, { cwd: payaraServer.getPath() });
+    }
+
+    private isValidPort(portStr?: string): boolean {
+        if (!portStr) {
+            return false;
+        }
+        const port = parseInt(portStr, 10);
+        return portStr.trim() !== '' && port >= 0 && port <= 65535;
     }
 
     private addJavaAgent(payaraServer: PayaraLocalServerInstance, jvmConfigReader: JvmConfigReader): void {
