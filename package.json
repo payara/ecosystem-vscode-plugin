@@ -699,7 +699,7 @@
 		"tail": "^2.0.3",
 		"tmp": "^0.2.0",
 		"validator": "^13.0.0",
-		"xml2js": "^0.4.23"
+		"xml2js": "^0.6.0"
 	},
 	"devDependencies": {
 		"@types/fs-extra": "^9.0.1",
