@@ -11,14 +11,6 @@ export async function run(): Promise<void> {
 	});
 
 	const testsRoot = path.resolve(__dirname, '..');
-
-    // // Add test files to the Mocha instance
-    // const testFiles = await getTestFiles(testsRoot);
-    // testFiles.forEach((file) => {
-    //     mocha.addFile(file);
-    // });
-
-    // Detect test files and add them to Mocha
 	const testFiles = findTestFiles(testsRoot);
     testFiles.forEach((file: string) => {
         mocha.addFile(file);
@@ -39,30 +31,6 @@ export async function run(): Promise<void> {
         console.error('Failed to run tests:', error);
         process.exit(1);
     }
-
-	// return new Promise((c, e) => {
-	// 	glob('**/**.test.js', { cwd: testsRoot }, (err: any, files: string[]) => {
-	// 		if (err) {
-	// 			return e(err);
-	// 		}
-
-	// 		// Add files to the test suite
-	// 		files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
-
-	// 		try {
-	// 			// Run the mocha test
-	// 			mocha.run((failures: number) => {
-	// 				if (failures > 0) {
-	// 					e(new Error(`${failures} tests failed.`));
-	// 				} else {
-	// 					c();
-	// 				}
-	// 			});
-	// 		} catch (err) {
-	// 			e(err);
-	// 		}
-	// 	});
-	// });
 }
 
 function findTestFiles(rootDir: string): string[] {
