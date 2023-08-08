@@ -801,6 +801,16 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             .then(doc => vscode.window.showTextDocument(doc));
     }
 
+    public async openDomainDirectory(payaraServer: PayaraLocalServerInstance): Promise<void> {
+        let domainDirectory = Uri.file(payaraServer.getDomainPath());
+        vscode.env.openExternal(domainDirectory);
+    }
+
+    public async openServerHomeDirectory(payaraServer: PayaraLocalServerInstance): Promise<void> {
+        let serverHomeDirectory = Uri.file(payaraServer.getServerHome());
+        vscode.env.openExternal(serverHomeDirectory);
+    }
+
     public async refreshServerList(): Promise<void> {
         vscode.commands.executeCommand('payara.server.refresh');
     }
