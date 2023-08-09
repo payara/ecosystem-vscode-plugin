@@ -108,7 +108,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
                                     this.refreshServerList();
                                 });
                             } else if (payaraServer instanceof PayaraRemoteServerInstance) {
-                                if(state.instanceType == "docker") {
+                                if (state.instanceType == "docker") {
                                     payaraServer.setHostPath(state.hostPath.trim());
                                     payaraServer.setContainerPath(state.containerPath.trim());
                                 }
@@ -863,10 +863,13 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
 
     public readDebugPortFromWorkspace(uri: Uri) {
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-        const launchConfig = vscode.workspace.getConfiguration('launch', workspaceFolder.uri);
-        const debugConfigurations = launchConfig.get('configurations') as any[];
-        const debugConfig = debugConfigurations.find(config => config.type === 'java' && config.request === 'attach');
-        return debugConfig && debugConfig.port;
+        if (workspaceFolder) {
+            const launchConfig = vscode.workspace.getConfiguration('launch', workspaceFolder.uri);
+            const debugConfigurations = launchConfig.get('configurations') as any[];
+            const debugConfig = debugConfigurations.find(config => config.type === 'java' && config.request === 'attach');
+            return debugConfig && debugConfig.port;
+        }
+        return undefined;
     }
 
     private selectListedServer(callback: (server: PayaraServerInstance) => any) {
