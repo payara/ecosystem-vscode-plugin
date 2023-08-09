@@ -41,6 +41,8 @@
 		"onCommand:payara.server.console.open",
 		"onCommand:payara.server.log.open",
 		"onCommand:payara.server.config.open",
+		"onCommand:payara.server.domain.open",
+		"onCommand:payara.server.home.open",
 		"onCommand:payara.server.app.deploy",
 		"onCommand:payara.server.app.debug",
 		"onCommand:payara.server.app.migrate",
@@ -172,6 +174,16 @@
 			{
 				"command": "payara.server.config.open",
 				"title": "View Domain Server Config",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.domain.open",
+				"title": "Open Domain Directory",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.home.open",
+				"title": "Open Server Home Directory",
 				"category": "Payara"
 			},
 			{
@@ -410,6 +422,14 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.server.domain.open",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.home.open",
+					"when": "never"
+				},
+				{
 					"command": "payara.server.app.deploy",
 					"when": "never"
 				},
@@ -579,6 +599,16 @@
 					"group": "view@11"
 				},
 				{
+					"command": "payara.server.domain.open",
+					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal",
+					"group": "view@12"
+				},
+				{
+					"command": "payara.server.home.open",
+					"when": "viewItem == loadingPayaraLocal || viewItem == runningPayaraLocal || viewItem == stoppedPayaraLocal",
+					"group": "view@13"
+				},
+				{
 					"command": "payara.server.app.undeploy",
 					"when": "viewItem == payara-application",
 					"group": "application@1"
@@ -694,7 +724,7 @@
 		"fs-extra": "^11.1.0",
 		"gradle-to-js": "^2.0.0",
 		"lodash": "^4.17.21",
-		"open": "^9.1.0 ",
+		"open": "^8.4.2 ",
 		"request": "^2.88.0",
 		"tail": "^2.0.3",
 		"tmp": "^0.2.0",
@@ -708,7 +738,7 @@
 		"@types/mocha": "^10.0.0",
 		"@types/node": "^20.3.1",
 		"@types/vscode": "^1.22.0",
-		"glob": "^10.2.7",
+		"glob": "^7.1.7",
 		"mocha": "^10.0.0",
 		"os": "^0.1.1",
 		"tslint": "^6.1.0",
