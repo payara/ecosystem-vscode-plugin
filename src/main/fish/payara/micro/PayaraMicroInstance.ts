@@ -119,7 +119,7 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
 
     public async setState(state: InstanceState): Promise<void> {
         this.state = state;
-        this.iconPath = this.context.asAbsolutePath(path.join('resources', this.getIcon()));
+        this.iconPath = this.context.asAbsolutePath(path.join('resources', this.getIcon())) as unknown as vscode.Uri;
         this.contextValue = this.getState();
         this.tooltip = this.getPath().fsPath;
         vscode.commands.executeCommand('payara.micro.refresh', this);
