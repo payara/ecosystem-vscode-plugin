@@ -17,9 +17,6 @@
 		"Payara Server",
 		"Payara Micro"
 	],
-	"engines": {
-		"vscode": "^1.22.0"
-	},
 	"categories": [
 		"Other"
 	],
