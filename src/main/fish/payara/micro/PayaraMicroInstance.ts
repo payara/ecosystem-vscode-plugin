@@ -58,6 +58,12 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
         this.setState(InstanceState.STOPPED);
         this.build = BuildSupport.getBuild(this, this.path);
     }
+    kind?: vscode.QuickPickItemKind;
+    detail?: string;
+    picked?: boolean;
+    alwaysShow?: boolean;
+    buttons?: readonly vscode.QuickInputButton[];
+    iconPath?: vscode.Uri;
 
     public getBuild() {
         return this.build;
