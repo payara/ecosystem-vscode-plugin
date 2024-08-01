@@ -46,7 +46,7 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Tre
     public async getChildren(item?: TreeItem): Promise<TreeItem[]> {
         if (!item) {
             return this.instanceProvider.getServers().map((server: PayaraServerInstance) => {
-                server.iconPath = this.context.asAbsolutePath(path.join('resources', server.getIcon()));
+                server.iconPath = this.context.asAbsolutePath(path.join('resources', server.getIcon())) as unknown as vscode.Uri;
                 server.contextValue = server.getState() + (server instanceof PayaraLocalServerInstance ? "Local" : "Remote");
                 server.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
                 server.label = server.getName();
