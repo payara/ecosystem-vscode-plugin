@@ -19,6 +19,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as ps from 'process';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import { WorkspaceFolder, Uri, DebugConfiguration, TaskDefinition } from "vscode";
@@ -132,7 +133,7 @@ export class Maven implements Build {
         }
 
         let jdkHome;
-        let env: any = {};
+        let env: any = {...ps.env};
         if (this.payaraInstance && (jdkHome = this.payaraInstance.getJDKHome())) {
             env['JAVA_HOME'] = jdkHome;
         }
