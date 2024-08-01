@@ -60,6 +60,12 @@ export abstract class PayaraServerInstance extends vscode.TreeItem implements vs
         this.label = name;
         this.outputChannel = ProjectOutputWindowProvider.getInstance().get(name);
     }
+    kind?: vscode.QuickPickItemKind;
+    detail?: string;
+    picked?: boolean;
+    alwaysShow?: boolean;
+    buttons?: readonly vscode.QuickInputButton[];
+    iconPath?: vscode.Uri;
 
     abstract getId(): string;
 
