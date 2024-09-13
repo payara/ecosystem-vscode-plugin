@@ -227,7 +227,7 @@
 			},
 			{
 				"command": "payara.server.app.migrate",
-				"title" : "Transform to Jakarta EE 10",
+				"title": "Transform to Jakarta EE 10",
 				"category": "Payara"
 			},
 			{
@@ -725,6 +725,7 @@
 		"gradle-to-js": "^2.0.0",
 		"lodash": "^4.17.21",
 		"open": "^8.4.2 ",
+		"payara-vscode": "file:",
 		"request": "^2.88.0",
 		"tail": "^2.0.3",
 		"tmp": "^0.2.0",
@@ -736,8 +737,8 @@
 		"@types/glob": "^8.0.0",
 		"@types/lodash": "^4.14.155",
 		"@types/mocha": "^10.0.0",
-		"@types/node": "^20.3.1",
-		"@types/vscode": "^1.22.0",
+		"@types/node": "^22.5.4",
+		"@types/vscode": "^1.93.0",
 		"glob": "^7.1.7",
 		"mocha": "^10.0.0",
 		"os": "^0.1.1",

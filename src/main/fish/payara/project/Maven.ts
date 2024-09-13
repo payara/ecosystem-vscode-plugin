@@ -132,14 +132,14 @@ export class Maven implements Build {
         }
 
         let jdkHome;
-        let env: any = {};
+        let env = { ...process.env };
         if (this.payaraInstance && (jdkHome = this.payaraInstance.getJDKHome())) {
             env['JAVA_HOME'] = jdkHome;
         }
 
-        let process: ChildProcess = cp.spawn(mavenExe, args, { cwd: this.workspaceFolder.uri.fsPath, env: env });
+        let mvnProcess: ChildProcess = cp.spawn(mavenExe, args, { cwd: this.workspaceFolder.uri.fsPath, shell: true, env: env});
 
-        if (process.pid) {
+        if (mvnProcess.pid) {
             let outputChannel = ProjectOutputWindowProvider.getInstance().get(this.workspaceFolder);
             if (silent !== true) {
                 outputChannel.show(false);
@@ -152,16 +152,16 @@ export class Maven implements Build {
                 outputChannel.append(data.toString());
                 dataCallback(data.toString());
             };
-            if (process.stdout !== null) {
-                process.stdout.on('data', logCallback);
+            if (mvnProcess.stdout !== null) {
+                mvnProcess.stdout.on('data', logCallback);
             }
-            if (process.stderr !== null) {
-                process.stderr.on('data', logCallback);
+            if (mvnProcess.stderr !== null) {
+                mvnProcess.stderr.on('data', logCallback);
             }
-            process.on('error', errorCallback);
-            process.on('exit', exitCallback);
+            mvnProcess.on('error', errorCallback);
+            mvnProcess.on('exit', exitCallback);
         }
-        return process;
+        return mvnProcess;
     }
 
     public getDefaultHome(): string | undefined {
