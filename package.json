@@ -18,7 +18,7 @@
 		"Payara Micro"
 	],
 	"engines": {
-		"vscode": "^1.93.0"
+		"vscode": "1.22.0"
 	},
 	"categories": [
 		"Other"
@@ -737,8 +737,8 @@
 		"@types/glob": "^8.0.0",
 		"@types/lodash": "^4.14.155",
 		"@types/mocha": "^10.0.0",
-		"@types/node": "^22.5.4",
-		"@types/vscode": "^1.93.0",
+		"@types/node": "^20.3.1",
+		"@types/vscode": "1.22.0",
 		"glob": "^7.1.7",
 		"mocha": "^10.0.0",
 		"os": "^0.1.1",
