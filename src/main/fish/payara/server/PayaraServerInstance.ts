@@ -28,6 +28,7 @@ import { IncomingMessage } from "http";
 import { ProjectOutputWindowProvider } from "../project/ProjectOutputWindowProvider";
 import { PayaraInstance } from "../common/PayaraInstance";
 import { DeployOption } from "../common/DeployOption";
+import { Uri } from "vscode";
 
 export abstract class PayaraServerInstance extends vscode.TreeItem implements vscode.QuickPickItem, PayaraInstance {
 
@@ -54,6 +55,8 @@ export abstract class PayaraServerInstance extends vscode.TreeItem implements vs
     private applicationInstances: Array<ApplicationInstance> = new Array<ApplicationInstance>();
 
     private versionLabel: string | undefined;
+
+    public iconPath?: Uri | vscode.ThemeIcon | { light: Uri; dark: Uri; };
 
     constructor(private name: string, private domainName: string) {
         super(name);

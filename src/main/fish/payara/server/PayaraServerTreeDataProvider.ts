@@ -46,7 +46,7 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Tre
     public async getChildren(item?: TreeItem): Promise<TreeItem[]> {
         if (!item) {
             return this.instanceProvider.getServers().map((server: PayaraServerInstance) => {
-                server.iconPath = this.context.asAbsolutePath(path.join('resources', server.getIcon()));
+                server.iconPath = vscode.Uri.file(this.context.asAbsolutePath(path.join('resources', server.getIcon())));
                 server.contextValue = server.getState() + (server instanceof PayaraLocalServerInstance ? "Local" : "Remote");
                 server.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
                 server.label = server.getName();
@@ -55,7 +55,7 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Tre
             });
         } else if (item instanceof PayaraServerInstance && item.isStarted()) {
             return item.getApplications().map((application: ApplicationInstance) => {
-                application.iconPath = this.context.asAbsolutePath(path.join('resources', application.getIcon()));
+                application.iconPath = vscode.Uri.file(this.context.asAbsolutePath(path.join('resources', application.getIcon())));
                 application.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
                 application.label = application.name;
                 application.contextValue = "payara-application";
@@ -63,7 +63,7 @@ export class PayaraServerTreeDataProvider implements vscode.TreeDataProvider<Tre
             });
         } else if (item instanceof ApplicationInstance) {
             return item.getRestEndpoints().map((endpoint: RestEndpoint) => {
-                endpoint.iconPath = this.context.asAbsolutePath(path.join('resources', 'rest-endpoint.svg'));
+                endpoint.iconPath = vscode.Uri.file(this.context.asAbsolutePath(path.join('resources', 'rest-endpoint.svg')));
                 endpoint.label = endpoint.httpMethod + " " + endpoint.endpoint;
                 endpoint.contextValue = "application-rest-endpoint";
                 return endpoint;
