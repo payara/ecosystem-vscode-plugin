@@ -51,6 +51,8 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
 
     private build: Build;
 
+    public iconPath?: Uri | vscode.ThemeIcon | { light: Uri; dark: Uri; };
+
     constructor(private context: vscode.ExtensionContext, private name: string, private path: Uri) {
         super(name);
         this.label = name;
@@ -113,7 +115,7 @@ export class PayaraMicroInstance extends vscode.TreeItem implements vscode.Quick
 
     public async setState(state: InstanceState): Promise<void> {
         this.state = state;
-        this.iconPath = this.context.asAbsolutePath(path.join('resources', this.getIcon()));
+        this.iconPath = vscode.Uri.file(this.context.asAbsolutePath(path.join('resources', this.getIcon())));
         this.contextValue = this.getState();
         this.tooltip = this.getPath().fsPath;
         vscode.commands.executeCommand('payara.micro.refresh', this);
