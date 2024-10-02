@@ -2,7 +2,7 @@
 	"name": "payara-vscode",
 	"displayName": "Payara Tools",
 	"description": "Payara Tools for Visual Studio Code",
-	"version": "1.4.0",
+	"version": "1.5.0-SNAPSHOT",
 	"publisher": "Payara",
 	"icon": "resources/payara.png",
 	"repository": {
@@ -18,7 +18,7 @@
 		"Payara Micro"
 	],
 	"engines": {
-		"vscode": "^1.22.0"
+		"vscode": "^1.93.0"
 	},
 	"categories": [
 		"Other"
