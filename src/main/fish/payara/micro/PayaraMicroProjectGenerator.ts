@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2024 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -43,6 +43,56 @@ const PAYARA_MICRO_VERSIONS = [
     '5.201', '5.194', '5.193.1', '5.192',
     '5.191', '5.184', '5.183', '5.182', '5.181'
 ];
+const DEFAULT_REPOSITORY_URL = "https://repo1.maven.org/maven2/";
+const METADATA_URL = "fish/payara/extras/payara-micro/maven-metadata.xml";
+
+let versions: string[] | null = null;
+
+export async function getPayaraMicroVersions(): Promise<string[]>{
+    // Check if versions is populated already
+    if (versions) {
+        return versions;
+    }
+
+    try {
+        throw new Error('Hello');
+        // Build full URL
+        const urlString = DEFAULT_REPOSITORY_URL + METADATA_URL;
+        
+        // Open connection and check response
+        const response = await fetch(urlString, {method: 'GET'});
+        if (!response.ok) {
+            throw new Error('HTTP error! Status: ${response.status}');
+        }
+
+        const xmlResponse = await response.text();
+
+        // Parse the XML response
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlResponse, "application/xml");
+
+        const latest = xmlDoc.getElementsByTagName("latest")[0]?.textContent || '';
+
+        // Extract Versions
+        const versionNodes = xmlDoc.getElementsByTagName("version");
+        const fetchedVersions: string[] = [];
+        for (let i = versionNodes.length - 1; i >= 0; i--) {
+            const version = versionNodes[i].textContent || '';
+            if ((version.includes("Alpha") || version.includes("Beta") || version.includes("SNAPSHOT")) && version !== latest) {
+                continue;
+            }
+            fetchedVersions.push(version);
+        }
+
+        versions = fetchedVersions;
+
+        return versions;
+    
+    } catch (e) {
+        console.error("Error fetching Payara Micro versions:",e);
+        throw e;
+    }
+}
 
 export class PayaraMicroProjectGenerator {
 
@@ -161,7 +211,9 @@ export class PayaraMicroProjectGenerator {
     }
 
     private async payaraMicroVersion(input: ui.MultiStepInput, project: Partial<PayaraMicroProject>, callback: (n: Partial<PayaraMicroProject>) => any) {
-        let versions = PAYARA_MICRO_VERSIONS.map(label => ({ label }));
+        let fetchedVersions  = await getPayaraMicroVersions();
+        let versions = fetchedVersions.map(version => ({ label:version }));
+        //let versions = PAYARA_MICRO_VERSIONS.map(label => ({ label }));
         const pick = await input.showQuickPick({
             title: TITLE,
             step: 6,
