@@ -711,8 +711,7 @@
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
 		"pretest": "yarn run compile",
-		"test": "node ./out/test/runTest.js",
-		"test:e2e": "playwright test -c src/test/e2e/playwright.config.ts",
+		"test:e2e": "playwright test -c test/e2e/playwright.config.ts",
 		"tslint": "tslint -t verbose src/**/*.ts"
 	},
 	"dependencies": {
@@ -741,7 +740,6 @@
 		"@types/mocha": "10.0.8",
 		"@types/node": "^22.5.4",
 		"@types/vscode": "^1.93.0",
-		"@vscode/test-electron": "^2.4.1",
 		"glob": "^7.1.7",
 		"mocha": "10.7.3",
 		"os": "^0.1.1",
