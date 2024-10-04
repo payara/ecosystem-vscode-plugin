@@ -25,24 +25,13 @@ import { Maven } from '../project/Maven';
 import { OpenDialogOptions, Uri, WorkspaceFolder } from 'vscode';
 import { PayaraMicroProject } from './PayaraMicroProject';
 import { PayaraMicroInstanceController } from './PayaraMicroInstanceController';
+import { parseStringPromise } from "xml2js";
 
 const TITLE = 'Generate a Payara Micro project';
 const TOTAL_STEP = 7;
 const DEFAULT_VERSION: string = '1.0.0-SNAPSHOT';
 const DEFAULT_ARTIFACT_ID: string = 'payara-micro-sample';
 const DEFAULT_GROUP_ID: string = 'fish.payara.micro.sample';
-const PAYARA_MICRO_VERSIONS = [
-    '6.2023.1', '6.2022.2', '6.2022.1',
-    '5.2022.5', '5.2022.4', '5.2022.3',
-    '5.2022.2', '5.2022.1', '5.2021.10',
-    '5.2021.9', '5.2021.8', '5.2021.7',
-    '5.2021.6', '5.2021.5', '5.2021.4',
-    '5.2021.3', '5.2021.2', '5.2021.1',
-    '5.2020.7', '5.2020.6', '5.2020.5',
-    '5.2020.4', '5.2020.3', '5.2020.2',
-    '5.201', '5.194', '5.193.1', '5.192',
-    '5.191', '5.184', '5.183', '5.182', '5.181'
-];
 const DEFAULT_REPOSITORY_URL = "https://repo1.maven.org/maven2/";
 const METADATA_URL = "fish/payara/extras/payara-micro/maven-metadata.xml";
 
@@ -55,29 +44,26 @@ export async function getPayaraMicroVersions(): Promise<string[]>{
     }
 
     try {
-        throw new Error('Hello');
         // Build full URL
         const urlString = DEFAULT_REPOSITORY_URL + METADATA_URL;
-        
+
         // Open connection and check response
         const response = await fetch(urlString, {method: 'GET'});
         if (!response.ok) {
             throw new Error('HTTP error! Status: ${response.status}');
         }
-
         const xmlResponse = await response.text();
 
-        // Parse the XML response
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlResponse, "application/xml");
-
-        const latest = xmlDoc.getElementsByTagName("latest")[0]?.textContent || '';
+        // Parse the XML response using parseStringPromise
+        const xmlDoc = await parseStringPromise(xmlResponse);
+        const latest = xmlDoc.metadata.versioning[0].latest[0] || '';
 
         // Extract Versions
-        const versionNodes = xmlDoc.getElementsByTagName("version");
+        const versionNodes = xmlDoc.metadata.versioning[0].versions[0].version;
         const fetchedVersions: string[] = [];
+
         for (let i = versionNodes.length - 1; i >= 0; i--) {
-            const version = versionNodes[i].textContent || '';
+            const version = versionNodes[i] || '';
             if ((version.includes("Alpha") || version.includes("Beta") || version.includes("SNAPSHOT")) && version !== latest) {
                 continue;
             }
@@ -213,7 +199,6 @@ export class PayaraMicroProjectGenerator {
     private async payaraMicroVersion(input: ui.MultiStepInput, project: Partial<PayaraMicroProject>, callback: (n: Partial<PayaraMicroProject>) => any) {
         let fetchedVersions  = await getPayaraMicroVersions();
         let versions = fetchedVersions.map(version => ({ label:version }));
-        //let versions = PAYARA_MICRO_VERSIONS.map(label => ({ label }));
         const pick = await input.showQuickPick({
             title: TITLE,
             step: 6,
