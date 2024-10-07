@@ -28,11 +28,11 @@ export const test = base.extend<TestFixtures>({
 
 		const electronApp = await _electron.launch({
 			executablePath: vscodePath,
-			// Got it from https://github.com/microsoft/vscode-test/blob/0ec222ef170e102244569064a12898fb203e5bb7/lib/runTest.ts#L126-L160
+			// Got it from https://github.com/gitkraken/vscode-gitlens/blob/main/tests/e2e/specs/baseTest.ts
 			args: [
-				'--no-sandbox', // https://github.com/microsoft/vscode/issues/84238
-				'--disable-gpu-sandbox', // https://github.com/microsoft/vscode-test/issues/221
-				'--disable-updates', // https://github.com/microsoft/vscode-test/issues/120
+				'--no-sandbox', 
+				'--disable-gpu-sandbox', 
+				'--disable-updates', 
 				'--skip-welcome',
 				'--skip-release-notes',
 				'--disable-workspace-trust',
@@ -44,17 +44,9 @@ export const test = base.extend<TestFixtures>({
 		});
 
 		const page = await electronApp.firstWindow();
-		/*await page.context().tracing.start({
-			screenshots: true,
-			snapshots: true,
-			title: test.info().title,
-		});*/
 
 		await use(page);
 
-		/*const tracePath = test.info().outputPath('trace.zip');
-		await page.context().tracing.stop({ path: tracePath });
-		test.info().attachments.push({ name: 'trace', path: tracePath, contentType: 'application/zip' });*/
 		await electronApp.close();
 
 		const logPath = path.join(defaultCachePath, 'user-data');
@@ -63,9 +55,6 @@ export const test = base.extend<TestFixtures>({
 			await fs.promises.cp(logPath, logOutputPath, { recursive: true });
 		}
 	},
-	// Next line is necessary because of how Playwright works. It expect a destructured pattern here:
-	// https://github.com/microsoft/playwright/issues/14590#issuecomment-1911734641
-	// https://github.com/microsoft/playwright/issues/21566#issuecomment-1464858235
 
 	// eslint-disable-next-line no-empty-pattern
 	createTmpDir: async ({}, use) => {
