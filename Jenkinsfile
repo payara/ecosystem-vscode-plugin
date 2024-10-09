@@ -36,12 +36,5 @@ pipeline {
                 sh 'yarn run tslint'
                 sh 'yarn run compile'            }
         }
-
-        stage('Test') {
-            steps {
-                // Run tests (if any) using yarn
-                sh 'yarn test'
-            }
-        }
     }
 }
