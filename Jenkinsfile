@@ -22,6 +22,8 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 // Install project dependencies using yarn
+                sh 'curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+sudo apt-get install -y nodejs'
                 sh 'npm install -g yarn'
                 sh 'yarn install'
                 sh 'yarn run tslint'
