@@ -24,7 +24,7 @@ pipeline {
                 // Install project dependencies using yarn
                 sh 'curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -'
                 sh 'sudo apt-get install -y nodejs'
-                sh 'npm install -g yarn'
+                sh 'sudo npm install -g yarn'
                 sh 'yarn install'
                 sh 'yarn run tslint'
                 sh 'yarn run compile'
