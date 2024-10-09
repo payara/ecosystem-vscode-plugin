@@ -22,6 +22,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 // Install project dependencies using yarn
+                sh 'npm install -g yarn'
                 sh 'yarn install'
                 sh 'yarn run tslint'
                 sh 'yarn run compile'
