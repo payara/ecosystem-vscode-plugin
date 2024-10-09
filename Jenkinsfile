@@ -8,7 +8,6 @@ pipeline {
     tools {
         jdk "zulu-11"
         maven "maven-3.6.3"
-        nodejs "NodeJS"
 
     }
     environment {
