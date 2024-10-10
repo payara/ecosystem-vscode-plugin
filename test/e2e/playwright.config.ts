@@ -29,5 +29,5 @@ export default defineConfig<TestOptions>({
 			},
 		},
 	],
-	testMatch: './test/e2e/specs/*.test.ts'
+	testMatch: 'specs/*.test.ts'
 });
