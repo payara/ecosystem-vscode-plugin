@@ -1,5 +1,5 @@
 import { Page } from 'playwright/test';
-import { expect, test } from '../baseTest.js';
+import { expect, test } from '../basePage.js';
 
 test.describe('Test Payara layout', () => {
 	test.beforeEach('Open Payara plugin', async ({page}) =>{

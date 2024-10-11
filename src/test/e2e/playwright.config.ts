@@ -1,5 +1,5 @@
 import { defineConfig } from '@playwright/test';
-import type { TestOptions } from './baseTest.js';
+import type { TestOptions } from './basePage.js';
 
 // eslint-disable-next-line import-x/no-default-export
 export default defineConfig<TestOptions>({
@@ -14,7 +14,7 @@ export default defineConfig<TestOptions>({
 		timeout: 60000, // 1 minute
 	},
 	globalSetup: './setup',
-	outputDir: '../../out/test-results',
+	outputDir: '../../../out/test-results',
 	projects: [
 		{
 			name: 'VSCode stable',
@@ -29,5 +29,5 @@ export default defineConfig<TestOptions>({
 			},
 		},
 	],
-	testMatch: 'specs/*.test.ts'
+	testMatch: '**/*.test.ts'
 });

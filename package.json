@@ -711,7 +711,7 @@
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
 		"pretest": "yarn run compile",
-		"test:e2e": "playwright test -c test/e2e/playwright.config.ts",
+		"test:e2e": "playwright test -c src/test/e2e/playwright.config.ts",
 		"tslint": "tslint -t verbose src/**/*.ts"
 	},
 	"dependencies": {
