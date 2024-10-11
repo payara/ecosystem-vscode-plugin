@@ -279,18 +279,25 @@ export class Maven implements Build {
         }
         const cmdArgs: string[] = [
             "archetype:generate",
-            `-DarchetypeArtifactId=payara-micro-maven-archetype`,
-            `-DarchetypeGroupId=fish.payara.maven.archetypes`,
-            `-DarchetypeVersion=` + (project.payaraMicroVersion.split('.')[0] === '5' ? '1.0.5' : '2.0'),
+            `-DarchetypeArtifactId=payara-starter-archetype`,
+            `-DarchetypeGroupId=fish.payara.starter`,
+            `-DarchetypeVersion=1.0-beta9`,
             `-DgroupId=${project.groupId}`,
             `-DartifactId=${project.artifactId}`,
             `-Dversion=${project.version}`,
             `-Dpackage=${project.package}`,
             `-DpayaraMicroVersion=${project.payaraMicroVersion}`,
             '-DaddPayaraApi=true',
-            '-DinteractiveMode=false'
+            '-DinteractiveMode=false',
+            '-DjakartaEEVersion='+ (project.payaraMicroVersion.split('.')[0] === '5' ? '8' : '10')
         ];
-        let process: ChildProcess = cp.spawn(mavenExe, cmdArgs, { cwd: project.targetFolder?.fsPath });
+
+        /**
+         * String PROP_PLATFORM = "platform";
+         * String PROP_PLATFORM_MICRO_VALUE = "micro";
+         * properties.put(PROP_PLATFORM, PROP_PLATFORM_MICRO_VALUE)
+         */
+        let process: ChildProcess = cp.spawn(mavenExe, cmdArgs, { cwd: project.targetFolder?.fsPath, shell: true });
 
         if (process.pid) {
             let outputChannel = ProjectOutputWindowProvider.getInstance().get(`${project.artifactId}`);
