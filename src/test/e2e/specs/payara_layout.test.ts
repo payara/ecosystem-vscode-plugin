@@ -6,7 +6,7 @@ test.describe('Test Payara layout', () => {
 		await page.getByRole('tab', { name: 'Payara' }).waitFor();
 		const payaraIcon = page.getByRole('tab', { name: 'Payara' });
 		await payaraIcon.click();
-	})
+	});
 
 	test('should contain Payara icon in activity bar', async ({page}) => {
 		await page.getByRole('tab', { name: 'Payara' }).waitFor();
