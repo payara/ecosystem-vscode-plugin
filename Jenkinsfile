@@ -22,7 +22,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 // Install project dependencies 
-                sh 'curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -'
+                sh 'curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -'
                 sh 'sudo apt-get install -y nodejs'
                 sh 'sudo npm install -g yarn'
 
