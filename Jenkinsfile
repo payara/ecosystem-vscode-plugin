@@ -34,8 +34,7 @@ pipeline {
                 // Build the project using yarn
                 sh 'yarn install'
                 sh 'yarn run tslint'
-                sh 'yarn run compile' 
-                sh 'npm run test:e2e'           }
+                sh 'yarn run compile'         }
         }
 
         stage('Install Xvfb') {
