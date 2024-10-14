@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2024 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -289,15 +289,11 @@ export class Maven implements Build {
             `-DpayaraMicroVersion=${project.payaraMicroVersion}`,
             '-DaddPayaraApi=true',
             '-DinteractiveMode=false',
-            '-DjakartaEEVersion='+ (project.payaraMicroVersion.split('.')[0] === '5' ? '8' : '10')
+            '-DjakartaEEVersion='+ (project.payaraMicroVersion.split('.')[0] === '5' ? '8' : '10'),
+            '-Dplatform=micro'
         ];
 
-        /**
-         * String PROP_PLATFORM = "platform";
-         * String PROP_PLATFORM_MICRO_VALUE = "micro";
-         * properties.put(PROP_PLATFORM, PROP_PLATFORM_MICRO_VALUE)
-         */
-        let process: ChildProcess = cp.spawn(mavenExe, cmdArgs, { cwd: project.targetFolder?.fsPath, shell: true });
+        let process: ChildProcess = cp.spawn(mavenExe, cmdArgs, { cwd: project.targetFolder?.fsPath });
 
         if (process.pid) {
             let outputChannel = ProjectOutputWindowProvider.getInstance().get(`${project.artifactId}`);
