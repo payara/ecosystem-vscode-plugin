@@ -34,7 +34,31 @@ pipeline {
                 // Build the project using yarn
                 sh 'yarn install'
                 sh 'yarn run tslint'
-                sh 'yarn run compile'            }
+                sh 'yarn run compile' 
+                sh 'npm run test:e2e'           }
+        }
+
+        stage('Install Xvfb') {
+            steps {
+                script {
+                    // Check if Xvfb is installed, if not, install it
+                    sh '''
+                    if ! command -v Xvfb &> /dev/null
+                    then
+                        echo "Xvfb not found. Installing..."
+                        sudo apt-get update
+                        sudo apt-get install -y xvfb
+                    else
+                        echo "Xvfb is already installed."
+                    fi
+                    '''
+                }
+            }
+        }
+
+        stage('E2E tests') {
+            steps {
+                sh 'npm run test:e2e'           }
         }
     }
 }
