@@ -278,7 +278,7 @@ export class Maven implements Build {
             throw new Error("Maven executable [" + mavenExe + "] not found");
         }
         const cmdArgs: string[] = [
-            "archetype:generate",
+            "org.apache.maven.plugins:maven-archetype-plugin:3.2.1:generate",
             `-DarchetypeArtifactId=payara-starter-archetype`,
             `-DarchetypeGroupId=fish.payara.starter`,
             `-DarchetypeVersion=1.0-beta9`,
