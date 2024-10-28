@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2024 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -278,18 +278,21 @@ export class Maven implements Build {
             throw new Error("Maven executable [" + mavenExe + "] not found");
         }
         const cmdArgs: string[] = [
-            "archetype:generate",
-            `-DarchetypeArtifactId=payara-micro-maven-archetype`,
-            `-DarchetypeGroupId=fish.payara.maven.archetypes`,
-            `-DarchetypeVersion=` + (project.payaraMicroVersion.split('.')[0] === '5' ? '1.0.5' : '2.0'),
+            "org.apache.maven.plugins:maven-archetype-plugin:3.2.1:generate",
+            `-DarchetypeArtifactId=payara-starter-archetype`,
+            `-DarchetypeGroupId=fish.payara.starter`,
+            `-DarchetypeVersion=1.0-beta9`,
             `-DgroupId=${project.groupId}`,
             `-DartifactId=${project.artifactId}`,
             `-Dversion=${project.version}`,
             `-Dpackage=${project.package}`,
             `-DpayaraMicroVersion=${project.payaraMicroVersion}`,
             '-DaddPayaraApi=true',
-            '-DinteractiveMode=false'
+            '-DinteractiveMode=false',
+            '-DjakartaEEVersion='+ (project.payaraMicroVersion.split('.')[0] === '5' ? '8' : '10'),
+            '-Dplatform=micro'
         ];
+
         let process: ChildProcess = cp.spawn(mavenExe, cmdArgs, { cwd: project.targetFolder?.fsPath });
 
         if (process.pid) {
