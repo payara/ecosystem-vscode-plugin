@@ -293,28 +293,34 @@ export class Maven implements Build {
             '-Dplatform=micro'
         ];
 
-        let process: ChildProcess = cp.spawn(mavenExe, cmdArgs, { cwd: project.targetFolder?.fsPath });
+        let jdkHome;
+        let env = { ...process.env };
+        if (this.payaraInstance && (jdkHome = this.payaraInstance.getJDKHome())) {
+            env['JAVA_HOME'] = jdkHome;
+        }
 
-        if (process.pid) {
+        let childProcess: ChildProcess = cp.spawn(mavenExe, cmdArgs, { cwd: project.targetFolder?.fsPath,  shell: true, env: env });
+
+        if (childProcess.pid) {
             let outputChannel = ProjectOutputWindowProvider.getInstance().get(`${project.artifactId}`);
             outputChannel.show(false);
             let logCallback = (data: string | Buffer): void => outputChannel.append(data.toString());
-            if (process.stdout !== null) {
-                process.stdout.on('data', logCallback);
+            if (childProcess.stdout !== null) {
+                childProcess.stdout.on('data', logCallback);
             }
-            if (process.stderr !== null) {
-                process.stderr.on('data', logCallback);
+            if (childProcess.stderr !== null) {
+                childProcess.stderr.on('data', logCallback);
             }
-            process.on('error', (err: Error) => {
+            childProcess.on('error', (err: Error) => {
                 console.log('error: ' + err.message);
             });
-            process.on('exit', (code: number) => {
+            childProcess.on('exit', (code: number) => {
                 if (code === 0 && project.targetFolder && project.artifactId) {
                     callback(vscode.Uri.file(path.join(project.targetFolder.fsPath, project.artifactId)));
                 }
             });
         }
-        return process;
+        return childProcess;
     }
 
     public startPayaraMicro(
