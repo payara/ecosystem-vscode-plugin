@@ -42,8 +42,6 @@ export class Gradle implements Build {
 
     private microPluginReader: GradleMicroPluginReader | undefined;
 
-    private cachedBuildDir: string | undefined;
-
     constructor(public payaraInstance: PayaraInstance | null, public workspaceFolder: WorkspaceFolder) {
         this.readBuildConfig();
     }
@@ -236,37 +234,15 @@ export class Gradle implements Build {
         return gradleExecStr;
     }
 
-    public detectBuildDir(): string {
-        if (this.cachedBuildDir !== undefined) {
-            return this.cachedBuildDir;
-        }
-        const gradleFiles = ['build.gradle', 'build.gradle.kts'];
-        for (const gradleFile of gradleFiles) {
-            const filePath = path.join(this.workspaceFolder.uri.fsPath, gradleFile);
-            if (fs.existsSync(filePath)) {
-                try {
-                    const content = fs.readFileSync(filePath, 'utf8');
-                    const fileMatch = content.match(/buildDir\s*=\s*file\(\s*["']([^"']+)["']\s*\)/);
-                    if (fileMatch) {
-                        this.cachedBuildDir = fileMatch[1];
-                        return this.cachedBuildDir;
-                    }
-                    const stringMatch = content.match(/buildDir\s*=\s*["']([^"']+)["']/);
-                    if (stringMatch) {
-                        this.cachedBuildDir = stringMatch[1];
-                        return this.cachedBuildDir;
-                    }
-                } catch (e) {
-                    // ignore read errors and fall back to default
-                }
+    public getBuildDir(): string {
+        let buildDirValue = 'build';
+        if (this.buildReader instanceof GradleBuildReader) {
+            let customDir = this.buildReader.getBuildDirectory();
+            if (customDir.length > 0) {
+                buildDirValue = customDir;
             }
         }
-        this.cachedBuildDir = 'build';
-        return this.cachedBuildDir;
-    }
-
-    public getBuildDir(): string {
-        let buildDir = path.join(this.workspaceFolder.uri.fsPath, this.detectBuildDir(), 'libs');
+        let buildDir = path.resolve(this.workspaceFolder.uri.fsPath, buildDirValue, 'libs');
         if (!fs.existsSync(buildDir)) {
             throw Error("no build dir found: " + buildDir);
         }

@@ -28,6 +28,7 @@ export class GradleBuildReader implements BuildReader {
     private artifactId: string = '';
     private version: string = '';
     private finalName: string = '';
+    private buildDirectory: string = '';
 
     public constructor(public workspaceFolder: WorkspaceFolder) {
         this.parseBuild();
@@ -45,6 +46,12 @@ export class GradleBuildReader implements BuildReader {
             let build: any = await g2js.parseFile(buildPath);
             reader.groupId = build.group;
             reader.version = build.version;
+            reader.buildDirectory = reader.parseBuildDirectory(buildPath);
+        }
+
+        let buildKtsPath = path.join(this.workspaceFolder.uri.fsPath, 'build.gradle.kts');
+        if (reader.buildDirectory.length < 1 && fs.existsSync(buildKtsPath)) {
+            reader.buildDirectory = reader.parseBuildDirectory(buildKtsPath);
         }
 
         if (fs.existsSync(settingsPath)) {
@@ -55,6 +62,23 @@ export class GradleBuildReader implements BuildReader {
         if (reader.artifactId && reader.version) {
             reader.finalName = reader.artifactId + '-' + reader.version;
         }
+    }
+
+    private parseBuildDirectory(gradleFilePath: string): string {
+        try {
+            const content = fs.readFileSync(gradleFilePath, 'utf8');
+            const fileMatch = content.match(/buildDir\s*=\s*file\(\s*["']([^"']+)["']\s*\)/);
+            if (fileMatch) {
+                return fileMatch[1];
+            }
+            const stringMatch = content.match(/buildDir\s*=\s*["']([^"']+)["']/);
+            if (stringMatch) {
+                return stringMatch[1];
+            }
+        } catch (e) {
+            // ignore read errors and fall back to default
+        }
+        return '';
     }
 
     public getGroupId(): string {
@@ -71,6 +95,10 @@ export class GradleBuildReader implements BuildReader {
 
     public getFinalName(): string {
         return this.finalName;
+    }
+
+    public getBuildDirectory(): string {
+        return this.buildDirectory;
     }
 
 }
