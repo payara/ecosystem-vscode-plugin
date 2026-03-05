@@ -23,6 +23,7 @@ import { workspace } from 'vscode';
 import * as _ from "lodash";
 import * as fse from "fs-extra";
 import * as cp from 'child_process';
+import * as path from "path";
 import { JavaUtils } from '../tooling/utils/JavaUtils';
 
 export class JDKVersion {
@@ -291,11 +292,16 @@ export class JDKVersion {
         }
     }
 
-    public static isCorrectJDK(jdkVersion: JDKVersion,
+    public static isCorrectJDK(
+        jdkVersion: JDKVersion,
         vendor: string | undefined,
         minVersion: JDKVersion | undefined,
-        maxVersion: JDKVersion | undefined): boolean {
+        maxVersion: JDKVersion | undefined,
+        jvmOption: string | undefined,
+        javaHome: string | undefined): boolean {
+
         let correctJDK: boolean = true;
+
         if (vendor !== undefined) {
             let jdkVendor: string | undefined = jdkVersion.getVendor();
             if (jdkVendor) {
@@ -304,13 +310,31 @@ export class JDKVersion {
                 correctJDK = false;
             }
         }
+
         if (correctJDK && minVersion) {
             correctJDK = jdkVersion.ge(minVersion);
         }
+
         if (correctJDK && maxVersion) {
             correctJDK = jdkVersion.le(maxVersion);
         }
+
+        if (correctJDK &&
+            jvmOption &&
+            /^-XX:[+-]?CRaC.*/.test(jvmOption)) {
+
+            correctJDK = JDKVersion.isCRaCJDK(javaHome);
+        }
+
         return correctJDK;
+    }
+
+    public static isCRaCJDK(javaHome: string | undefined): boolean {
+        if (!javaHome) {
+            return false;
+        }
+        const criuPath = path.join(javaHome, "lib", "criu");
+        return fse.pathExistsSync(criuPath);
     }
 
     /**
