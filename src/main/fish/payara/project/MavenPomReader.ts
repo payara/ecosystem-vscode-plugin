@@ -29,6 +29,7 @@ export class MavenPomReader implements BuildReader {
     private artifactId: string = '';
     private version: string = '';
     private finalName: string = '';
+    private buildDirectory: string = '';
 
     public constructor(public workspaceFolder: WorkspaceFolder) {
         this.parsePom();
@@ -54,14 +55,20 @@ export class MavenPomReader implements BuildReader {
                         reader.groupId = project.groupId[0];
                         reader.artifactId = project.artifactId[0];
                         reader.version = project.version[0];
-                        reader.finalName = reader.parseBuild(project.build);
+                        reader.finalName = reader.parseFinalName(project.build);
+                        reader.buildDirectory = reader.parseBuildDirectory(project.build);
                         if (project.profiles
                             && project.profiles[0].profile) {
                             for (let profile of project.profiles[0].profile) {
-                                if (reader.finalName.length > 0) {
+                                if (reader.finalName.length > 0 && reader.buildDirectory.length > 0) {
                                     break;
                                 }
-                                reader.finalName = reader.parseBuild(profile.build);
+                                if (reader.finalName.length < 1) {
+                                    reader.finalName = reader.parseFinalName(profile.build);
+                                }
+                                if (reader.buildDirectory.length < 1) {
+                                    reader.buildDirectory = reader.parseBuildDirectory(profile.build);
+                                }
                             }
                         }
                         if (reader.finalName.length < 1) {
@@ -73,11 +80,20 @@ export class MavenPomReader implements BuildReader {
         }
     }
 
-    private parseBuild(build: any): string {
+    private parseFinalName(build: any): string {
         if (build
             && build[0]
             && build[0].finalName) {
             return build[0].finalName.toString();
+        }
+        return '';
+    }
+
+    private parseBuildDirectory(build: any): string {
+        if (build
+            && build[0]
+            && build[0].directory) {
+            return build[0].directory.toString();
         }
         return '';
     }
@@ -96,6 +112,10 @@ export class MavenPomReader implements BuildReader {
 
     public getFinalName(): string {
         return this.finalName;
+    }
+
+    public getBuildDirectory(): string {
+        return this.buildDirectory;
     }
 
 }

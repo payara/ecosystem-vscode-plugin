@@ -235,7 +235,14 @@ export class Maven implements Build {
     }
 
     public getBuildDir(): string {
-        let targetDir = path.join(this.workspaceFolder.uri.fsPath, 'target');
+        let buildDirValue = 'target';
+        if (this.pomReader instanceof MavenPomReader) {
+            let customDir = this.pomReader.getBuildDirectory();
+            if (customDir.length > 0) {
+                buildDirValue = customDir;
+            }
+        }
+        let targetDir = path.resolve(this.workspaceFolder.uri.fsPath, buildDirValue);
         if (!fs.existsSync(targetDir)) {
             throw Error("no target dir found: " + targetDir);
         }
