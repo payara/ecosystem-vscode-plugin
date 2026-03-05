@@ -235,7 +235,14 @@ export class Gradle implements Build {
     }
 
     public getBuildDir(): string {
-        let buildDir = path.join(this.workspaceFolder.uri.fsPath, 'build', 'libs');
+        let buildDirValue = 'build';
+        if (this.buildReader instanceof GradleBuildReader) {
+            let customDir = this.buildReader.getBuildDirectory();
+            if (customDir.length > 0) {
+                buildDirValue = customDir;
+            }
+        }
+        let buildDir = path.resolve(this.workspaceFolder.uri.fsPath, buildDirValue, 'libs');
         if (!fs.existsSync(buildDir)) {
             throw Error("no build dir found: " + buildDir);
         }
