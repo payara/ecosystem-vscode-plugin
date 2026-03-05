@@ -48,7 +48,14 @@ export class StartTask {
         let optList: Array<string> = new Array<string>();
 
         for (const jvmOption of jvmConfigReader.getJvmOptions()) {
-            if (JDKVersion.isCorrectJDK(javaVersion, jvmOption.vendor, jvmOption.minVersion, jvmOption.maxVersion)) {
+            if (JDKVersion.isCorrectJDK(
+                    javaVersion,
+                    jvmOption.vendor,
+                    jvmOption.minVersion,
+                    jvmOption.maxVersion,
+                    jvmOption.option,
+                    javaHome)) {
+
                 optList.push(jvmOption.option);
             }
         }
