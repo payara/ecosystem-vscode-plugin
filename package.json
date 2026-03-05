@@ -741,7 +741,7 @@
 		"@types/node": "^22.5.4",
 		"@types/vscode": "^1.93.0",
 		"@vscode/test-electron": "2.4.1",
-		"glob": "^7.1.7",
+		"glob": "^13.0.6",
 		"mocha": "10.7.3",
 		"os": "^0.1.1",
 		"playwright": "^1.47.2",
