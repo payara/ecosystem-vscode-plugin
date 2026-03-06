@@ -723,7 +723,7 @@
 		"fs-extra": "^11.3.4",
 		"gradle-to-js": "^2.0.1",
 		"lodash": "^4.17.23",
-		"open": "^8.4.2",
+		"open": "^11.0.0",
 		"payara-vscode": "file:",
 		"tail": "^2.2.6",
 		"tmp": "^0.2.5",
