@@ -739,7 +739,7 @@
 		"@types/vscode": "^1.109.0",
 		"@vscode/test-electron": "2.5.2",
 		"glob": "^13.0.6",
-		"mocha": "10.7.3",
+		"mocha": "11.7.5",
 		"playwright": "^1.58.2",
 		"tslint": "^6.1.0",
 		"typescript": "^5.9.3"
