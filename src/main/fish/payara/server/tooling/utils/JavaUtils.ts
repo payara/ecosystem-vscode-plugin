@@ -180,7 +180,7 @@ export class JavaUtils {
                     ++i;
                     if (i < slength) {
                         let cc: string = args.charAt(i);
-                        if (cc === '\"' || cc === '\\') {
+                        if (cc === '"' || cc === '\\') {
                             buff += cc;
                         } else if (cc.trim() === '') { // check whitespace
                             buff += c;
@@ -207,7 +207,7 @@ export class JavaUtils {
                 }
                 continue;
             }
-            if (c === '\"') {
+            if (c === '"') {
                 if (state === NULL) {
                     state = INPARAM;
                 } else if (state === INPARAM) {
@@ -215,10 +215,10 @@ export class JavaUtils {
                 } else if (state === STICK) {
                     state = INPARAM;
                 } else if (state === STICKPENDING) {
-                    buff += '\"';
+                    buff += '"';
                     state = STICK;
                 } else { // INPARAMPENDING
-                    buff += '\"';
+                    buff += '"';
                     state = INPARAM;
                 }
                 continue;

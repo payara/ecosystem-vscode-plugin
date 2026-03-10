@@ -13,7 +13,7 @@ export class StringUtils {
      * @return Quoted path if it contains any space characters, otherwise same.
      */
     public static quote(path: string): string {
-        return path.indexOf(' ') === -1 ? path : "\"" + path + "\"";
+        return path.indexOf(' ') === -1 ? path : '"' + path + '"';
     }
 
     /**
