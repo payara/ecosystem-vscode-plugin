@@ -127,10 +127,10 @@ export class PayaraLocalServerInstance extends PayaraServerInstance {
         let lines: string[] = output.toString().split(/(?:\r\n|\r|\n)/g);
         for (let line of lines) {
             let result: string[] = line.split(" ");
-            if (result.length >= 6
+            if (result.length >= 2
                 && result[1] === ServerUtils.PF_MAIN_CLASS
-                && result[3] === this.getDomainName()
-                && result[5] === this.getDomainPath()) {
+                && line.includes('--domain ' + this.getDomainName())
+                && line.includes('--domaindir ' + this.getDomainPath())) {
                 callback();
                 break;
             }
@@ -152,7 +152,7 @@ export class PayaraLocalServerInstance extends PayaraServerInstance {
             if (JavaUtils.IS_WIN) {
                 this.logStream = cp.spawn('powershell.exe', ['Get-Content', '-Tail', '20', '-Wait', '-literalpath', this.getServerLog()]);
             } else {
-                this.logStream = cp.spawn('tail ', ['-f', '-n', '20', this.getServerLog()]);
+                this.logStream = cp.spawn('tail', ['-f', '-n', '20', this.getServerLog()]);
             }
             if (this.logStream.pid) {
                 this.getOutputChannel().show(false);

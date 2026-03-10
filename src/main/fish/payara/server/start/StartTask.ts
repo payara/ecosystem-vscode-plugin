@@ -177,12 +177,12 @@ export class StartTask {
                 name = opt.substring(0, splitIndex);
                 value = StringUtils.quote(opt.substring(splitIndex + 1));
             } else {
-                name = opt;
+                name = StringUtils.quote(opt);
                 value = null;
             }
 
-            // seperate modules options
-            if (name.startsWith("--add-")) {
+            // separate modules options
+            if (opt.startsWith("--add-")) {
                 moduleOptions.push(opt);
             } else {
                 if (!keyValueArgs.has(name)) {
