@@ -49,12 +49,12 @@ export class StartTask {
 
         for (const jvmOption of jvmConfigReader.getJvmOptions()) {
             if (JDKVersion.isCorrectJDK(
-                    javaVersion,
-                    jvmOption.vendor,
-                    jvmOption.minVersion,
-                    jvmOption.maxVersion,
-                    jvmOption.option,
-                    javaHome)) {
+                javaVersion,
+                jvmOption.vendor,
+                jvmOption.minVersion,
+                jvmOption.maxVersion,
+                jvmOption.option,
+                javaHome)) {
 
                 optList.push(jvmOption.option);
             }
@@ -172,7 +172,17 @@ export class StartTask {
             // do placeholder substitution
             opt = StringUtils.doSub(opt.trim(), varMap);
             let splitIndex: number = opt.indexOf('=');
-            if (splitIndex !== -1 && !opt.startsWith("-agentpath:")) {
+            if (splitIndex === -1) {
+                // No '=' found; check for known prefix with colon
+                let colonIndex = opt.indexOf(':');
+                if (colonIndex !== -1 && opt.startsWith("-Xbootclasspath/a:")) {
+                    name = opt.substring(0, colonIndex + 1) + StringUtils.quote(opt.substring(colonIndex + 1));
+                    value = null;
+                } else {
+                    name = opt;
+                    value = null;
+                }
+            } else if (!opt.startsWith("-agentpath:")) {
                 // key=value type of option
                 name = opt.substring(0, splitIndex);
                 value = StringUtils.quote(opt.substring(splitIndex + 1));
