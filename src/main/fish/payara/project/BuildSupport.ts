@@ -17,8 +17,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
 
+import * as path from 'path';
 import * as vscode from 'vscode';
-import { Uri } from "vscode";
+import { Uri, WorkspaceFolder } from "vscode";
 import { Build } from './Build';
 import { Maven } from './Maven';
 import { Gradle } from './Gradle';
@@ -35,8 +36,21 @@ export class BuildSupport {
             return new Maven(payaraInstance, workspace);
         } else if(Gradle.detect(workspace)){
             return new Gradle(payaraInstance, workspace);
-        } else {
-            throw new Error("Project build not supported for [" + uri.fsPath + "].");
+        } 
+        // If build files not found at the workspace root, try the uri path itself.
+        // This handles the case where the project is a subdirectory of the workspace.
+        if(uri.fsPath !== workspace.uri.fsPath) {
+            const projectWorkspace: WorkspaceFolder = {
+                uri: uri,
+                name: path.basename(uri.fsPath),
+                index: workspace.index  // inherit the parent workspace index; only uri is used for file operations
+            };
+            if(Maven.detect(projectWorkspace)){
+                return new Maven(payaraInstance, projectWorkspace);
+            } else if(Gradle.detect(projectWorkspace)){
+                return new Gradle(payaraInstance, projectWorkspace);
+            }
         }
+        throw new Error("Project build not supported for [" + uri.fsPath + "].");
     }
 }
