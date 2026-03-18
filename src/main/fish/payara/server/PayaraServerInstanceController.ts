@@ -634,7 +634,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
     }
 
 
-    public async startServer(payaraServer: PayaraLocalServerInstance, debug: boolean, debugPort: string, callback?: (status: boolean) => any): Promise<void> {
+    public async startServer(payaraServer: PayaraLocalServerInstance, debug: boolean, debugPort: string | number | undefined, callback?: (status: boolean) => any): Promise<void> {
         if (!payaraServer.isStopped()) {
             vscode.window.showErrorMessage('Payara Server instance already running.');
             return;
@@ -744,7 +744,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
         });
     }
 
-    private async stopAndStartInDebugMode(payaraServer: PayaraLocalServerInstance, debugPort: string, callback?: (status: boolean) => any): Promise<void> {
+    private async stopAndStartInDebugMode(payaraServer: PayaraLocalServerInstance, debugPort: string | number | undefined, callback?: (status: boolean) => any): Promise<void> {
         let endpoints: RestEndpoints = new RestEndpoints(payaraServer);
         endpoints.invoke("stop-domain", async (_res) => {
             payaraServer.setState(InstanceState.STOPPED);
@@ -879,7 +879,7 @@ export class PayaraServerInstanceController extends PayaraInstanceController {
             this.selectListedServer(callback);
         }
     }
- 
+
     public readDebugPortFromWorkspace(uri: Uri) {
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
         if (workspaceFolder) {
