@@ -742,7 +742,7 @@
 		"mocha": "11.7.5",
 		"playwright": "^1.58.2",
 		"tslint": "^6.1.0",
-		"typescript": "^5.9.3"
+		"typescript": "^6.0.2"
 	},
 	"overrides": {
 		"serialize-javascript": ">=7.0.3"
