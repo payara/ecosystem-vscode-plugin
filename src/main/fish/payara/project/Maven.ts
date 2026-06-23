@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2024 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2026 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -33,6 +33,7 @@ import { PayaraServerTransformPlugin } from '../server/PayaraServerTransformPlug
 import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
 import { MavenMicroPluginReader } from './MavenMicroPluginReader';
 import { BuildReader } from './BuildReader';
+import { PayaraServerMavenPlugin } from '../server/maven/PayaraServerMavenPlugin';
 import { TaskManager } from './TaskManager';
 import { PayaraInstance } from '../common/PayaraInstance';
 import { DeployOption } from '../common/DeployOption';
@@ -365,6 +366,21 @@ export class Maven implements Build {
 
     }
 
+    public devPayaraMicro(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultMicroDevConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        if (debugConfig) {
+            commands.push(`-Ddebug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugConfig.port}`);
+        }
+        return this.fireCommand(commands, onData, onExit, onError);
+    }
+
     public reloadPayaraMicro(
         onExit: (code: number) => any,
         onError: (err: Error) => any,
@@ -433,6 +449,15 @@ export class Maven implements Build {
         };
     }
 
+    private getDefaultMicroDevConfig(): TaskDefinition {
+        return {
+            label: "payara-micro-dev",
+            type: "shell",
+            command: `mvn ${PayaraMicroMavenPlugin.GROUP_ID}:${PayaraMicroMavenPlugin.ARTIFACT_ID}:${PayaraMicroMavenPlugin.DEV_GOAL}`,
+            group: "build"
+        };
+    }
+
     private getDefaultMicroBundleConfig(): TaskDefinition {
         return {
             label: "payara-micro-bundle",
@@ -484,6 +509,77 @@ export class Maven implements Build {
             label: "payara-tranform",
             type: "shell",
             command: `mvn package ${PayaraServerTransformPlugin.GROUP_ID}:${PayaraServerTransformPlugin.ARTIFACT_ID}:${PayaraServerTransformPlugin.VERSION}:${PayaraServerTransformPlugin.RUN_GOAL}`,
+            group: "build"
+        };
+    }
+
+    public startPayaraServerMaven(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerMavenStartConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        if (debugConfig) {
+            commands.push(`-Ddebug=true`);
+            commands.push(`-DdebugPort=${debugConfig.port}`);
+        }
+        return this.fireCommand(commands, onData, onExit, onError);
+    }
+
+    public devPayaraServerMaven(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerMavenDevConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        if (debugConfig) {
+            commands.push(`-Dpayara.debug=true`);
+            commands.push(`-Dpayara.debug.port=${debugConfig.port}`);
+        }
+        return this.fireCommand(commands, onData, onExit, onError);
+    }
+
+    public stopPayaraServerMaven(
+        processId: number,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerMavenStopConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        commands.push(`-DprocessId=${processId}`);
+        return this.fireCommand(commands, () => { }, onExit, onError);
+    }
+
+    private getDefaultServerMavenStartConfig(): TaskDefinition {
+        return {
+            label: "payara-server-maven-start",
+            type: "shell",
+            command: `mvn package ${PayaraServerMavenPlugin.GROUP_ID}:${PayaraServerMavenPlugin.ARTIFACT_ID}:${PayaraServerMavenPlugin.START_GOAL}`,
+            group: "build"
+        };
+    }
+
+    private getDefaultServerMavenDevConfig(): TaskDefinition {
+        return {
+            label: "payara-server-maven-dev",
+            type: "shell",
+            command: `mvn package ${PayaraServerMavenPlugin.GROUP_ID}:${PayaraServerMavenPlugin.ARTIFACT_ID}:${PayaraServerMavenPlugin.DEV_GOAL}`,
+            group: "build"
+        };
+    }
+
+    private getDefaultServerMavenStopConfig(): TaskDefinition {
+        return {
+            label: "payara-server-maven-stop",
+            type: "shell",
+            command: `mvn ${PayaraServerMavenPlugin.GROUP_ID}:${PayaraServerMavenPlugin.ARTIFACT_ID}:${PayaraServerMavenPlugin.STOP_GOAL}`,
             group: "build"
         };
     }

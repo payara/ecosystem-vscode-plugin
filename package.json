@@ -2,7 +2,7 @@
 	"name": "payara-vscode",
 	"displayName": "Payara Tools",
 	"description": "Payara Tools for Visual Studio Code",
-	"version": "1.7.0-SNAPSHOT",
+	"version": "1.6.0-SNAPSHOT",
 	"publisher": "Payara",
 	"icon": "resources/payara.png",
 	"repository": {
@@ -51,6 +51,8 @@
 		"onCommand:payara.micro.refresh.all",
 		"onCommand:payara.micro.start",
 		"onCommand:payara.micro.start.debug",
+		"onCommand:payara.micro.start.dev",
+		"onCommand:payara.micro.start.dev.debug",
 		"onCommand:payara.micro.reload",
 		"onCommand:payara.micro.stop",
 		"onCommand:payara.micro.bundle",
@@ -59,7 +61,18 @@
 		"onView:payaraServerExplorer",
 		"onView:payaraServer",
 		"onView:payaraMicroExplorer",
-		"onView:payaraMicro"
+		"onView:payaraMicro",
+		"onCommand:payara.server.maven.refresh",
+		"onCommand:payara.server.maven.refresh.all",
+		"onCommand:payara.server.maven.start",
+		"onCommand:payara.server.maven.start.debug",
+		"onCommand:payara.server.maven.start.dev",
+		"onCommand:payara.server.maven.start.dev.debug",
+		"onCommand:payara.server.maven.stop",
+		"onCommand:payara.server.maven.jdk.home",
+		"onCommand:payara.server.maven.deploy.settings",
+		"onView:payaraServerMavenExplorer",
+		"onView:payaraServerMaven"
 	],
 	"main": "./out/main/extension.js",
 	"contributes": {
@@ -263,6 +276,24 @@
 				}
 			},
 			{
+				"command": "payara.micro.start.dev",
+				"title": "Start (Dev Mode)",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/dev.svg",
+					"dark": "resources/theme/dark/dev.svg"
+				}
+			},
+			{
+				"command": "payara.micro.start.dev.debug",
+				"title": "Start (Dev Mode) in Debug",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/dev-debug.svg",
+					"dark": "resources/theme/dark/dev-debug.svg"
+				}
+			},
+			{
 				"command": "payara.micro.reload",
 				"title": "Reload",
 				"category": "Payara",
@@ -298,6 +329,79 @@
 				"command": "payara.micro.deploy.settings",
 				"title": "Deployment settings",
 				"category": "Payara"
+			},
+			{
+				"command": "payara.server.maven.refresh.all",
+				"title": "Refresh All",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/refresh.svg",
+					"dark": "resources/theme/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.refresh",
+				"title": "Refresh",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/refresh.svg",
+					"dark": "resources/theme/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.start",
+				"title": "Start",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/start.svg",
+					"dark": "resources/theme/dark/start.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.start.debug",
+				"title": "Start in Debug Mode",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/debug.svg",
+					"dark": "resources/theme/dark/debug.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.start.dev",
+				"title": "Start (Dev Mode)",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/dev.svg",
+					"dark": "resources/theme/dark/dev.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.start.dev.debug",
+				"title": "Start (Dev Mode) in Debug",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/dev-debug.svg",
+					"dark": "resources/theme/dark/dev-debug.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.stop",
+				"title": "Stop",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/stop.svg",
+					"dark": "resources/theme/dark/stop.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.jdk.home",
+				"title": "JDK Home",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.maven.deploy.settings",
+				"title": "Deployment settings",
+				"category": "Payara"
 			}
 		],
 		"views": {
@@ -309,6 +413,10 @@
 				{
 					"id": "payaraMicroExplorer",
 					"name": "Payara Micro Instances"
+				},
+				{
+					"id": "payaraServerMavenExplorer",
+					"name": "Payara Server Projects"
 				}
 			],
 			"payaraActivitybar": [
@@ -319,6 +427,10 @@
 				{
 					"id": "payaraMicro",
 					"name": "Micro Instances"
+				},
+				{
+					"id": "payaraServerMaven",
+					"name": "Server Projects"
 				}
 			]
 		},
@@ -362,6 +474,11 @@
 					"command": "payara.micro.stop",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro",
 					"group": "navigation@5"
+				},
+				{
+					"command": "payara.server.maven.refresh.all",
+					"when": "view == payaraServerMavenExplorer || view == payaraServerMaven",
+					"group": "navigation@6"
 				}
 			],
 			"commandPalette": [
@@ -470,6 +587,14 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.micro.start.dev",
+					"when": "never"
+				},
+				{
+					"command": "payara.micro.start.dev.debug",
+					"when": "never"
+				},
+				{
 					"command": "payara.micro.reload",
 					"when": "never"
 				},
@@ -487,6 +612,34 @@
 				},
 				{
 					"command": "payara.micro.deploy.settings",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.start",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.start.debug",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.start.dev",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.start.dev.debug",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.stop",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.jdk.home",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.deploy.settings",
 					"when": "never"
 				}
 			],
@@ -644,6 +797,16 @@
 					"group": "inline"
 				},
 				{
+					"command": "payara.micro.start.dev",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "inline"
+				},
+				{
+					"command": "payara.micro.start.dev.debug",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "inline"
+				},
+				{
 					"command": "payara.micro.reload",
 					"when": "viewItem == runningPayaraMicro",
 					"group": "inline"
@@ -664,29 +827,99 @@
 					"group": "payara-micro@1"
 				},
 				{
+					"command": "payara.micro.start.dev",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "payara-micro@2"
+				},
+				{
+					"command": "payara.micro.start.dev.debug",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "payara-micro@3"
+				},
+				{
 					"command": "payara.micro.reload",
 					"when": "viewItem == runningPayaraMicro",
-					"group": "payara-micro@2"
+					"group": "payara-micro@4"
 				},
 				{
 					"command": "payara.micro.stop",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro",
-					"group": "payara-micro@3"
+					"group": "payara-micro@4"
 				},
 				{
 					"command": "payara.micro.bundle",
 					"when": "viewItem == stoppedPayaraMicro || viewItem == runningPayaraMicro",
-					"group": "payara-micro@4"
+					"group": "payara-micro@5"
 				},
 				{
 					"command": "payara.micro.jdk.home",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro || viewItem == stoppedPayaraMicro",
-					"group": "payara-micro@5"
+					"group": "payara-micro@6"
 				},
 				{
 					"command": "payara.micro.deploy.settings",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro || viewItem == stoppedPayaraMicro",
-					"group": "payara-micro@6"
+					"group": "payara-micro@7"
+				},
+				{
+					"command": "payara.server.maven.start",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.maven.start.debug",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.maven.start.dev",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.maven.start.dev.debug",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.maven.stop",
+					"when": "viewItem == loadingPayaraServerMaven || viewItem == runningPayaraServerMaven",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.maven.start",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@0"
+				},
+				{
+					"command": "payara.server.maven.start.debug",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@1"
+				},
+				{
+					"command": "payara.server.maven.start.dev",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@2"
+				},
+				{
+					"command": "payara.server.maven.start.dev.debug",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@3"
+				},
+				{
+					"command": "payara.server.maven.stop",
+					"when": "viewItem == loadingPayaraServerMaven || viewItem == runningPayaraServerMaven",
+					"group": "payara-server-maven@4"
+				},
+				{
+					"command": "payara.server.maven.jdk.home",
+					"when": "viewItem == loadingPayaraServerMaven || viewItem == runningPayaraServerMaven || viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@5"
+				},
+				{
+					"command": "payara.server.maven.deploy.settings",
+					"when": "viewItem == loadingPayaraServerMaven || viewItem == runningPayaraServerMaven || viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@6"
 				},
 				{
 					"command": "payara.server.app.deploy",
