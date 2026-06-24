@@ -165,6 +165,106 @@ export class Maven implements Build {
         return mvnProcess;
     }
 
+    public fireCommandInteractive(
+        commands: string[],
+        terminalName: string,
+        dataCallback: (data: string) => any,
+        exitCallback: (code: number) => any,
+        errorCallback: (err: Error) => any,
+        extraEnv?: Record<string, string>
+    ): ChildProcess {
+        if (commands.length <= 1) {
+            throw new Error(`Invalid command definition ${commands.join(" ")}`);
+        }
+
+        let mavenExe = commands[0];
+        let args = commands.splice(1, commands.length);
+
+        if (mavenExe === "mvnw") {
+            mavenExe = this.getWrapperFullPath();
+        } else {
+            mavenExe = this.getExecutableFullPath(undefined);
+        }
+
+        if (!this.workspaceFolder) {
+            throw new Error("WorkSpace path not found.");
+        }
+
+        let jdkHome: string | undefined;
+        let env = { ...process.env, ...extraEnv };
+        if (this.payaraInstance && (jdkHome = this.payaraInstance.getJDKHome())) {
+            env['JAVA_HOME'] = jdkHome;
+        }
+
+        const writeEmitter = new vscode.EventEmitter<string>();
+        const outputBuffer: string[] = [];
+        let terminalOpen = false;
+
+        const mvnProcess: ChildProcess = cp.spawn(mavenExe, args, {
+            cwd: this.workspaceFolder.uri.fsPath,
+            shell: true,
+            env: env
+        });
+
+        const handleData = (data: string | Buffer): void => {
+            const text = data.toString().replace(/\r?\n/g, '\r\n');
+            if (terminalOpen) {
+                writeEmitter.fire(text);
+            } else {
+                outputBuffer.push(text);
+            }
+            dataCallback(data.toString());
+        };
+
+        if (mvnProcess.stdout !== null) {
+            mvnProcess.stdout.on('data', handleData);
+        }
+        if (mvnProcess.stderr !== null) {
+            mvnProcess.stderr.on('data', handleData);
+        }
+        mvnProcess.on('error', errorCallback);
+        mvnProcess.on('exit', (code: number) => {
+            writeEmitter.fire(`\r\nProcess exited with code ${code}\r\n`);
+            exitCallback(code);
+        });
+
+        const pty: vscode.Pseudoterminal = {
+            onDidWrite: writeEmitter.event,
+            open: () => {
+                terminalOpen = true;
+                if (jdkHome) {
+                    writeEmitter.fire(`Java Platform: ${jdkHome}\r\n`);
+                }
+                writeEmitter.fire(`> ${mavenExe} ${args.join(' ')}\r\n`);
+                for (const chunk of outputBuffer) {
+                    writeEmitter.fire(chunk);
+                }
+                outputBuffer.length = 0;
+            },
+            handleInput: (data: string) => {
+                if (mvnProcess.stdin) {
+                    if (data === '\r') {
+                        mvnProcess.stdin.write('\n');
+                        writeEmitter.fire('\r\n');
+                    } else {
+                        mvnProcess.stdin.write(data);
+                        writeEmitter.fire(data);
+                    }
+                }
+            },
+            close: () => {
+                if (!mvnProcess.killed) {
+                    mvnProcess.kill();
+                }
+                writeEmitter.dispose();
+            }
+        };
+
+        vscode.window.createTerminal({ name: terminalName, pty }).show(false);
+
+        return mvnProcess;
+    }
+
     public getDefaultHome(): string | undefined {
         const config = vscode.workspace.getConfiguration();
         let mavenHome: string | undefined = config.get<string>('maven.home');
@@ -513,6 +613,63 @@ export class Maven implements Build {
         };
     }
 
+    private getAIAgentEnv(): Record<string, string> {
+        const config = vscode.workspace.getConfiguration();
+        if (config.get<boolean>('payara.ai.agent') !== true) { return {}; }
+        const env: Record<string, string> = {};
+        const apiKey = config.get<string>('payara.ai.apiKey');
+        if (apiKey) { env['PAYARA_AI_API_KEY'] = apiKey; }
+        return env;
+    }
+
+    private getAIAgentFlags(): string[] {
+        const config = vscode.workspace.getConfiguration();
+        if (config.get<boolean>('payara.ai.agent') !== true) { return []; }
+
+        const flags: string[] = ['-Dpayara.ai.agent=true'];
+
+        const str = (key: string, prop: string) => {
+            const v = config.get<string>(key);
+            if (v) { flags.push(`-D${prop}=${v}`); }
+        };
+        const num = (key: string, prop: string) => {
+            const v = config.get<number | null>(key);
+            if (v !== undefined && v !== null) { flags.push(`-D${prop}=${v}`); }
+        };
+        const bool = (key: string, prop: string) => {
+            if (config.get<boolean>(key) === true) { flags.push(`-D${prop}=true`); }
+        };
+
+        str('payara.ai.provider',         'payara.ai.provider');
+        str('payara.ai.model',            'payara.ai.model');
+        str('payara.ai.providerLocation', 'payara.ai.provider.location');
+        str('payara.ai.organizationId',   'payara.ai.organizationId');
+        str('payara.ai.customHeaders',    'payara.ai.customHeaders');
+
+        num('payara.ai.temperature',           'payara.ai.temperature');
+        num('payara.ai.topP',                  'payara.ai.topP');
+        num('payara.ai.topK',                  'payara.ai.topK');
+        num('payara.ai.maxTokens',             'payara.ai.maxTokens');
+        num('payara.ai.maxCompletionTokens',   'payara.ai.maxCompletionTokens');
+        num('payara.ai.maxOutputTokens',       'payara.ai.maxOutputTokens');
+        num('payara.ai.presencePenalty',       'payara.ai.presencePenalty');
+        num('payara.ai.frequencyPenalty',      'payara.ai.frequencyPenalty');
+        num('payara.ai.repeatPenalty',         'payara.ai.repeatPenalty');
+        num('payara.ai.seed',                  'payara.ai.seed');
+        num('payara.ai.timeout',               'payara.ai.timeout');
+        num('payara.ai.maxRetries',            'payara.ai.maxRetries');
+        num('payara.ai.chatHistoryLimit',      'payara.ai.chat.history.limit');
+
+        bool('payara.ai.stream',                    'payara.ai.stream');
+        bool('payara.ai.logRequests',               'payara.ai.log.requests');
+        bool('payara.ai.logResponses',              'payara.ai.log.responses');
+        bool('payara.ai.allowCodeExecution',        'payara.ai.allowCodeExecution');
+        bool('payara.ai.includeCodeExecutionOutput','payara.ai.includeCodeExecutionOutput');
+        bool('payara.ai.chatHistory',               'payara.ai.chat.history');
+
+        return flags;
+    }
+
     public startPayaraServerMaven(
         debugConfig: DebugConfiguration | undefined,
         onData: (data: string) => any,
@@ -526,7 +683,13 @@ export class Maven implements Build {
             commands.push(`-Ddebug=true`);
             commands.push(`-DdebugPort=${debugConfig.port}`);
         }
-        return this.fireCommand(commands, onData, onExit, onError);
+        commands.push(...this.getAIAgentFlags());
+        return this.fireCommandInteractive(
+            commands,
+            `Payara Server Maven - ${this.workspaceFolder.name}`,
+            onData, onExit, onError,
+            this.getAIAgentEnv()
+        );
     }
 
     public devPayaraServerMaven(
@@ -542,7 +705,13 @@ export class Maven implements Build {
             commands.push(`-Dpayara.debug=true`);
             commands.push(`-Dpayara.debug.port=${debugConfig.port}`);
         }
-        return this.fireCommand(commands, onData, onExit, onError);
+        commands.push(...this.getAIAgentFlags());
+        return this.fireCommandInteractive(
+            commands,
+            `Payara Server Maven - ${this.workspaceFolder.name}`,
+            onData, onExit, onError,
+            this.getAIAgentEnv()
+        );
     }
 
     public stopPayaraServerMaven(

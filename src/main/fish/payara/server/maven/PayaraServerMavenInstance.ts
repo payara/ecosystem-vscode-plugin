@@ -163,6 +163,12 @@ export class PayaraServerMavenInstance extends vscode.TreeItem implements vscode
         this.process = process;
     }
 
+    public sendCommand(input: string): void {
+        if (this.process?.stdin) {
+            this.process.stdin.write(input + '\n');
+        }
+    }
+
     public getOutputChannel(): vscode.OutputChannel {
         return this.outputChannel;
     }

@@ -32,6 +32,7 @@ import * as path from 'path';
 import { PayaraRemoteServerInstance } from './fish/payara/server/PayaraRemoteServerInstance';
 import { DeployOption } from './fish/payara/common/DeployOption';
 import { Uri, WorkspaceFolder } from 'vscode';
+import { selectAIModel } from './fish/payara/ai/AIModelFetcher';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
@@ -404,7 +405,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			payaraServerMaven => payaraServerMavenInstanceController.deploySettings(payaraServerMaven)
 		)
 	);
-
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'payara.ai.selectModel',
+			() => selectAIModel()
+		)
+	);
 	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
 		let metadataChanged = true;

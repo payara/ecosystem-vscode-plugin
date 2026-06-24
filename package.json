@@ -72,7 +72,8 @@
 		"onCommand:payara.server.maven.jdk.home",
 		"onCommand:payara.server.maven.deploy.settings",
 		"onView:payaraServerMavenExplorer",
-		"onView:payaraServerMaven"
+		"onView:payaraServerMaven",
+		"onCommand:payara.ai.selectModel"
 	],
 	"main": "./out/main/extension.js",
 	"contributes": {
@@ -401,6 +402,11 @@
 			{
 				"command": "payara.server.maven.deploy.settings",
 				"title": "Deployment settings",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.ai.selectModel",
+				"title": "Select AI Model",
 				"category": "Payara"
 			}
 		],
@@ -914,12 +920,12 @@
 				{
 					"command": "payara.server.maven.jdk.home",
 					"when": "viewItem == loadingPayaraServerMaven || viewItem == runningPayaraServerMaven || viewItem == stoppedPayaraServerMaven",
-					"group": "payara-server-maven@5"
+					"group": "payara-server-maven@6"
 				},
 				{
 					"command": "payara.server.maven.deploy.settings",
 					"when": "viewItem == loadingPayaraServerMaven || viewItem == runningPayaraServerMaven || viewItem == stoppedPayaraServerMaven",
-					"group": "payara-server-maven@6"
+					"group": "payara-server-maven@7"
 				},
 				{
 					"command": "payara.server.app.deploy",
@@ -937,6 +943,198 @@
 					"group": "java-project@1"
 				}
 			]
+		},
+		"configuration": {
+			"title": "Payara",
+			"properties": {
+				"payara.ai.agent": {
+					"order": 0,
+					"type": "boolean",
+					"default": false,
+					"description": "Enable the Payara AI Agent. When disabled, no AI properties are passed to Maven."
+				},
+				"payara.ai.apiKey": {
+					"order": 1,
+					"type": "string",
+					"default": "",
+					"description": "API key for the AI provider used by Payara AI Agent."
+				},
+				"payara.ai.provider": {
+					"order": 2,
+					"type": "string",
+					"default": "OPEN_AI",
+					"enum": [
+						"OPEN_AI",
+						"CUSTOM_OPEN_AI",
+						"GOOGLE",
+						"DEEPINFRA",
+						"DEEPSEEK",
+						"GROQ",
+						"MISTRAL",
+						"OLLAMA",
+						"ANTHROPIC",
+						"LM_STUDIO",
+						"GPT4ALL"
+					],
+					"description": "AI provider for Payara AI Agent."
+				},
+				"payara.ai.model": {
+					"order": 3,
+					"type": "string",
+					"default": "",
+					"markdownDescription": "AI model name. Click **[Select AI Model](command:payara.ai.selectModel)** to browse available models for the selected provider."
+				},
+				"payara.ai.providerLocation": {
+					"order": 4,
+					"type": "string",
+					"default": "",
+					"description": "Base URL for local or custom AI provider (e.g., http://localhost:11434 for Ollama)."
+				},
+				"payara.ai.organizationId": {
+					"type": "string",
+					"default": "",
+					"description": "Organization ID for OpenAI or compatible providers."
+				},
+				"payara.ai.temperature": {
+					"type": [
+						"number",
+						"null"
+					],
+					"default": null,
+					"description": "Sampling temperature (0.0-2.0). Higher values produce more random output."
+				},
+				"payara.ai.topP": {
+					"type": [
+						"number",
+						"null"
+					],
+					"default": null,
+					"description": "Nucleus sampling probability mass (0.0-1.0)."
+				},
+				"payara.ai.topK": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Top-K sampling limit. Supported by some providers (e.g., Ollama, Google)."
+				},
+				"payara.ai.maxTokens": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Maximum number of tokens in the response (legacy OpenAI parameter)."
+				},
+				"payara.ai.maxCompletionTokens": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Maximum completion tokens (newer OpenAI models)."
+				},
+				"payara.ai.maxOutputTokens": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Maximum output tokens (Anthropic / Google)."
+				},
+				"payara.ai.presencePenalty": {
+					"type": [
+						"number",
+						"null"
+					],
+					"default": null,
+					"description": "Presence penalty (-2.0-2.0) to discourage topic repetition."
+				},
+				"payara.ai.frequencyPenalty": {
+					"type": [
+						"number",
+						"null"
+					],
+					"default": null,
+					"description": "Frequency penalty (-2.0-2.0) to reduce word repetition."
+				},
+				"payara.ai.repeatPenalty": {
+					"type": [
+						"number",
+						"null"
+					],
+					"default": null,
+					"description": "Repeat penalty for local models such as Ollama."
+				},
+				"payara.ai.seed": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Random seed for deterministic outputs."
+				},
+				"payara.ai.timeout": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "HTTP request timeout in seconds. Defaults to 600 if not set."
+				},
+				"payara.ai.maxRetries": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Number of retry attempts on transient errors."
+				},
+				"payara.ai.stream": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable streaming responses from the AI provider."
+				},
+				"payara.ai.logRequests": {
+					"type": "boolean",
+					"default": false,
+					"description": "Log outgoing AI requests to the console (useful for debugging)."
+				},
+				"payara.ai.logResponses": {
+					"type": "boolean",
+					"default": false,
+					"description": "Log AI responses to the console (useful for debugging)."
+				},
+				"payara.ai.allowCodeExecution": {
+					"type": "boolean",
+					"default": false,
+					"description": "Allow the AI agent to execute code snippets it generates."
+				},
+				"payara.ai.includeCodeExecutionOutput": {
+					"type": "boolean",
+					"default": false,
+					"description": "Include code execution output in the AI agent response."
+				},
+				"payara.ai.chatHistory": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable chat history so the AI agent remembers previous messages in a session."
+				},
+				"payara.ai.chatHistoryLimit": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Maximum number of past exchanges kept in chat history. Defaults to 3."
+				},
+				"payara.ai.customHeaders": {
+					"type": "string",
+					"default": "",
+					"description": "Semicolon-separated custom HTTP headers sent to the AI provider (e.g., X-Header1=value1;X-Header2=value2)."
+				}
+			}
 		}
 	},
 	"scripts": {
@@ -944,6 +1142,7 @@
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
 		"pretest": "yarn run compile",
+		"test:unit": "mocha",
 		"test:e2e": "playwright test -c src/test/e2e/playwright.config.ts",
 		"tslint": "tslint -t verbose src/**/*.ts"
 	},
@@ -969,11 +1168,14 @@
 		"@types/lodash": "^4.17.24",
 		"@types/mocha": "10.0.10",
 		"@types/node": "^25.4.0",
+		"@types/sinon": "^17.0.3",
 		"@types/vscode": "^1.109.0",
 		"@vscode/test-electron": "2.5.2",
 		"glob": "^13.0.6",
 		"mocha": "11.7.5",
 		"playwright": "^1.58.2",
+		"sinon": "^18.0.0",
+		"ts-node": "^10.9.2",
 		"tslint": "^6.1.0",
 		"typescript": "^5.9.3"
 	},
