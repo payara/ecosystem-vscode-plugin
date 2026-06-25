@@ -444,7 +444,8 @@
 				{
 					"type": "webview",
 					"id": "payara.ai.chat",
-					"name": "Payara AI Agent"
+					"name": "Payara AI Agent",
+					"retainContextWhenHidden": true
 				}
 			]
 		},
@@ -467,11 +468,19 @@
 		"viewsWelcome": [
 			{
 				"view": "payaraServerMaven",
-				"contents": "No Maven project found in the current workspace.\nOpen a folder containing a pom.xml to get started."
+				"contents": "No Maven projects are open in the Explorer.\n[Open Project](command:workbench.action.files.openFolder)"
 			},
 			{
 				"view": "payaraServerMavenExplorer",
-				"contents": "No Maven project found in the current workspace.\nOpen a folder containing a pom.xml to get started."
+				"contents": "No Maven projects are open in the Explorer.\n[Open Project](command:workbench.action.files.openFolder)"
+			},
+			{
+				"view": "payaraMicro",
+				"contents": "No Maven projects are open in the Explorer.\n[Open Project](command:workbench.action.files.openFolder)"
+			},
+			{
+				"view": "payaraMicroExplorer",
+				"contents": "No Maven projects are open in the Explorer.\n[Open Project](command:workbench.action.files.openFolder)"
 			}
 		],
 		"menus": {

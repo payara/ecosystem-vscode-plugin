@@ -207,13 +207,23 @@ export class Maven implements Build {
         });
 
         const handleData = (data: string | Buffer): void => {
-            const text = data.toString().replace(/\r?\n/g, '\r\n');
+            const raw = data.toString();
+            const filtered = raw
+                .split(/\r?\n/)
+                .filter(line => {
+                    const t = line.trim();
+                    return t !== '%%PAYARA-AI-START%%'
+                        && t !== '%%PAYARA-AI-END%%'
+                        && !t.startsWith('%%PAYARA-AI-STREAM-URL%%');
+                })
+                .join('\n')
+                .replace(/\n/g, '\r\n');
             if (terminalOpen) {
-                writeEmitter.fire(text);
+                writeEmitter.fire(filtered);
             } else {
-                outputBuffer.push(text);
+                outputBuffer.push(filtered);
             }
-            dataCallback(data.toString());
+            dataCallback(raw);
         };
 
         if (mvnProcess.stdout !== null) {
