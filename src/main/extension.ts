@@ -18,6 +18,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as cp from 'child_process';
 import { PayaraInstanceProvider } from "./fish/payara/server/PayaraInstanceProvider";
 import { PayaraServerInstanceController } from "./fish/payara/server/PayaraServerInstanceController";
 import { PayaraServerTreeDataProvider } from "./fish/payara/server/PayaraServerTreeDataProvider";
@@ -33,6 +34,29 @@ import { PayaraRemoteServerInstance } from './fish/payara/server/PayaraRemoteSer
 import { DeployOption } from './fish/payara/common/DeployOption';
 import { Uri, WorkspaceFolder } from 'vscode';
 import { selectAIModel } from './fish/payara/ai/AIModelFetcher';
+import { PayaraAIChatViewProvider } from './fish/payara/ai/PayaraAIChatViewProvider';
+
+let _mavenInstanceProvider: PayaraServerMavenInstanceProvider | undefined;
+
+export function deactivate(): void {
+    killAllMavenInstances();
+}
+
+function killAllMavenInstances(): void {
+    if (!_mavenInstanceProvider) { return; }
+    for (const instance of _mavenInstanceProvider.getAllInstances()) {
+        const proc = instance.getProcess();
+        if (proc?.pid && !proc.killed) {
+            try {
+                if (process.platform === 'win32') {
+                    cp.execSync(`taskkill /F /T /PID ${proc.pid}`, { stdio: 'ignore' });
+                } else {
+                    proc.kill('SIGTERM');
+                }
+            } catch (_) { /* already gone */ }
+        }
+    }
+}
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
@@ -46,8 +70,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	const payaraMicroProjectGenerator: PayaraMicroProjectGenerator = new PayaraMicroProjectGenerator(payaraMicroInstanceController);
 
 	const payaraServerMavenInstanceProvider: PayaraServerMavenInstanceProvider = new PayaraServerMavenInstanceProvider(context);
+	_mavenInstanceProvider = payaraServerMavenInstanceProvider;
 	const payaraServerMavenTree: PayaraServerMavenTreeDataProvider = new PayaraServerMavenTreeDataProvider(context, payaraServerMavenInstanceProvider);
-	const payaraServerMavenInstanceController: PayaraServerMavenInstanceController = new PayaraServerMavenInstanceController(context, payaraServerMavenInstanceProvider, context.extensionPath);
+	const payaraAiChatProvider: PayaraAIChatViewProvider = new PayaraAIChatViewProvider(context.extensionUri);
+	const payaraServerMavenInstanceController: PayaraServerMavenInstanceController = new PayaraServerMavenInstanceController(context, payaraServerMavenInstanceProvider, context.extensionPath, payaraAiChatProvider);
+
+	// Kill any still-running Payara Server Maven process trees when VS Code shuts down.
+	context.subscriptions.push({ dispose: killAllMavenInstances });
 
 	context.subscriptions.push(
 		vscode.window.registerTreeDataProvider(
@@ -77,6 +106,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	context.subscriptions.push(
 		vscode.window.registerTreeDataProvider(
 			'payaraServerMaven', payaraServerMavenTree
+		)
+	);
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(
+			PayaraAIChatViewProvider.viewType,
+			payaraAiChatProvider
 		)
 	);
 	context.subscriptions.push(
@@ -487,8 +522,5 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			}
 		}
 	});
-
 }
 
-// this method is called when your extension is deactivated
-export function deactivate() { }

@@ -228,6 +228,23 @@ export class Maven implements Build {
             exitCallback(code);
         });
 
+        // Kill the entire process tree (cmd.exe + Maven JVM + Payara JVM) when
+        // the Node.js extension host exits, so no orphaned server is left behind.
+        const killTree = () => {
+            if (mvnProcess.pid && !mvnProcess.killed) {
+                try {
+                    if (JavaUtils.IS_WIN) {
+                        cp.execSync(`taskkill /F /T /PID ${mvnProcess.pid}`, { stdio: 'ignore' });
+                    } else {
+                        mvnProcess.kill('SIGTERM');
+                    }
+                } catch (_) { /* already gone */ }
+            }
+        };
+        process.on('exit', killTree);
+        // Remove the listener once Maven exits normally to avoid accumulating stale listeners.
+        mvnProcess.once('exit', () => process.removeListener('exit', killTree));
+
         const pty: vscode.Pseudoterminal = {
             onDidWrite: writeEmitter.event,
             open: () => {
@@ -253,8 +270,14 @@ export class Maven implements Build {
                 }
             },
             close: () => {
-                if (!mvnProcess.killed) {
-                    mvnProcess.kill();
+                if (mvnProcess.pid && !mvnProcess.killed) {
+                    try {
+                        if (JavaUtils.IS_WIN) {
+                            cp.execSync(`taskkill /F /T /PID ${mvnProcess.pid}`, { stdio: 'ignore' });
+                        } else {
+                            mvnProcess.kill('SIGTERM');
+                        }
+                    } catch (_) { /* already gone */ }
                 }
                 writeEmitter.dispose();
             }
@@ -626,7 +649,7 @@ export class Maven implements Build {
         const config = vscode.workspace.getConfiguration();
         if (config.get<boolean>('payara.ai.agent') !== true) { return []; }
 
-        const flags: string[] = ['-Dpayara.ai.agent=true'];
+        const flags: string[] = ['-Dpayara.ai.agent=true', '-Dpayara.ai.chat.markers=true'];
 
         const str = (key: string, prop: string) => {
             const v = config.get<string>(key);

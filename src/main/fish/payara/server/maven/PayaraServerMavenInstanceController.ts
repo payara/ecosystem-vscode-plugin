@@ -24,13 +24,15 @@ import { PayaraInstanceController } from "../../common/PayaraInstanceController"
 import { DebugManager } from '../../project/DebugManager';
 import { InstanceState, PayaraServerMavenInstance } from "./PayaraServerMavenInstance";
 import { PayaraServerMavenInstanceProvider } from './PayaraServerMavenInstanceProvider';
+import { PayaraAIChatViewProvider } from '../../ai/PayaraAIChatViewProvider';
 
 export class PayaraServerMavenInstanceController extends PayaraInstanceController {
 
     constructor(
         context: vscode.ExtensionContext,
         private instanceProvider: PayaraServerMavenInstanceProvider,
-        private extensionPath: string) {
+        private extensionPath: string,
+        private chatProvider?: PayaraAIChatViewProvider) {
         super(context);
     }
 
@@ -52,6 +54,7 @@ export class PayaraServerMavenInstanceController extends PayaraInstanceControlle
             let process = payaraServerMaven.getBuild()
                 .startPayaraServerMaven(debugConfig,
                     async data => {
+                        this.chatProvider?.handleData(data);
                         if (!payaraServerMaven.isStarted()) {
                             if (debugConfig && data.indexOf("Listening for transport dt_socket at address:") > -1) {
                                 vscode.debug.startDebugging(workspaceFolder, debugConfig);
@@ -59,11 +62,13 @@ export class PayaraServerMavenInstanceController extends PayaraInstanceControlle
                             }
                             if (data.indexOf("application deployed successfully") > -1) {
                                 await payaraServerMaven.setState(InstanceState.RUNNING);
+                                this.chatProvider?.onInstanceStarted(payaraServerMaven);
                             }
                         }
                     },
                     async (code) => {
                         await payaraServerMaven.setState(InstanceState.STOPPED);
+                        this.chatProvider?.onInstanceStopped();
                         if (code !== 0) {
                             console.warn(`startServerMaven task failed with exit code ${code}`);
                         }
@@ -71,6 +76,7 @@ export class PayaraServerMavenInstanceController extends PayaraInstanceControlle
                     async (error) => {
                         vscode.window.showErrorMessage(`Error on executing startServerMaven task: ${error.message}`);
                         await payaraServerMaven.setState(InstanceState.STOPPED);
+                        this.chatProvider?.onInstanceStopped();
                     }
                 );
             if (process) {
@@ -103,6 +109,7 @@ export class PayaraServerMavenInstanceController extends PayaraInstanceControlle
                 .devPayaraServerMaven(
                     debugConfig,
                     async data => {
+                        this.chatProvider?.handleData(data);
                         if (!payaraServerMaven.isStarted()) {
                             if (debugConfig && data.indexOf("Listening for transport dt_socket at address:") > -1) {
                                 vscode.debug.startDebugging(workspaceFolder, debugConfig);
@@ -110,11 +117,13 @@ export class PayaraServerMavenInstanceController extends PayaraInstanceControlle
                             }
                             if (data.indexOf("application deployed successfully") > -1) {
                                 await payaraServerMaven.setState(InstanceState.RUNNING);
+                                this.chatProvider?.onInstanceStarted(payaraServerMaven);
                             }
                         }
                     },
                     async (code) => {
                         await payaraServerMaven.setState(InstanceState.STOPPED);
+                        this.chatProvider?.onInstanceStopped();
                         if (code !== 0) {
                             console.warn(`devServerMaven task failed with exit code ${code}`);
                         }
@@ -122,6 +131,7 @@ export class PayaraServerMavenInstanceController extends PayaraInstanceControlle
                     async (error) => {
                         vscode.window.showErrorMessage(`Error on executing devServerMaven task: ${error.message}`);
                         await payaraServerMaven.setState(InstanceState.STOPPED);
+                        this.chatProvider?.onInstanceStopped();
                     }
                 );
             if (process) {

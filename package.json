@@ -73,7 +73,8 @@
 		"onCommand:payara.server.maven.deploy.settings",
 		"onView:payaraServerMavenExplorer",
 		"onView:payaraServerMaven",
-		"onCommand:payara.ai.selectModel"
+		"onCommand:payara.ai.selectModel",
+		"onView:payara.ai.chat"
 	],
 	"main": "./out/main/extension.js",
 	"contributes": {
@@ -438,6 +439,13 @@
 					"id": "payaraServerMaven",
 					"name": "Server Projects"
 				}
+			],
+			"payaraAiPanel": [
+				{
+					"type": "webview",
+					"id": "payara.ai.chat",
+					"name": "Payara AI Agent"
+				}
 			]
 		},
 		"viewsContainers": {
@@ -447,8 +455,25 @@
 					"title": "Payara",
 					"icon": "resources/payara.svg"
 				}
+			],
+			"panel": [
+				{
+					"id": "payaraAiPanel",
+					"title": "Payara AI Agent",
+					"icon": "resources/payara.svg"
+				}
 			]
 		},
+		"viewsWelcome": [
+			{
+				"view": "payaraServerMaven",
+				"contents": "No Maven project found in the current workspace.\nOpen a folder containing a pom.xml to get started."
+			},
+			{
+				"view": "payaraServerMavenExplorer",
+				"contents": "No Maven project found in the current workspace.\nOpen a folder containing a pom.xml to get started."
+			}
+		],
 		"menus": {
 			"view/title": [
 				{

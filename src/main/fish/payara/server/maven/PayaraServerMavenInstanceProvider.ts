@@ -18,6 +18,7 @@
  */
 
 import * as vscode from "vscode";
+import * as path from "path";
 import * as _ from "lodash";
 import { PayaraServerMavenInstance } from "./PayaraServerMavenInstance";
 import { BuildSupport } from "../../project/BuildSupport";
@@ -30,6 +31,10 @@ export class PayaraServerMavenInstanceProvider {
     constructor(public context: vscode.ExtensionContext) {
     }
 
+    public getAllInstances(): PayaraServerMavenInstance[] {
+        return Array.from(this.instances.values());
+    }
+
     public getServerMavenInstances(): PayaraServerMavenInstance[] {
         let instances: Array<PayaraServerMavenInstance> = new Array<PayaraServerMavenInstance>();
         if (vscode.workspace.workspaceFolders) {
@@ -38,12 +43,13 @@ export class PayaraServerMavenInstanceProvider {
                     let instance = this.instances.get(folder.uri.fsPath);
                     if (!instance) {
                         let build = BuildSupport.getBuild(null, folder.uri);
-                        instance = new PayaraServerMavenInstance(this.context, build.getBuildReader().getArtifactId(), folder.uri);
+                        const artifactId = build.getBuildReader().getArtifactId() || path.basename(folder.uri.fsPath);
+                        instance = new PayaraServerMavenInstance(this.context, artifactId, folder.uri);
                         this.instances.set(folder.uri.fsPath, instance);
                     }
                     instances.push(instance);
                 } catch (e) {
-                    // ..skip
+                    // skip folders that aren't valid Maven projects
                 }
             }
         }
