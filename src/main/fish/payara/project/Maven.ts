@@ -165,6 +165,22 @@ export class Maven implements Build {
         return mvnProcess;
     }
 
+    public registerKillOnExit(proc: ChildProcess): void {
+        const killTree = () => {
+            if (proc.pid && !proc.killed) {
+                try {
+                    if (JavaUtils.IS_WIN) {
+                        cp.execSync(`taskkill /F /T /PID ${proc.pid}`, { stdio: 'ignore' });
+                    } else {
+                        proc.kill('SIGTERM');
+                    }
+                } catch (_) { /* already gone */ }
+            }
+        };
+        process.on('exit', killTree);
+        proc.once('exit', () => process.removeListener('exit', killTree));
+    }
+
     public fireCommandInteractive(
         commands: string[],
         terminalName: string,
@@ -495,7 +511,9 @@ export class Maven implements Build {
         if (debugConfig) {
             commands.push(`-Ddebug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugConfig.port}`);
         }
-        return this.fireCommand(commands, onData, onExit, onError);
+        const proc = this.fireCommand(commands, onData, onExit, onError);
+        this.registerKillOnExit(proc);
+        return proc;
 
     }
 
@@ -511,7 +529,9 @@ export class Maven implements Build {
         if (debugConfig) {
             commands.push(`-Ddebug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugConfig.port}`);
         }
-        return this.fireCommand(commands, onData, onExit, onError);
+        const proc = this.fireCommand(commands, onData, onExit, onError);
+        this.registerKillOnExit(proc);
+        return proc;
     }
 
     public reloadPayaraMicro(

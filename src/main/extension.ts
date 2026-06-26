@@ -37,14 +37,18 @@ import { selectAIModel } from './fish/payara/ai/AIModelFetcher';
 import { PayaraAIChatViewProvider } from './fish/payara/ai/PayaraAIChatViewProvider';
 
 let _mavenInstanceProvider: PayaraServerMavenInstanceProvider | undefined;
+let _microInstanceProvider: PayaraMicroInstanceProvider | undefined;
 
 export function deactivate(): void {
     killAllMavenInstances();
 }
 
 function killAllMavenInstances(): void {
-    if (!_mavenInstanceProvider) { return; }
-    for (const instance of _mavenInstanceProvider.getAllInstances()) {
+    const instances = [
+        ...(_mavenInstanceProvider?.getAllInstances() ?? []),
+        ...(_microInstanceProvider?.getMicroInstances() ?? []),
+    ];
+    for (const instance of instances) {
         const proc = instance.getProcess();
         if (proc?.pid && !proc.killed) {
             try {
@@ -65,6 +69,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	const payaraServerInstanceController: PayaraServerInstanceController = new PayaraServerInstanceController(context, payaraServerInstanceProvider, context.extensionPath);
 
 	const payaraMicroInstanceProvider: PayaraMicroInstanceProvider = new PayaraMicroInstanceProvider(context);
+	_microInstanceProvider = payaraMicroInstanceProvider;
 	const payaraMicroTree: PayaraMicroTreeDataProvider = new PayaraMicroTreeDataProvider(context, payaraMicroInstanceProvider);
 	const payaraMicroInstanceController: PayaraMicroInstanceController = new PayaraMicroInstanceController(context, payaraMicroInstanceProvider, context.extensionPath);
 	const payaraMicroProjectGenerator: PayaraMicroProjectGenerator = new PayaraMicroProjectGenerator(payaraMicroInstanceController);
