@@ -2,7 +2,7 @@
 	"name": "payara-vscode",
 	"displayName": "Payara Tools",
 	"description": "Payara Tools for Visual Studio Code",
-	"version": "1.7.0-SNAPSHOT",
+	"version": "1.6.0-SNAPSHOT",
 	"publisher": "Payara",
 	"icon": "resources/payara.png",
 	"repository": {
@@ -51,6 +51,8 @@
 		"onCommand:payara.micro.refresh.all",
 		"onCommand:payara.micro.start",
 		"onCommand:payara.micro.start.debug",
+		"onCommand:payara.micro.start.dev",
+		"onCommand:payara.micro.start.dev.debug",
 		"onCommand:payara.micro.reload",
 		"onCommand:payara.micro.stop",
 		"onCommand:payara.micro.bundle",
@@ -59,7 +61,20 @@
 		"onView:payaraServerExplorer",
 		"onView:payaraServer",
 		"onView:payaraMicroExplorer",
-		"onView:payaraMicro"
+		"onView:payaraMicro",
+		"onCommand:payara.server.maven.refresh",
+		"onCommand:payara.server.maven.refresh.all",
+		"onCommand:payara.server.maven.start",
+		"onCommand:payara.server.maven.start.debug",
+		"onCommand:payara.server.maven.start.dev",
+		"onCommand:payara.server.maven.start.dev.debug",
+		"onCommand:payara.server.maven.stop",
+		"onCommand:payara.server.maven.jdk.home",
+		"onCommand:payara.server.maven.deploy.settings",
+		"onView:payaraServerMavenExplorer",
+		"onView:payaraServerMaven",
+		"onCommand:payara.ai.selectModel",
+		"onView:payara.ai.chat"
 	],
 	"main": "./out/main/extension.js",
 	"contributes": {
@@ -263,6 +278,24 @@
 				}
 			},
 			{
+				"command": "payara.micro.start.dev",
+				"title": "Start (Dev Mode)",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/dev.svg",
+					"dark": "resources/theme/dark/dev.svg"
+				}
+			},
+			{
+				"command": "payara.micro.start.dev.debug",
+				"title": "Start (Dev Mode) in Debug",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/dev-debug.svg",
+					"dark": "resources/theme/dark/dev-debug.svg"
+				}
+			},
+			{
 				"command": "payara.micro.reload",
 				"title": "Reload",
 				"category": "Payara",
@@ -298,6 +331,84 @@
 				"command": "payara.micro.deploy.settings",
 				"title": "Deployment settings",
 				"category": "Payara"
+			},
+			{
+				"command": "payara.server.maven.refresh.all",
+				"title": "Refresh All",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/refresh.svg",
+					"dark": "resources/theme/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.refresh",
+				"title": "Refresh",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/refresh.svg",
+					"dark": "resources/theme/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.start",
+				"title": "Start",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/start.svg",
+					"dark": "resources/theme/dark/start.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.start.debug",
+				"title": "Start in Debug Mode",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/debug.svg",
+					"dark": "resources/theme/dark/debug.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.start.dev",
+				"title": "Start (Dev Mode)",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/dev.svg",
+					"dark": "resources/theme/dark/dev.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.start.dev.debug",
+				"title": "Start (Dev Mode) in Debug",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/dev-debug.svg",
+					"dark": "resources/theme/dark/dev-debug.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.stop",
+				"title": "Stop",
+				"category": "Payara",
+				"icon": {
+					"light": "resources/theme/light/stop.svg",
+					"dark": "resources/theme/dark/stop.svg"
+				}
+			},
+			{
+				"command": "payara.server.maven.jdk.home",
+				"title": "JDK Home",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.server.maven.deploy.settings",
+				"title": "Deployment settings",
+				"category": "Payara"
+			},
+			{
+				"command": "payara.ai.selectModel",
+				"title": "Select AI Model",
+				"category": "Payara"
 			}
 		],
 		"views": {
@@ -309,6 +420,10 @@
 				{
 					"id": "payaraMicroExplorer",
 					"name": "Payara Micro Instances"
+				},
+				{
+					"id": "payaraServerMavenExplorer",
+					"name": "Payara Server Projects"
 				}
 			],
 			"payaraActivitybar": [
@@ -319,6 +434,18 @@
 				{
 					"id": "payaraMicro",
 					"name": "Micro Instances"
+				},
+				{
+					"id": "payaraServerMaven",
+					"name": "Server Projects"
+				}
+			],
+			"payaraAiPanel": [
+				{
+					"type": "webview",
+					"id": "payara.ai.chat",
+					"name": "Payara AI Agent",
+					"retainContextWhenHidden": true
 				}
 			]
 		},
@@ -329,8 +456,33 @@
 					"title": "Payara",
 					"icon": "resources/payara.svg"
 				}
+			],
+			"panel": [
+				{
+					"id": "payaraAiPanel",
+					"title": "Payara AI Agent",
+					"icon": "resources/payara.svg"
+				}
 			]
 		},
+		"viewsWelcome": [
+			{
+				"view": "payaraServerMaven",
+				"contents": "No Maven projects are open in the Explorer.\n[Open Project](command:workbench.action.files.openFolder)"
+			},
+			{
+				"view": "payaraServerMavenExplorer",
+				"contents": "No Maven projects are open in the Explorer.\n[Open Project](command:workbench.action.files.openFolder)"
+			},
+			{
+				"view": "payaraMicro",
+				"contents": "No Maven projects are open in the Explorer.\n[Open Project](command:workbench.action.files.openFolder)"
+			},
+			{
+				"view": "payaraMicroExplorer",
+				"contents": "No Maven projects are open in the Explorer.\n[Open Project](command:workbench.action.files.openFolder)"
+			}
+		],
 		"menus": {
 			"view/title": [
 				{
@@ -362,6 +514,11 @@
 					"command": "payara.micro.stop",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro",
 					"group": "navigation@5"
+				},
+				{
+					"command": "payara.server.maven.refresh.all",
+					"when": "view == payaraServerMavenExplorer || view == payaraServerMaven",
+					"group": "navigation@6"
 				}
 			],
 			"commandPalette": [
@@ -470,6 +627,14 @@
 					"when": "never"
 				},
 				{
+					"command": "payara.micro.start.dev",
+					"when": "never"
+				},
+				{
+					"command": "payara.micro.start.dev.debug",
+					"when": "never"
+				},
+				{
 					"command": "payara.micro.reload",
 					"when": "never"
 				},
@@ -487,6 +652,34 @@
 				},
 				{
 					"command": "payara.micro.deploy.settings",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.start",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.start.debug",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.start.dev",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.start.dev.debug",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.stop",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.jdk.home",
+					"when": "never"
+				},
+				{
+					"command": "payara.server.maven.deploy.settings",
 					"when": "never"
 				}
 			],
@@ -644,6 +837,16 @@
 					"group": "inline"
 				},
 				{
+					"command": "payara.micro.start.dev",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "inline"
+				},
+				{
+					"command": "payara.micro.start.dev.debug",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "inline"
+				},
+				{
 					"command": "payara.micro.reload",
 					"when": "viewItem == runningPayaraMicro",
 					"group": "inline"
@@ -664,29 +867,99 @@
 					"group": "payara-micro@1"
 				},
 				{
+					"command": "payara.micro.start.dev",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "payara-micro@2"
+				},
+				{
+					"command": "payara.micro.start.dev.debug",
+					"when": "viewItem == stoppedPayaraMicro",
+					"group": "payara-micro@3"
+				},
+				{
 					"command": "payara.micro.reload",
 					"when": "viewItem == runningPayaraMicro",
-					"group": "payara-micro@2"
+					"group": "payara-micro@4"
 				},
 				{
 					"command": "payara.micro.stop",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro",
-					"group": "payara-micro@3"
+					"group": "payara-micro@4"
 				},
 				{
 					"command": "payara.micro.bundle",
 					"when": "viewItem == stoppedPayaraMicro || viewItem == runningPayaraMicro",
-					"group": "payara-micro@4"
+					"group": "payara-micro@5"
 				},
 				{
 					"command": "payara.micro.jdk.home",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro || viewItem == stoppedPayaraMicro",
-					"group": "payara-micro@5"
+					"group": "payara-micro@6"
 				},
 				{
 					"command": "payara.micro.deploy.settings",
 					"when": "viewItem == loadingPayaraMicro || viewItem == runningPayaraMicro || viewItem == stoppedPayaraMicro",
-					"group": "payara-micro@6"
+					"group": "payara-micro@7"
+				},
+				{
+					"command": "payara.server.maven.start",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.maven.start.debug",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.maven.start.dev",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.maven.start.dev.debug",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.maven.stop",
+					"when": "viewItem == loadingPayaraServerMaven || viewItem == runningPayaraServerMaven",
+					"group": "inline"
+				},
+				{
+					"command": "payara.server.maven.start",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@0"
+				},
+				{
+					"command": "payara.server.maven.start.debug",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@1"
+				},
+				{
+					"command": "payara.server.maven.start.dev",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@2"
+				},
+				{
+					"command": "payara.server.maven.start.dev.debug",
+					"when": "viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@3"
+				},
+				{
+					"command": "payara.server.maven.stop",
+					"when": "viewItem == loadingPayaraServerMaven || viewItem == runningPayaraServerMaven",
+					"group": "payara-server-maven@4"
+				},
+				{
+					"command": "payara.server.maven.jdk.home",
+					"when": "viewItem == loadingPayaraServerMaven || viewItem == runningPayaraServerMaven || viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@6"
+				},
+				{
+					"command": "payara.server.maven.deploy.settings",
+					"when": "viewItem == loadingPayaraServerMaven || viewItem == runningPayaraServerMaven || viewItem == stoppedPayaraServerMaven",
+					"group": "payara-server-maven@7"
 				},
 				{
 					"command": "payara.server.app.deploy",
@@ -704,6 +977,198 @@
 					"group": "java-project@1"
 				}
 			]
+		},
+		"configuration": {
+			"title": "Payara",
+			"properties": {
+				"payara.ai.agent": {
+					"order": 0,
+					"type": "boolean",
+					"default": false,
+					"description": "Enable the Payara AI Agent. When disabled, no AI properties are passed to Maven."
+				},
+				"payara.ai.apiKey": {
+					"order": 1,
+					"type": "string",
+					"default": "",
+					"description": "API key for the AI provider used by Payara AI Agent."
+				},
+				"payara.ai.provider": {
+					"order": 2,
+					"type": "string",
+					"default": "OPEN_AI",
+					"enum": [
+						"OPEN_AI",
+						"CUSTOM_OPEN_AI",
+						"GOOGLE",
+						"DEEPINFRA",
+						"DEEPSEEK",
+						"GROQ",
+						"MISTRAL",
+						"OLLAMA",
+						"ANTHROPIC",
+						"LM_STUDIO",
+						"GPT4ALL"
+					],
+					"description": "AI provider for Payara AI Agent."
+				},
+				"payara.ai.model": {
+					"order": 3,
+					"type": "string",
+					"default": "",
+					"markdownDescription": "AI model name. Click **[Select AI Model](command:payara.ai.selectModel)** to browse available models for the selected provider."
+				},
+				"payara.ai.providerLocation": {
+					"order": 4,
+					"type": "string",
+					"default": "",
+					"description": "Base URL for local or custom AI provider (e.g., http://localhost:11434 for Ollama)."
+				},
+				"payara.ai.organizationId": {
+					"type": "string",
+					"default": "",
+					"description": "Organization ID for OpenAI or compatible providers."
+				},
+				"payara.ai.temperature": {
+					"type": [
+						"number",
+						"null"
+					],
+					"default": null,
+					"description": "Sampling temperature (0.0-2.0). Higher values produce more random output."
+				},
+				"payara.ai.topP": {
+					"type": [
+						"number",
+						"null"
+					],
+					"default": null,
+					"description": "Nucleus sampling probability mass (0.0-1.0)."
+				},
+				"payara.ai.topK": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Top-K sampling limit. Supported by some providers (e.g., Ollama, Google)."
+				},
+				"payara.ai.maxTokens": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Maximum number of tokens in the response (legacy OpenAI parameter)."
+				},
+				"payara.ai.maxCompletionTokens": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Maximum completion tokens (newer OpenAI models)."
+				},
+				"payara.ai.maxOutputTokens": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Maximum output tokens (Anthropic / Google)."
+				},
+				"payara.ai.presencePenalty": {
+					"type": [
+						"number",
+						"null"
+					],
+					"default": null,
+					"description": "Presence penalty (-2.0-2.0) to discourage topic repetition."
+				},
+				"payara.ai.frequencyPenalty": {
+					"type": [
+						"number",
+						"null"
+					],
+					"default": null,
+					"description": "Frequency penalty (-2.0-2.0) to reduce word repetition."
+				},
+				"payara.ai.repeatPenalty": {
+					"type": [
+						"number",
+						"null"
+					],
+					"default": null,
+					"description": "Repeat penalty for local models such as Ollama."
+				},
+				"payara.ai.seed": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Random seed for deterministic outputs."
+				},
+				"payara.ai.timeout": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "HTTP request timeout in seconds. Defaults to 600 if not set."
+				},
+				"payara.ai.maxRetries": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Number of retry attempts on transient errors."
+				},
+				"payara.ai.stream": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable streaming responses from the AI provider."
+				},
+				"payara.ai.logRequests": {
+					"type": "boolean",
+					"default": false,
+					"description": "Log outgoing AI requests to the console (useful for debugging)."
+				},
+				"payara.ai.logResponses": {
+					"type": "boolean",
+					"default": false,
+					"description": "Log AI responses to the console (useful for debugging)."
+				},
+				"payara.ai.allowCodeExecution": {
+					"type": "boolean",
+					"default": false,
+					"description": "Allow the AI agent to execute code snippets it generates."
+				},
+				"payara.ai.includeCodeExecutionOutput": {
+					"type": "boolean",
+					"default": false,
+					"description": "Include code execution output in the AI agent response."
+				},
+				"payara.ai.chatHistory": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable chat history so the AI agent remembers previous messages in a session."
+				},
+				"payara.ai.chatHistoryLimit": {
+					"type": [
+						"integer",
+						"null"
+					],
+					"default": null,
+					"description": "Maximum number of past exchanges kept in chat history. Defaults to 3."
+				},
+				"payara.ai.customHeaders": {
+					"type": "string",
+					"default": "",
+					"description": "Semicolon-separated custom HTTP headers sent to the AI provider (e.g., X-Header1=value1;X-Header2=value2)."
+				}
+			}
 		}
 	},
 	"scripts": {
@@ -711,6 +1176,7 @@
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
 		"pretest": "yarn run compile",
+		"test:unit": "mocha",
 		"test:e2e": "playwright test -c src/test/e2e/playwright.config.ts",
 		"tslint": "tslint -t verbose src/**/*.ts"
 	},
@@ -736,11 +1202,14 @@
 		"@types/lodash": "^4.17.24",
 		"@types/mocha": "10.0.10",
 		"@types/node": "^26.0.0",
+		"@types/sinon": "^17.0.3",
 		"@types/vscode": "^1.109.0",
 		"@vscode/test-electron": "2.5.2",
 		"glob": "^13.0.6",
 		"mocha": "11.7.5",
 		"playwright": "^1.58.2",
+		"sinon": "^18.0.0",
+		"ts-node": "^10.9.2",
 		"tslint": "^6.1.0",
 		"typescript": "^5.9.3"
 	},

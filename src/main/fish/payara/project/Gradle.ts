@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2026 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -278,6 +278,16 @@ export class Gradle implements Build {
         throw new Error("Gradle project generator not supported yet.");
     }
 
+    public devPayaraMicro(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        vscode.window.showWarningMessage('The dev goal is not supported for Gradle projects.');
+        return undefined;
+    }
+
     public startPayaraMicro(
         debugConfig: DebugConfiguration | undefined,
         onData: (data: string) => any,
@@ -410,6 +420,35 @@ export class Gradle implements Build {
             command: `gradle ${PayaraMicroGradlePlugin.STOP_GOAL}`,
             group: "build"
         };
+    }
+
+    public startPayaraServerMaven(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        vscode.window.showWarningMessage('The payara-server-maven-plugin is not supported for Gradle projects.');
+        return undefined;
+    }
+
+    public devPayaraServerMaven(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        vscode.window.showWarningMessage('The payara-server-maven-plugin is not supported for Gradle projects.');
+        return undefined;
+    }
+
+    public stopPayaraServerMaven(
+        processId: number,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        vscode.window.showWarningMessage('The payara-server-maven-plugin is not supported for Gradle projects.');
+        return undefined;
     }
 
 }

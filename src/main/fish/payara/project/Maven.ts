@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2024 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2026 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -33,6 +33,7 @@ import { PayaraServerTransformPlugin } from '../server/PayaraServerTransformPlug
 import { ProjectOutputWindowProvider } from './ProjectOutputWindowProvider';
 import { MavenMicroPluginReader } from './MavenMicroPluginReader';
 import { BuildReader } from './BuildReader';
+import { PayaraServerMavenPlugin } from '../server/maven/PayaraServerMavenPlugin';
 import { TaskManager } from './TaskManager';
 import { PayaraInstance } from '../common/PayaraInstance';
 import { DeployOption } from '../common/DeployOption';
@@ -161,6 +162,155 @@ export class Maven implements Build {
             mvnProcess.on('error', errorCallback);
             mvnProcess.on('exit', exitCallback);
         }
+        return mvnProcess;
+    }
+
+    public registerKillOnExit(proc: ChildProcess): void {
+        const killTree = () => {
+            if (proc.pid && !proc.killed) {
+                try {
+                    if (JavaUtils.IS_WIN) {
+                        cp.execSync(`taskkill /F /T /PID ${proc.pid}`, { stdio: 'ignore' });
+                    } else {
+                        proc.kill('SIGTERM');
+                    }
+                } catch (_) { /* already gone */ }
+            }
+        };
+        process.on('exit', killTree);
+        proc.once('exit', () => process.removeListener('exit', killTree));
+    }
+
+    public fireCommandInteractive(
+        commands: string[],
+        terminalName: string,
+        dataCallback: (data: string) => any,
+        exitCallback: (code: number) => any,
+        errorCallback: (err: Error) => any,
+        extraEnv?: Record<string, string>
+    ): ChildProcess {
+        if (commands.length <= 1) {
+            throw new Error(`Invalid command definition ${commands.join(" ")}`);
+        }
+
+        let mavenExe = commands[0];
+        let args = commands.splice(1, commands.length);
+
+        if (mavenExe === "mvnw") {
+            mavenExe = this.getWrapperFullPath();
+        } else {
+            mavenExe = this.getExecutableFullPath(undefined);
+        }
+
+        if (!this.workspaceFolder) {
+            throw new Error("WorkSpace path not found.");
+        }
+
+        let jdkHome: string | undefined;
+        let env = { ...process.env, ...extraEnv };
+        if (this.payaraInstance && (jdkHome = this.payaraInstance.getJDKHome())) {
+            env['JAVA_HOME'] = jdkHome;
+        }
+
+        const writeEmitter = new vscode.EventEmitter<string>();
+        const outputBuffer: string[] = [];
+        let terminalOpen = false;
+
+        const mvnProcess: ChildProcess = cp.spawn(mavenExe, args, {
+            cwd: this.workspaceFolder.uri.fsPath,
+            shell: true,
+            env: env
+        });
+
+        const handleData = (data: string | Buffer): void => {
+            const raw = data.toString();
+            const filtered = raw
+                .split(/\r?\n/)
+                .filter(line => {
+                    const t = line.trim();
+                    return t !== '%%PAYARA-AI-START%%'
+                        && t !== '%%PAYARA-AI-END%%'
+                        && !t.startsWith('%%PAYARA-AI-STREAM-URL%%');
+                })
+                .join('\n')
+                .replace(/\n/g, '\r\n');
+            if (terminalOpen) {
+                writeEmitter.fire(filtered);
+            } else {
+                outputBuffer.push(filtered);
+            }
+            dataCallback(raw);
+        };
+
+        if (mvnProcess.stdout !== null) {
+            mvnProcess.stdout.on('data', handleData);
+        }
+        if (mvnProcess.stderr !== null) {
+            mvnProcess.stderr.on('data', handleData);
+        }
+        mvnProcess.on('error', errorCallback);
+        mvnProcess.on('exit', (code: number) => {
+            writeEmitter.fire(`\r\nProcess exited with code ${code}\r\n`);
+            exitCallback(code);
+        });
+
+        // Kill the entire process tree (cmd.exe + Maven JVM + Payara JVM) when
+        // the Node.js extension host exits, so no orphaned server is left behind.
+        const killTree = () => {
+            if (mvnProcess.pid && !mvnProcess.killed) {
+                try {
+                    if (JavaUtils.IS_WIN) {
+                        cp.execSync(`taskkill /F /T /PID ${mvnProcess.pid}`, { stdio: 'ignore' });
+                    } else {
+                        mvnProcess.kill('SIGTERM');
+                    }
+                } catch (_) { /* already gone */ }
+            }
+        };
+        process.on('exit', killTree);
+        // Remove the listener once Maven exits normally to avoid accumulating stale listeners.
+        mvnProcess.once('exit', () => process.removeListener('exit', killTree));
+
+        const pty: vscode.Pseudoterminal = {
+            onDidWrite: writeEmitter.event,
+            open: () => {
+                terminalOpen = true;
+                if (jdkHome) {
+                    writeEmitter.fire(`Java Platform: ${jdkHome}\r\n`);
+                }
+                writeEmitter.fire(`> ${mavenExe} ${args.join(' ')}\r\n`);
+                for (const chunk of outputBuffer) {
+                    writeEmitter.fire(chunk);
+                }
+                outputBuffer.length = 0;
+            },
+            handleInput: (data: string) => {
+                if (mvnProcess.stdin) {
+                    if (data === '\r') {
+                        mvnProcess.stdin.write('\n');
+                        writeEmitter.fire('\r\n');
+                    } else {
+                        mvnProcess.stdin.write(data);
+                        writeEmitter.fire(data);
+                    }
+                }
+            },
+            close: () => {
+                if (mvnProcess.pid && !mvnProcess.killed) {
+                    try {
+                        if (JavaUtils.IS_WIN) {
+                            cp.execSync(`taskkill /F /T /PID ${mvnProcess.pid}`, { stdio: 'ignore' });
+                        } else {
+                            mvnProcess.kill('SIGTERM');
+                        }
+                    } catch (_) { /* already gone */ }
+                }
+                writeEmitter.dispose();
+            }
+        };
+
+        vscode.window.createTerminal({ name: terminalName, pty }).show(false);
+
         return mvnProcess;
     }
 
@@ -361,8 +511,27 @@ export class Maven implements Build {
         if (debugConfig) {
             commands.push(`-Ddebug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugConfig.port}`);
         }
-        return this.fireCommand(commands, onData, onExit, onError);
+        const proc = this.fireCommand(commands, onData, onExit, onError);
+        this.registerKillOnExit(proc);
+        return proc;
 
+    }
+
+    public devPayaraMicro(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultMicroDevConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        if (debugConfig) {
+            commands.push(`-Ddebug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugConfig.port}`);
+        }
+        const proc = this.fireCommand(commands, onData, onExit, onError);
+        this.registerKillOnExit(proc);
+        return proc;
     }
 
     public reloadPayaraMicro(
@@ -433,6 +602,15 @@ export class Maven implements Build {
         };
     }
 
+    private getDefaultMicroDevConfig(): TaskDefinition {
+        return {
+            label: "payara-micro-dev",
+            type: "shell",
+            command: `mvn ${PayaraMicroMavenPlugin.GROUP_ID}:${PayaraMicroMavenPlugin.ARTIFACT_ID}:${PayaraMicroMavenPlugin.DEV_GOAL}`,
+            group: "build"
+        };
+    }
+
     private getDefaultMicroBundleConfig(): TaskDefinition {
         return {
             label: "payara-micro-bundle",
@@ -484,6 +662,146 @@ export class Maven implements Build {
             label: "payara-tranform",
             type: "shell",
             command: `mvn package ${PayaraServerTransformPlugin.GROUP_ID}:${PayaraServerTransformPlugin.ARTIFACT_ID}:${PayaraServerTransformPlugin.VERSION}:${PayaraServerTransformPlugin.RUN_GOAL}`,
+            group: "build"
+        };
+    }
+
+    private getAIAgentEnv(): Record<string, string> {
+        const config = vscode.workspace.getConfiguration();
+        if (config.get<boolean>('payara.ai.agent') !== true) { return {}; }
+        const env: Record<string, string> = {};
+        const apiKey = config.get<string>('payara.ai.apiKey');
+        if (apiKey) { env['PAYARA_AI_API_KEY'] = apiKey; }
+        return env;
+    }
+
+    private getAIAgentFlags(): string[] {
+        const config = vscode.workspace.getConfiguration();
+        if (config.get<boolean>('payara.ai.agent') !== true) { return []; }
+
+        const flags: string[] = ['-Dpayara.ai.agent=true', '-Dpayara.ai.chat.markers=true'];
+
+        const str = (key: string, prop: string) => {
+            const v = config.get<string>(key);
+            if (v) { flags.push(`-D${prop}=${v}`); }
+        };
+        const num = (key: string, prop: string) => {
+            const v = config.get<number | null>(key);
+            if (v !== undefined && v !== null) { flags.push(`-D${prop}=${v}`); }
+        };
+        const bool = (key: string, prop: string) => {
+            if (config.get<boolean>(key) === true) { flags.push(`-D${prop}=true`); }
+        };
+
+        str('payara.ai.provider',         'payara.ai.provider');
+        str('payara.ai.model',            'payara.ai.model');
+        str('payara.ai.providerLocation', 'payara.ai.provider.location');
+        str('payara.ai.organizationId',   'payara.ai.organizationId');
+        str('payara.ai.customHeaders',    'payara.ai.customHeaders');
+
+        num('payara.ai.temperature',           'payara.ai.temperature');
+        num('payara.ai.topP',                  'payara.ai.topP');
+        num('payara.ai.topK',                  'payara.ai.topK');
+        num('payara.ai.maxTokens',             'payara.ai.maxTokens');
+        num('payara.ai.maxCompletionTokens',   'payara.ai.maxCompletionTokens');
+        num('payara.ai.maxOutputTokens',       'payara.ai.maxOutputTokens');
+        num('payara.ai.presencePenalty',       'payara.ai.presencePenalty');
+        num('payara.ai.frequencyPenalty',      'payara.ai.frequencyPenalty');
+        num('payara.ai.repeatPenalty',         'payara.ai.repeatPenalty');
+        num('payara.ai.seed',                  'payara.ai.seed');
+        num('payara.ai.timeout',               'payara.ai.timeout');
+        num('payara.ai.maxRetries',            'payara.ai.maxRetries');
+        num('payara.ai.chatHistoryLimit',      'payara.ai.chat.history.limit');
+
+        bool('payara.ai.stream',                    'payara.ai.stream');
+        bool('payara.ai.logRequests',               'payara.ai.log.requests');
+        bool('payara.ai.logResponses',              'payara.ai.log.responses');
+        bool('payara.ai.allowCodeExecution',        'payara.ai.allowCodeExecution');
+        bool('payara.ai.includeCodeExecutionOutput','payara.ai.includeCodeExecutionOutput');
+        bool('payara.ai.chatHistory',               'payara.ai.chat.history');
+
+        return flags;
+    }
+
+    public startPayaraServerMaven(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerMavenStartConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        if (debugConfig) {
+            commands.push(`-Ddebug=true`);
+            commands.push(`-DdebugPort=${debugConfig.port}`);
+        }
+        commands.push(...this.getAIAgentFlags());
+        return this.fireCommandInteractive(
+            commands,
+            `Payara Server Maven - ${this.workspaceFolder.name}`,
+            onData, onExit, onError,
+            this.getAIAgentEnv()
+        );
+    }
+
+    public devPayaraServerMaven(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerMavenDevConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        if (debugConfig) {
+            commands.push(`-Dpayara.debug=true`);
+            commands.push(`-Dpayara.debug.port=${debugConfig.port}`);
+        }
+        commands.push(...this.getAIAgentFlags());
+        return this.fireCommandInteractive(
+            commands,
+            `Payara Server Maven - ${this.workspaceFolder.name}`,
+            onData, onExit, onError,
+            this.getAIAgentEnv()
+        );
+    }
+
+    public stopPayaraServerMaven(
+        processId: number,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined {
+        let taskManager: TaskManager = new TaskManager();
+        let taskDefinition = taskManager.getPayaraConfig(this.workspaceFolder, this.getDefaultServerMavenStopConfig());
+        let commands = taskDefinition.command.split(/\s+/);
+        commands.push(`-DprocessId=${processId}`);
+        return this.fireCommand(commands, () => { }, onExit, onError);
+    }
+
+    private getDefaultServerMavenStartConfig(): TaskDefinition {
+        return {
+            label: "payara-server-maven-start",
+            type: "shell",
+            command: `mvn package ${PayaraServerMavenPlugin.GROUP_ID}:${PayaraServerMavenPlugin.ARTIFACT_ID}:${PayaraServerMavenPlugin.START_GOAL}`,
+            group: "build"
+        };
+    }
+
+    private getDefaultServerMavenDevConfig(): TaskDefinition {
+        return {
+            label: "payara-server-maven-dev",
+            type: "shell",
+            command: `mvn package ${PayaraServerMavenPlugin.GROUP_ID}:${PayaraServerMavenPlugin.ARTIFACT_ID}:${PayaraServerMavenPlugin.DEV_GOAL}`,
+            group: "build"
+        };
+    }
+
+    private getDefaultServerMavenStopConfig(): TaskDefinition {
+        return {
+            label: "payara-server-maven-stop",
+            type: "shell",
+            command: `mvn ${PayaraServerMavenPlugin.GROUP_ID}:${PayaraServerMavenPlugin.ARTIFACT_ID}:${PayaraServerMavenPlugin.STOP_GOAL}`,
             group: "build"
         };
     }
