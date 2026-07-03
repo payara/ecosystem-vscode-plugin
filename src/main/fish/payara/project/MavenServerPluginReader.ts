@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2026 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2026 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -20,26 +20,19 @@
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as xml2js from "xml2js";
-import { PayaraMicroMavenPlugin } from "../micro/PayaraMicroMavenPlugin";
-import { MicroPluginReader } from "./MicroPluginReader";
+import { PayaraServerMavenPlugin } from "../server/maven/PayaraServerMavenPlugin";
 import { WorkspaceFolder } from "vscode";
 
-export class MavenMicroPluginReader implements MicroPluginReader {
+export class MavenServerPluginReader {
 
     private pluginFound: boolean = false;
-
-    private deployWar: boolean | undefined;
-
-    private useUberJar: boolean | undefined;
-
-    private exploded: boolean | undefined;
 
     public constructor(public workspaceFolder: WorkspaceFolder) {
         this.parsePom();
     }
 
     public parsePom(): void {
-        let reader: MavenMicroPluginReader = this;
+        let reader: MavenServerPluginReader = this;
         let pomPath = path.join(this.workspaceFolder.uri.fsPath, 'pom.xml');
         if (fse.existsSync(pomPath)) {
             let data = fse.readFileSync(pomPath);
@@ -51,7 +44,7 @@ export class MavenMicroPluginReader implements MicroPluginReader {
             );
             parser.parseString(data,
                 function (err: any, result: any) {
-                    if(err) {
+                    if (err) {
                         throw new Error(`Unable to parse file ${pomPath} : ${err.message}`);
                     }
                     if (result.project) {
@@ -68,32 +61,23 @@ export class MavenMicroPluginReader implements MicroPluginReader {
                                 reader.pluginFound = plugin !== undefined;
                             }
                         }
-                        if (plugin
-                            && Array.isArray(plugin.configuration)
-                            && plugin.configuration[0]) {
-                            let config = plugin.configuration[0];
-                            reader.deployWar = config.deployWar ? JSON.parse(config.deployWar[0]) : undefined;
-                            reader.exploded = config.exploded ? JSON.parse(config.exploded[0]) : undefined;
-                            reader.useUberJar = config.useUberJar ? JSON.parse(config.useUberJar[0]) : undefined;
-                        }
                     }
                 }
             );
         }
-
     }
 
     private parseBuild(build: any) {
         if (build
-            && build[0] 
+            && build[0]
             && build[0].plugins
             && build[0].plugins[0]
             && build[0].plugins[0].plugin) {
             for (let plugin of build[0].plugins[0].plugin) {
                 if (plugin.groupId
                     && plugin.artifactId
-                    && plugin.groupId[0] === PayaraMicroMavenPlugin.GROUP_ID
-                    && plugin.artifactId[0] === PayaraMicroMavenPlugin.ARTIFACT_ID) {
+                    && plugin.groupId[0] === PayaraServerMavenPlugin.GROUP_ID
+                    && plugin.artifactId[0] === PayaraServerMavenPlugin.ARTIFACT_ID) {
                     return plugin;
                 }
             }
@@ -103,18 +87,6 @@ export class MavenMicroPluginReader implements MicroPluginReader {
 
     public isPluginFound(): boolean {
         return this.pluginFound;
-    }
-
-    public isDeployWarEnabled(): boolean | undefined {
-        return this.deployWar;
-    }
-
-    public isUberJarEnabled(): boolean | undefined {
-        return this.useUberJar;
-    }
-
-    public isExplodedEnabled(): boolean | undefined {
-        return this.exploded;
     }
 
 }

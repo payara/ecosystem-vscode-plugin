@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2026 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -85,6 +85,16 @@ export class DebugManager {
             hostName: ServerUtils.DEFAULT_HOST,
             name: "payara-server",
             port: 9009
+        };
+    }
+
+    public getDefaultServerMavenConfig(): DebugConfiguration {
+        return {
+            type: "java",
+            request: "attach",
+            hostName: ServerUtils.DEFAULT_HOST,
+            name: "payara-server-maven",
+            port: 5005
         };
     }
 

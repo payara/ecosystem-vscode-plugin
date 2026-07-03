@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2026 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -51,6 +51,13 @@ export interface Build {
         onError: (err: Error) => any
     ): ChildProcess | undefined;
 
+    devPayaraMicro(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined;
+
     reloadPayaraMicro(
         onExit: (code: number) => any,
         onError: (err: Error) => any,
@@ -64,6 +71,26 @@ export interface Build {
     ): ChildProcess | undefined;
 
     bundlePayaraMicro(
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined;
+
+    startPayaraServerMaven(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined;
+
+    devPayaraServerMaven(
+        debugConfig: DebugConfiguration | undefined,
+        onData: (data: string) => any,
+        onExit: (code: number) => any,
+        onError: (err: Error) => any
+    ): ChildProcess | undefined;
+
+    stopPayaraServerMaven(
+        processId: number,
         onExit: (code: number) => any,
         onError: (err: Error) => any
     ): ChildProcess | undefined;
