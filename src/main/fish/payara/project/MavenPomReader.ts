@@ -52,9 +52,9 @@ export class MavenPomReader implements BuildReader {
                     }
                     if (result.project) {
                         let project = result.project;
-                        reader.groupId = project.groupId[0];
-                        reader.artifactId = project.artifactId[0];
-                        reader.version = project.version[0];
+                        reader.groupId = project.groupId?.[0] ?? project.parent?.[0]?.groupId?.[0] ?? '';
+                        reader.artifactId = project.artifactId?.[0] ?? '';
+                        reader.version = project.version?.[0] ?? project.parent?.[0]?.version?.[0] ?? '';
                         reader.finalName = reader.parseFinalName(project.build);
                         reader.buildDirectory = reader.parseBuildDirectory(project.build);
                         if (project.profiles

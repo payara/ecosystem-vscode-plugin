@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2026 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2026 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -17,14 +17,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
 
-export namespace  PayaraMicroMavenPlugin {
+export namespace PayaraServerMavenPlugin {
 
-    export const ARTIFACT_ID = 'payara-micro-maven-plugin';
     export const GROUP_ID = 'fish.payara.maven.plugins';
+    export const ARTIFACT_ID = 'payara-server-maven-plugin';
     export const START_GOAL = 'start';
     export const DEV_GOAL = 'dev';
     export const STOP_GOAL = 'stop';
-    export const BUNDLE_GOAL = 'bundle';
-    export const RELOAD_GOAL = 'reload';
+    export const DEPLOY_GOAL = 'deploy';
+    export const UNDEPLOY_GOAL = 'undeploy';
 
 }

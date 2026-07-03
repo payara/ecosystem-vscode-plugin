@@ -1,0 +1,8 @@
+{
+    "require": [
+        "src/test/unit/vscode-mock.js",
+        "ts-node/register"
+    ],
+    "spec": "src/test/unit/**/*.test.ts",
+    "timeout": 10000
+}

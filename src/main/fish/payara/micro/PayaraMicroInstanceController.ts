@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * Copyright (c) 2020-2022 Payara Foundation and/or its affiliates and others.
+ * Copyright (c) 2020-2026 Payara Foundation and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -99,6 +99,56 @@ export class PayaraMicroInstanceController extends PayaraInstanceController {
             return true;
         }
         return false;
+    }
+
+    public async devMicro(payaraMicro: PayaraMicroInstance, debug: boolean, callback?: (status: boolean) => any): Promise<void> {
+        if (!payaraMicro.isStopped()) {
+            vscode.window.showErrorMessage('Payara Micro instance already running.');
+            return;
+        }
+        let workspaceFolder = vscode.workspace.getWorkspaceFolder(payaraMicro.getPath());
+
+        let debugConfig: DebugConfiguration | undefined;
+        if (debug && workspaceFolder) {
+            let debugManager: DebugManager = new DebugManager();
+            debugConfig = debugManager.getPayaraConfig(workspaceFolder, debugManager.getDefaultMicroConfig());
+        }
+        try {
+            payaraMicro.setDebug(debug);
+            await payaraMicro.setState(InstanceState.LOADING);
+            let process = payaraMicro.getBuild()
+                .devPayaraMicro(debugConfig,
+                    async data => {
+                        if (!payaraMicro.isStarted()) {
+                            if (debugConfig && data.indexOf("Listening for transport dt_socket at address:") > -1) {
+                                vscode.debug.startDebugging(workspaceFolder, debugConfig);
+                                debugConfig = undefined;
+                            }
+                            if (this.parseApplicationUrl(data, payaraMicro)) {
+                                await payaraMicro.setState(InstanceState.RUNNING);
+                            }
+                        }
+                    },
+                    async (code) => {
+                        await payaraMicro.setState(InstanceState.STOPPED);
+                        if (code !== 0) {
+                            console.warn(`devMicro task failed with exit code ${code}`);
+                        }
+                    },
+                    async (error) => {
+                        vscode.window.showErrorMessage(`Error on executing devMicro task: ${error.message}`);
+                        await payaraMicro.setState(InstanceState.STOPPED);
+                    }
+                );
+            if (process) {
+                payaraMicro.setProcess(process);
+            } else {
+                await payaraMicro.setState(InstanceState.STOPPED);
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage("Error on executing devMicro task:" + ((error instanceof Error)? error.message : error));
+            await payaraMicro.setState(InstanceState.STOPPED);
+        }
     }
 
     public async reloadMicro(payaraMicro: PayaraMicroInstance,
